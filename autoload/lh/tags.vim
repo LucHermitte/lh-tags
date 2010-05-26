@@ -2,19 +2,28 @@
 " $Id$
 " File:		autoload/lh/tags.vim                                    {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
-"		<URL:http://hermitte.free.fr/vim/>
-" Version:	0.2.0
+"		<URL:http://code.google.com/p/lh-vim/>
+" Version:	0.2.1
 " Created:	02nd Oct 2008
 " Last Update:	$Date$
 "------------------------------------------------------------------------
-" Description:	«description»
+" Description:	
+" 	Small plugin related to tags files. 
+" 	(Deported functions)
 " 
 "------------------------------------------------------------------------
 " Installation:	«install details»
 " History:
+" 	v0.2.1: 22nd Apr 2010
+" 	(*) Do not reuse a search buffer
+" 	(*) Jumps are pushed into the tagstack
 " 	v0.2.0: 03rd Oct 2008
 " 	(*) code moved to an autoload plugin
-" TODO:		«missing features»
+" TODO:		
+" 	(*) Have behaviour similars to the one from the quickfix mode
+" 	(possibility to close and reopen the search window; prev&next moves)
+" 	(*) Show/hide declarations -- merge declaration and definitions
+" 	(*) exclude patterns
 " }}}1
 "=============================================================================
 
@@ -26,26 +35,28 @@ set cpo&vim
 " ## Options {{{1
 let g:tags_options_c   = '--c++-kinds=+p --fields=+imaS --extra=+q'
 let g:tags_options_cpp = '--c++-kinds=+p --fields=+imaS --extra=+q'
+let g:tags_options_vim = '--fields=+mS --extra=+q'
 " let g:tags_options_cpp = '--c++-kinds=+p --fields=+iaS --extra=+q --language-force=cpp'
 
 function! s:CtagsExecutable()
-  let tags_executable = lh#option#Get('tags_executable', 'ctags', 'bg')
+  let tags_executable = lh#option#get('tags_executable', 'ctags', 'bg')
   return tags_executable
 endfunction
 
 function! s:CtagsOptions()
-  let ctags_options = lh#option#Get('tags_options_'.&ft, '')
-  let ctags_options .= ' '.lh#option#Get('tags_options', '', 'wbg')
+  let ctags_options = ' --tag-relative=yes'
+  let ctags_options .= ' '.lh#option#get('tags_options_'.&ft, '')
+  let ctags_options .= ' '.lh#option#get('tags_options', '', 'wbg')
   return ctags_options
 endfunction
 
 function! s:CtagsDirname()
-  let ctags_dirname = lh#option#Get('tags_dirname', '', 'b').'/'
+  let ctags_dirname = lh#option#get('tags_dirname', '', 'b').'/'
   return ctags_dirname
 endfunction
 
 function! s:CtagsFilename()
-  let ctags_filename = lh#option#Get('tags_filename', 'tags', 'bg')
+  let ctags_filename = lh#option#get('tags_filename', 'tags', 'bg')
   return ctags_filename
 endfunction
 
@@ -55,7 +66,7 @@ function! s:CtagsCmdLine(ctags_pathname)
 endfunction
 
 function! s:TagsSelectPolicy()
-  let select_policy = lh#option#Get('tags_select', "expand('<cword>')", 'bg')
+  let select_policy = lh#option#get('tags_select', "expand('<cword>')", 'bg')
   return select_policy
 endfunction
 
@@ -66,8 +77,12 @@ function! lh#tags#verbose(level)
   let s:verbose = a:level
 endfunction
 
+function! lh#tags#debug(expr)
+  return eval(a:expr)
+endfunction
+
 function! s:Verbose(expr)
-  if exists(s:verbose) && s:verbose
+  if exists('s:verbose') && s:verbose
     echomsg a:expr
   endif
 endfunction
@@ -79,18 +94,35 @@ endfunction
 " ======================================================================
 " Tags generating functions {{{2
 " ======================================================================
+" Purge all references to {source_name} in the tags file {{{3
+function! s:PurgeFileReferences(ctags_pathname, source_name)
+  if filereadable(a:ctags_pathname)
+    let temp_tags      = tempname()
+    " it exists => must be changed
+    let cmd_line = 'grep -v '
+	  \ .shellescape('	'.lh#path#to_regex(a:source_name).'	').' '.shellescape(a:ctags_pathname) 
+	  " \.' > '.shellescape(temp_tags)
+	  " The last redirection may cause troubles on windows
+    call s:Verbose(cmd_line)
+    let tags =  system(cmd_line)
+    call writefile(split(tags,'\n'), a:ctags_pathname, "b")
+    " using a single cmd_line with && causes troubles under windows ...
+    " let cmd_line = 'mv -f '.shellescape(temp_tags).' '.shellescape(a:ctags_pathname)
+    " call s:Verbose(cmd_line)
+    " call system(cmd_line)
+  endif
+endfunction
+
+" ======================================================================
 " generate tags on-the-fly {{{3
-function! UpdateTags_for_ModifiedFile(ctags_pathname)
-  let source_name    = expand('%')
+function! s:UpdateTags_for_ModifiedFile(ctags_pathname)
+  let ctags_dirname  = s:CtagsDirname()
+  let source_name    = lh#path#relative_to(expand('%'), ctags_dirname)
   let temp_name      = tempname()
   let temp_tags      = tempname()
 
   " 1- purge old references to the source name
-  if filereadable(a:ctags_pathname)
-    " it exists => must be changed
-    call system('grep -v "	'.source_name.'	" '.a:ctags_pathname.' > '.temp_tags.
-	  \ ' && mv -f '.temp_tags.' '.a:ctags_pathname)
-  endif
+  call s:PurgeFileReferences(a:ctags_pathname, source_name)
 
   " 2- save the unsaved contents of the current file
   call writefile(getline(1, '$'), temp_name, 'b')
@@ -98,8 +130,10 @@ function! UpdateTags_for_ModifiedFile(ctags_pathname)
   " 3- call ctags, and replace references to the temporary source file to the
   " real source file
   let cmd_line = s:CtagsCmdLine(a:ctags_pathname).' '.source_name.' --append'
+  " todo: test the redirection on windows
   let cmd_line .= ' && sed "s#\t'.temp_name.'\t#\t'.source_name.'\t#" > '.temp_tags
   let cmd_line .= ' && mv -f '.temp_tags.' '.a:ctags_pathname
+  call s:Verbose(cmd_line)
   call system(cmd_line)
   call delete(temp_name)
   
@@ -114,34 +148,37 @@ function! s:UpdateTags_for_All(ctags_pathname)
   " todo => use project directory
   "
   let cmd_line .= ' && '.s:CtagsCmdLine(a:ctags_pathname).' -R'
-  echo cmd_line
+  call s:Verbose(cmd_line)
   call system(cmd_line)
 endfunction
 
 " ======================================================================
 " generate tags for the current saved file {{{3
 function! s:UpdateTags_for_SavedFile(ctags_pathname)
-  let source_name    = expand('%')
-  let temp_tags      = tempname()
+  let ctags_dirname  = s:CtagsDirname()
+  let source_name    = lh#path#relative_to(expand('%'), ctags_dirname)
 
-  if filereadable(a:ctags_pathname)
-    " it exists => must be changed
-    call system('grep -v "	'.source_name.'	" '.a:ctags_pathname.' > '.temp_tags.' && mv -f '.temp_tags.' '.a:ctags_pathname)
-  endif
+  call s:PurgeFileReferences(a:ctags_pathname, source_name)
+  return
   let cmd_line = 'cd '.s:CtagsDirname()
   let cmd_line .= ' && ' . s:CtagsCmdLine(a:ctags_pathname).' --append '.source_name
-  " echo cmd_line
+  call s:Verbose(cmd_line)
   call system(cmd_line)
 endfunction
 
 " ======================================================================
 " (public) Run a tag generating function {{{3
 " See this function as a /template method/.
-function! lh#tags#Run(tag_function)
+function! lh#tags#run(tag_function, force)
   try
     let ctags_dirname  = s:CtagsDirname()
     if strlen(ctags_dirname)==1
-      throw "tags-error: empty dirname"
+      if a:force
+        " todo: a:force || not_already_notified_for_this_buffer
+        throw "tags-error: empty dirname"
+      else
+        return 0
+      endif
     endif
     let ctags_filename = s:CtagsFilename()
     let ctags_pathname = ctags_dirname.ctags_filename
@@ -152,7 +189,7 @@ function! lh#tags#Run(tag_function)
     let Fn = function("s:".a:tag_function)
     call Fn(ctags_pathname)
   catch /tags-error:/
-    " call lh#common#ErrorMsg(v:exception)
+    call lh#common#error_msg(v:exception)
     return 0
   finally
   endtry
@@ -162,45 +199,74 @@ function! lh#tags#Run(tag_function)
 endfunction
 
 function! s:Irun(tag_function, res)
-  call lh#tags#Run(a:tag_function)
+  call lh#tags#run(a:tag_function)
   return a:res
 endfunction
 
 " ======================================================================
 " Main function for updating all tags {{{3
-function! lh#tags#UpdateAll()
-  let done = lh#tags#Run('UpdateTags_for_All')
+function! lh#tags#update_all()
+  let done = lh#tags#run('UpdateTags_for_All', 1)
 endfunction
 
 " Main function for updating the tags from one file {{{3
 " @note the file may be saved or "modified".
-function! lh#tags#UpdateCurrent()
+function! lh#tags#update_current()
   if &modified
-    let done = lh#tags#Run('UpdateTags_for_ModifiedFile')
+    let done = lh#tags#run('UpdateTags_for_ModifiedFile', 1)
   else
-    let done = lh#tags#Run('UpdateTags_for_SavedFile')
+    let done = lh#tags#run('UpdateTags_for_SavedFile', 1)
   endif
   " if done
-    " call lh#common#ErrorMsg("updated")
+    " call lh#common#error_msg("updated")
   " else
-    " call lh#common#ErrorMsg("not updated")
+    " call lh#common#error_msg("not updated")
   " endif
 endfunction
 
 " ######################################################################
 " ## Tag browsing {{{1
-function! s:LeftJustity(text, nb)
+"
+" # Tag push/pop {{{2
+" internal tmp tags file {{{3
+if !exists('s:tags')
+  let s:tags = tempname()
+  let &tags .= ','.s:tags
+  let s:lines = []
+endif
+
+" lh#tags#jump {{{3
+let s:k_tag_name__ = '__jump_tag__'
+function! lh#tags#jump(tagentry)
+  let last = len(s:lines)+1
+  " Assert s:tagentry.filename == expand('%:p')
+  let filename = expand('%:p')
+
+  let l = s:k_tag_name__.last
+	\ . "\t" . (filename)
+	\ . "\t" . (a:tagentry.cmd)
+
+  call add(s:lines, l)
+  call writefile(s:lines, s:tags)
+  exe 'tag '.s:k_tag_name__.last
+endfunction
+
+" # Tag dialog {{{2
+" s:LeftJustify {{{3
+function! s:LeftJustify(text, nb)
   let nbchars = strlen(a:text)
   let cpltWith = (nbchars >= a:nb) ? 0 : a:nb - nbchars
   return a:text.repeat(' ', cpltWith)
 endfunction
 
-function! s:RightJustity(text, nb)
+" s:RightJustify {{{3
+function! s:RightJustify(text, nb)
   let nbchars = strlen(a:text)
   let cpltWith = (nbchars >= a:nb) ? 0 : a:nb - nbchars
   return repeat(' ', cpltWith).a:text
 endfunction
 
+" s:GetKey {{{3
 function! s:GetKey(dict, keys_list)
   for key in a:keys_list
     if has_key(a:dict, key)
@@ -210,6 +276,7 @@ function! s:GetKey(dict, keys_list)
   return ''
 endfunction
 
+" s:AccessSpecifier {{{3
 let s:access_table = {
       \ 'public'    : '+',
       \ 'protected' : '#',
@@ -231,15 +298,16 @@ function! s:AccessSpecifier(taginfo)
   return access
 endfunction
 
-" implementation
+" lh#tags#tag_name() {{{3
+" implementation [c++]
 " inherits, signature
-function! s:TagName(taginfo)
+function! lh#tags#tag_name(taginfo)
   " @todo: use keywords dependent on the ft
   let scope  = s:GetKey(a:taginfo,
 	\ [ 'struct', 'class', 'namespace', 'enum', 'union' ])
   " if the id begins with the scope name, it means there is no need to care the
   " scope into account twice
-  if (strlen(scope) != 0) && (a:taginfo.name !~ '^'.scope)
+  if (strlen(scope) != 0) && (a:taginfo.name !~ '^'.scope.'::')
     let fullname =  scope . '::' . a:taginfo.name
   else
     let fullname = a:taginfo.name
@@ -247,6 +315,7 @@ function! s:TagName(taginfo)
   return fullname
 endfunction
 
+" s:Fullname() {{{3
 function! s:Fullname(taginfo, fullsignature)
   let fullname = a:taginfo.name 
   let fullname .= (a:fullsignature && has_key(a:taginfo, 'signature'))
@@ -255,16 +324,18 @@ function! s:Fullname(taginfo, fullsignature)
   return fullname
 endfunction
 
+" s:TagEntry() {{{3
 function! s:TagEntry(taginfo, nameLen, fullsignature)
-  let res = "  ".s:RightJustity(a:taginfo.nr,2).' '
-	\ .s:LeftJustity(a:taginfo.pri, 3).' '
-	\ .s:LeftJustity(a:taginfo.kind, 4).' '
-	\ .s:LeftJustity(s:Fullname(a:taginfo, a:fullsignature), a:nameLen)
+  let res = "  ".s:RightJustify(a:taginfo.nr,2).' '
+	\ .s:LeftJustify(a:taginfo.pri, 3).' '
+	\ .s:LeftJustify(a:taginfo.kind, 4).' '
+	\ .s:LeftJustify(s:Fullname(a:taginfo, a:fullsignature), a:nameLen)
 	\ .' '.a:taginfo.filename 
   return res
 endfunction
 
-function! s:PrepareTagEntry(tagrawinfo, nr)
+" s:PrepareTagEntry0() {{{3
+function! s:PrepareTagEntry0(tagrawinfo, nr)
   let kind = a:tagrawinfo.kind . ' ' . s:AccessSpecifier(a:tagrawinfo)
   let taginfo = {
 	\ 'nr'              : a:nr,
@@ -272,7 +343,20 @@ function! s:PrepareTagEntry(tagrawinfo, nr)
 	\ 'kind'            : kind,
 	\ 'filename'        : a:tagrawinfo.filename,
 	\ 'signature'       : s:GetKey(a:tagrawinfo, ['signature']),
-	\ 'name'            : s:TagName(a:tagrawinfo)
+	\ 'name'            : lh#tags#tag_name(a:tagrawinfo)
+	\ }
+  return taginfo
+endfunction
+
+" s:PrepareTagEntry() {{{3
+function! s:PrepareTagEntry(tagrawinfo)
+  let kind = a:tagrawinfo.kind . ' ' . s:AccessSpecifier(a:tagrawinfo)
+  let taginfo = {
+	\ 'pri'             : '@@@',
+	\ 'kind'            : kind,
+	\ 'filename'        : a:tagrawinfo.filename,
+	\ 'signature'       : s:GetKey(a:tagrawinfo, ['signature']),
+	\ 'name'            : lh#tags#tag_name(a:tagrawinfo)
 	\ }
   return taginfo
 endfunction
@@ -285,6 +369,7 @@ let s:tag_header = {
 	\ 'name'            : 'name'
 	\ }
 
+" s:BuildTagsMenu() {{{3
 function! s:BuildTagsMenu(tagsinfo, maxNameLen, fullsignature)
   let tags= []
   for taginfo in (a:tagsinfo)
@@ -293,6 +378,7 @@ function! s:BuildTagsMenu(tagsinfo, maxNameLen, fullsignature)
   return tags
 endfunction
 
+" s:ComputeMaxNameLength() {{{3
 function! s:ComputeMaxNameLength(tagsinfo, fullsignature)
   let maxNameLen = 0
   for taginfo in a:tagsinfo
@@ -303,7 +389,8 @@ function! s:ComputeMaxNameLength(tagsinfo, fullsignature)
   return maxNameLen
 endfunction
 
-function! s:ChooseTagEntry(tagrawinfos)
+" s:ChooseTagEntry() {{{3
+function! s:ChooseTagEntry(tagrawinfos, tagpattern)
   if     len(a:tagrawinfos) <= 1 | return 0
     " < 0 => error
     " ==0 <=> empty => nothing to choose => abort
@@ -311,22 +398,30 @@ function! s:ChooseTagEntry(tagrawinfos)
   else
     let fullsignature = 0
     " 1-  Prepare the tags
-    let i=1
-    let tagsinfo = [ s:tag_header ]
+    let uniq_sort_tmp = {} " sometimes, taginfo entries are duplicated
     for tagrawinfo in (a:tagrawinfos)
-      let taginfo = s:PrepareTagEntry(tagrawinfo,i)
+      let taginfo = s:PrepareTagEntry(tagrawinfo)
+      let stored_taginfo = taginfo
+      let stored_taginfo['cmd'] = tagrawinfo.cmd
+      let uniq_sort_tmp[string(taginfo)] = stored_taginfo
+    endfor
+    let g:criteria = 'name'
+    let uniq_sorted = sort(values(uniq_sort_tmp), 'LH_Tabs_Sort')
+    let tagsinfo = [ s:tag_header ]
+    let nr=1
+    for taginfo in (uniq_sorted)
+      let taginfo['nr'] = nr
       call add(tagsinfo, taginfo)
-      let i+= 1
+      let nr+= 1
     endfor
     let maxNameLen = s:ComputeMaxNameLength(tagsinfo, fullsignature)
 
     " 2- Prepare the lines to display
-
     let tags = s:BuildTagsMenu(tagsinfo, maxNameLen, fullsignature)
 
     " 3- Display
     let dialog = lh#buffer#dialog#new(
-	  \ "tags-selector",
+	  \ "tags-selector(".a:tagpattern.")",
 	  \ "lh-tags ".g:loaded_lh_tags_vim.": Select a tag to jump to",
 	  \ '', 0,
 	  \ 'LHTags_select', tags)
@@ -337,9 +432,10 @@ function! s:ChooseTagEntry(tagrawinfos)
   endif
 endfunction
 
+" LH_Tabs_Sort() {{{3
 function! LH_Tabs_Sort(lhs, rhs)
-  if     a:lhs.nr == '#' | return -1
-  elseif a:rhs.nr == '#' | return 1
+  if     has_key(a:lhs, 'nr') && a:lhs.nr == '#' | return -1
+  elseif has_key(a:rhs, 'nr') && a:rhs.nr == '#' | return 1
   else
     let lhs = a:lhs[g:criteria]
     let rhs = a:rhs[g:criteria]
@@ -351,23 +447,26 @@ function! LH_Tabs_Sort(lhs, rhs)
   endif
 endfunction
 
+" s:Sort() {{{3
 function! s:Sort(field)
   " let s:criteria = a:field
   let g:criteria = a:field
   call sort(b:tagsinfo, 'LH_Tabs_Sort')
   let tags = s:BuildTagsMenu(b:tagsinfo, b:dialog.maxNameLen, b:dialog.fullsignature)
   let b:dialog.choices = tags
-  call lh#buffer#dialog#Update(b:dialog)
+  call lh#buffer#dialog#update(b:dialog)
 endfunction
 
+" s:ToggleSignature() {{{3
 function! s:ToggleSignature()
   let b:dialog.fullsignature = 1 - b:dialog.fullsignature
   let b:dialog.maxNameLen = s:ComputeMaxNameLength(b:tagsinfo, b:dialog.fullsignature)
   let tags = s:BuildTagsMenu(b:tagsinfo, b:dialog.maxNameLen, b:dialog.fullsignature)
   let b:dialog.choices = tags
-  call lh#buffer#dialog#Update(b:dialog)
+  call lh#buffer#dialog#update(b:dialog)
 endfunction
 
+" s:Postinit() {{{3
 function! s:Postinit(tagsinfo)
   let b:tagsinfo = a:tagsinfo
 
@@ -375,7 +474,7 @@ function! s:Postinit(tagsinfo)
   nnoremap <silent> <buffer> N :call <sid>Sort('name')<cr>
   nnoremap <silent> <buffer> F :call <sid>Sort('filename')<cr>
   nnoremap <silent> <buffer> s :call <sid>ToggleSignature()<cr>
-  exe "nnoremap <silent> <buffer> o :call lh#buffer#dialog#Select(line('.'), ".b:dialog.id.", 'sp')<cr>"
+  exe "nnoremap <silent> <buffer> o :call lh#buffer#dialog#select(line('.'), ".b:dialog.id.", 'sp')<cr>"
 
   call lh#buffer#dialog#add_help(b:dialog, '@| o                       : Split (O)pen in a new buffer if not yet opened', 'long')
   call lh#buffer#dialog#add_help(b:dialog, '@| K, N, or F              : Sort by (K)ind, (N)ame, or (F)ilename', 'long')
@@ -405,9 +504,11 @@ function! s:Postinit(tagsinfo)
   endif
 endfunction
 
+" s:DisplaySignature() {{{3
 function! s:DisplaySignature()
 endfunction
 
+" LHTags_select() {{{3
 function! LHTags_select(results, ...)
   if len(a:results.selection) > 1
     " this is an assert
@@ -425,13 +526,17 @@ function! LHTags_select(results, ...)
   echomsg '-> '.choices[selection]
   " echomsg '-> '.info[selection-1].filename . ": ".info[selection-1].cmd
   if exists('s:quit') | :quit | endif
-  call s:JumpToTag(cmd, info[selection-1])
+  " call s:JumpToTag(cmd, info[selection-1])
+  call s:JumpToTag(cmd, b:tagsinfo[selection])
 endfunction
 
+" s:JumpToTag() {{{3
 function! s:JumpToTag(cmd, taginfo)
   let filename = a:taginfo.filename
-  call lh#buffer#Jump(filename, a:cmd)
+  call lh#buffer#jump(filename, a:cmd)
   " Execute the search
+  call lh#tags#jump(a:taginfo)
+  return 
   try
     let save_magic=&magic
     set nomagic
@@ -441,25 +546,32 @@ function! s:JumpToTag(cmd, taginfo)
   endtry
 endfunction
 
-function! s:Find(cmd, tagpattern)
+" s:Find() {{{3
+function! s:Find(cmd_edit, cmd_split, tagpattern)
   let info = taglist(a:tagpattern)
   if len(info) == 0
-    call lh#common#ErrorMsg("lh-tags: no tags for `".a:tagpattern."'")
+    call lh#common#error_msg("lh-tags: no tags for `".a:tagpattern."'")
     return
   endif
   " call confirm( "taglist(".a:tagpattern.")=".len(info), '&Ok', 1)
-  let which = s:ChooseTagEntry(info)
-  if which >= 0 && which < len(info)
-    call s:JumpToTag(a:cmd, info[which])
+  if len(info) == 1
+    call s:JumpToTag(a:cmd_split, info[0])
   else
-    let b:info = info
-    let b:cmd = a:cmd
+    let which = s:ChooseTagEntry(info, a:tagpattern)
+    if which >= 0 && which < len(info)
+      echoerr "Assert: not expected path"
+      call s:JumpToTag(a:cmd_edit, info[which])
+    else
+      let b:info = info
+      let b:cmd = a:cmd_edit
+    endif
   endif
 endfunction
 
-function! lh#tags#SplitOpen()
+" lh#tags#split_open() {{{3
+function! lh#tags#split_open()
   let id = eval(s:TagsSelectPolicy())
-  :call s:Find('e', id.'$')
+  :call s:Find('e', 'sp', id.'$')
 endfunction
 
 " ######################################################################
@@ -521,9 +633,9 @@ function! LHTComplete(ArgLead, CmdLine, CursorPos)
 endfunction
 
 " Command execution  {{{3
-function! lh#tags#Command(...)
+function! lh#tags#command(...)
   let id = join(a:000, '.*')
-  :call s:Find('e', id)
+  :call s:Find('e', 'sp', id)
 endfunction
 
 
