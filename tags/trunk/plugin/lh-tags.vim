@@ -1,14 +1,18 @@
 "=============================================================================
 " $Id$
-" File:		lh-tags.vim                                           {{{1
+" File:		plugin/lh-tags.vim                                        {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
-"		<URL:http://hermitte.free.fr/vim/>
-" Version:	0.2.0
-let s:version = 'v0.2.0'
+"		<URL:http://code.google.com/p/lh-vim/>
+" Version:	0.2.1
+let s:version = 'v0.2.1'
 " Created:	04th Jan 2007
-" Last Update:	11th Sep 2007
+" Last Update:	$Date$
 "------------------------------------------------------------------------
-" Description:	«description»
+" Description:	
+" 	Small plugin related to tags files. 
+" 	It helps:
+" 	- generate tag files
+" 	- navigate (or more precisely: find the right tags)
 " 
 "------------------------------------------------------------------------
 " Installation:	«install details»
@@ -50,13 +54,11 @@ if exists("g:loaded_lh_tags_vim") && !exists('g:force_reload_lh_tags_vim')
 endif
 "------------------------------------------------------------------------
 " Needs ctags executable {{{2
-let s:tags_executable = lh#option#Get('tags_executable', 'ctags', 'bg')
+let s:tags_executable = lh#option#get('tags_executable', 'ctags', 'bg')
 let s:script = expand('<sfile>:p')
 
 if !executable(s:tags_executable)
-  echohl ErrorMsg
-  echo s:script.' not loaded as ``'.s:tags_executable."'' is not available in $PATH"
-  echohl None
+  let g:loaded_lh_tags_vim = s:script.' not loaded as ``'.s:tags_executable."'' is not available in $PATH"
   finish
 endif
 
@@ -64,14 +66,14 @@ endif
 " Tag generation {{{1
 " ======================================================================
 " Mappings {{{2
-" inoremap <expr> ; lh#tags#Run('UpdateTags_for_ModifiedFile',';')
+" inoremap <expr> ; lh#tags#run('UpdateTags_for_ModifiedFile',';')
 
-nnoremap <silent> <Plug>CTagsUpdateCurrent :call lh#tags#UpdateCurrent()<cr>
+nnoremap <silent> <Plug>CTagsUpdateCurrent :call lh#tags#update_current()<cr>
 if !hasmapto('<Plug>CTagsUpdateCurrent', 'n')
   nmap <silent> <c-x>tc  <Plug>CTagsUpdateCurrent
 endif
 
-nnoremap <silent> <Plug>CTagsUpdateAll     :call lh#tags#UpdateAll()<cr>
+nnoremap <silent> <Plug>CTagsUpdateAll     :call lh#tags#update_all()<cr>
 if !hasmapto('<Plug>CTagsUpdateAll', 'n')
   nmap <silent> <c-x>ta  <Plug>CTagsUpdateAll
 endif
@@ -81,13 +83,13 @@ endif
 " Auto command for automatically tagging a file when saved {{{2
 augroup LH_TAGS
   au!
-  autocmd BufWritePost,FileWritePost * if ! lh#option#Get('LHT_no_auto', 0) | call lh#tags#Run('UpdateTags_for_SavedFile') | endif
+  autocmd BufWritePost,FileWritePost * if ! lh#option#get('LHT_no_auto', 0) | call lh#tags#run('UpdateTags_for_SavedFile',0) | endif
 aug END
 
 " ######################################################################
 " Tag browsing {{{1
 
-nnoremap <silent> <Plug>CTagsSplitOpen     :call lh#tags#SplitOpen()<cr>
+nnoremap <silent> <Plug>CTagsSplitOpen     :call lh#tags#split_open()<cr>
 if !hasmapto('<Plug>CTagsSplitOpen', 'n')
   nmap <silent> <c-w><m-down>  <Plug>CTagsSplitOpen
 endif
@@ -97,7 +99,7 @@ endif
 " ======================================================================
 
 command! -nargs=* -complete=custom,LHTComplete
-      \		LHTags call lh#tags#Command(<f-args>)
+      \		LHTags call lh#tags#command(<f-args>)
 
 " ======================================================================
 let g:loaded_lh_tags_vim = s:version
