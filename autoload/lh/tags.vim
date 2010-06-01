@@ -3,7 +3,7 @@
 " File:		autoload/lh/tags.vim                                    {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "		<URL:http://code.google.com/p/lh-vim/>
-" Version:	0.2.1
+" Version:	0.2.2
 " Created:	02nd Oct 2008
 " Last Update:	$Date$
 "------------------------------------------------------------------------
@@ -14,6 +14,9 @@
 "------------------------------------------------------------------------
 " Installation:	«install details»
 " History:
+" 	v0.2.2: 26th May 2010
+" 	(*) s/s:tags/&_jump/g
+" 	(*) hook to run ctags with the default options, plus other ones
 " 	v0.2.1: 22nd Apr 2010
 " 	(*) Do not reuse a search buffer
 " 	(*) Jumps are pushed into the tagstack
@@ -34,13 +37,18 @@ set cpo&vim
 " ######################################################################
 " ## Options {{{1
 let g:tags_options_c   = '--c++-kinds=+p --fields=+imaS --extra=+q'
-let g:tags_options_cpp = '--c++-kinds=+p --fields=+imaS --extra=+q'
+" let g:tags_options_cpp = '--c++-kinds=+p --fields=+imaS --extra=+q'
 let g:tags_options_vim = '--fields=+mS --extra=+q'
+let g:tags_options_cpp = '--c++-kinds=+p --fields=+imaS --extra=+q --language-force=C++'
 " let g:tags_options_cpp = '--c++-kinds=+p --fields=+iaS --extra=+q --language-force=cpp'
 
 function! s:CtagsExecutable()
   let tags_executable = lh#option#get('tags_executable', 'ctags', 'bg')
   return tags_executable
+endfunction
+
+function! lh#tags#ctags_is_installed()
+  return executable(s:CtagsExecutable())
 endfunction
 
 function! s:CtagsOptions()
@@ -60,7 +68,7 @@ function! s:CtagsFilename()
   return ctags_filename
 endfunction
 
-function! s:CtagsCmdLine(ctags_pathname)
+function! lh#tags#cmd_line(ctags_pathname)
   let cmd_line = s:CtagsExecutable().' '.s:CtagsOptions().' -f '.a:ctags_pathname
   return cmd_line
 endfunction
@@ -71,7 +79,13 @@ function! s:TagsSelectPolicy()
 endfunction
 
 " ######################################################################
-" ## Internal Functions {{{1
+" ## Misc Functions     {{{1
+" # Version {{{2
+let s:k_version = 222
+function! lh#tags#version()
+  return s:k_version
+endfunction
+
 " # Debug {{{2
 function! lh#tags#verbose(level)
   let s:verbose = a:level
@@ -129,7 +143,7 @@ function! s:UpdateTags_for_ModifiedFile(ctags_pathname)
 
   " 3- call ctags, and replace references to the temporary source file to the
   " real source file
-  let cmd_line = s:CtagsCmdLine(a:ctags_pathname).' '.source_name.' --append'
+  let cmd_line = lh#tags#cmd_line(a:ctags_pathname).' '.source_name.' --append'
   " todo: test the redirection on windows
   let cmd_line .= ' && sed "s#\t'.temp_name.'\t#\t'.source_name.'\t#" > '.temp_tags
   let cmd_line .= ' && mv -f '.temp_tags.' '.a:ctags_pathname
@@ -147,7 +161,7 @@ function! s:UpdateTags_for_All(ctags_pathname)
   let cmd_line  = 'cd '.s:CtagsDirname()
   " todo => use project directory
   "
-  let cmd_line .= ' && '.s:CtagsCmdLine(a:ctags_pathname).' -R'
+  let cmd_line .= ' && '.lh#tags#cmd_line(a:ctags_pathname).' -R'
   call s:Verbose(cmd_line)
   call system(cmd_line)
 endfunction
@@ -161,7 +175,7 @@ function! s:UpdateTags_for_SavedFile(ctags_pathname)
   call s:PurgeFileReferences(a:ctags_pathname, source_name)
   return
   let cmd_line = 'cd '.s:CtagsDirname()
-  let cmd_line .= ' && ' . s:CtagsCmdLine(a:ctags_pathname).' --append '.source_name
+  let cmd_line .= ' && ' . lh#tags#cmd_line(a:ctags_pathname).' --append '.source_name
   call s:Verbose(cmd_line)
   call system(cmd_line)
 endfunction
@@ -229,9 +243,9 @@ endfunction
 "
 " # Tag push/pop {{{2
 " internal tmp tags file {{{3
-if !exists('s:tags')
-  let s:tags = tempname()
-  let &tags .= ','.s:tags
+if !exists('s:tags_jump')
+  let s:tags_jump = tempname()
+  let &tags .= ','.s:tags_jump
   let s:lines = []
 endif
 
@@ -247,7 +261,7 @@ function! lh#tags#jump(tagentry)
 	\ . "\t" . (a:tagentry.cmd)
 
   call add(s:lines, l)
-  call writefile(s:lines, s:tags)
+  call writefile(s:lines, s:tags_jump)
   exe 'tag '.s:k_tag_name__.last
 endfunction
 
