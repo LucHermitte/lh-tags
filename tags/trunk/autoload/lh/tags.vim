@@ -3,7 +3,7 @@
 " File:		autoload/lh/tags.vim                                    {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "		<URL:http://code.google.com/p/lh-vim/>
-" Version:	0.2.2
+" Version:	0.2.3
 " Created:	02nd Oct 2008
 " Last Update:	$Date$
 "------------------------------------------------------------------------
@@ -14,6 +14,8 @@
 "------------------------------------------------------------------------
 " Installation:	«install details»
 " History:
+" 	v0.2.3: 23rd Dec 2010
+" 	(*) system() calls catch errors
 " 	v0.2.2: 26th May 2010
 " 	(*) s/s:tags/&_jump/g
 " 	(*) hook to run ctags with the default options, plus other ones
@@ -81,7 +83,7 @@ endfunction
 " ######################################################################
 " ## Misc Functions     {{{1
 " # Version {{{2
-let s:k_version = 222
+let s:k_version = 223
 function! lh#tags#version()
   return s:k_version
 endfunction
@@ -101,12 +103,22 @@ function! s:Verbose(expr)
   endif
 endfunction
 
+" # s:System {{{2
+function! s:System(cmd_line)
+  call s:Verbose(a:cmd_line)
+  let res = system(a:cmd_line)
+  if v:shell_error
+    throw "Cannot execute system call (".a:cmd_line."): ".res
+  endif
+  return res
+endfunction
+
 " ######################################################################
 " ## Tags generation {{{1
 " ======================================================================
 
 " ======================================================================
-" Tags generating functions {{{2
+" # Tags generating functions {{{2
 " ======================================================================
 " Purge all references to {source_name} in the tags file {{{3
 function! s:PurgeFileReferences(ctags_pathname, source_name)
@@ -117,8 +129,7 @@ function! s:PurgeFileReferences(ctags_pathname, source_name)
 	  \ .shellescape('	'.lh#path#to_regex(a:source_name).'	').' '.shellescape(a:ctags_pathname) 
 	  " \.' > '.shellescape(temp_tags)
 	  " The last redirection may cause troubles on windows
-    call s:Verbose(cmd_line)
-    let tags =  system(cmd_line)
+    let tags =  s:System(cmd_line)
     call writefile(split(tags,'\n'), a:ctags_pathname, "b")
     " using a single cmd_line with && causes troubles under windows ...
     " let cmd_line = 'mv -f '.shellescape(temp_tags).' '.shellescape(a:ctags_pathname)
@@ -131,7 +142,7 @@ endfunction
 " generate tags on-the-fly {{{3
 function! s:UpdateTags_for_ModifiedFile(ctags_pathname)
   let ctags_dirname  = s:CtagsDirname()
-  let source_name    = lh#path#relative_to(expand('%'), ctags_dirname)
+  let source_name    = lh#path#relative_to(expand('%:p'), ctags_dirname)
   let temp_name      = tempname()
   let temp_tags      = tempname()
 
@@ -147,8 +158,7 @@ function! s:UpdateTags_for_ModifiedFile(ctags_pathname)
   " todo: test the redirection on windows
   let cmd_line .= ' && sed "s#\t'.temp_name.'\t#\t'.source_name.'\t#" > '.temp_tags
   let cmd_line .= ' && mv -f '.temp_tags.' '.a:ctags_pathname
-  call s:Verbose(cmd_line)
-  call system(cmd_line)
+  call s:System(cmd_line)
   call delete(temp_name)
   
   return ';'
@@ -157,27 +167,32 @@ endfunction
 " ======================================================================
 " generate tags for all files {{{3
 function! s:UpdateTags_for_All(ctags_pathname)
+  let ctags_dirname  = s:CtagsDirname()
+
   call delete(a:ctags_pathname)
-  let cmd_line  = 'cd '.s:CtagsDirname()
+  runtime autoload/lh/system.vim
+  if exists('*lh#system#SysCD')
+	let cmd_line  = lh#system#SysCD(ctags_dirname)
+  else
+	let cmd_line  = 'cd '.ctags_dirname
+  endif
   " todo => use project directory
   "
-  let cmd_line .= ' && '.lh#tags#cmd_line(a:ctags_pathname).' -R'
-  call s:Verbose(cmd_line)
-  call system(cmd_line)
+  let cmd_line .= ' && '.lh#tags#cmd_line(s:CtagsFilename()).' -R'
+  call s:System(cmd_line)
 endfunction
 
 " ======================================================================
 " generate tags for the current saved file {{{3
 function! s:UpdateTags_for_SavedFile(ctags_pathname)
   let ctags_dirname  = s:CtagsDirname()
-  let source_name    = lh#path#relative_to(expand('%'), ctags_dirname)
+  let source_name    = lh#path#relative_to(expand('%:p'), ctags_dirname)
 
   call s:PurgeFileReferences(a:ctags_pathname, source_name)
   return
-  let cmd_line = 'cd '.s:CtagsDirname()
+  let cmd_line = 'cd '.ctags_dirname
   let cmd_line .= ' && ' . lh#tags#cmd_line(a:ctags_pathname).' --append '.source_name
-  call s:Verbose(cmd_line)
-  call system(cmd_line)
+  call s:System(cmd_line)
 endfunction
 
 " ======================================================================
@@ -249,20 +264,27 @@ if !exists('s:tags_jump')
   let s:lines = []
 endif
 
+let s:lines = []
+
 " lh#tags#jump {{{3
 let s:k_tag_name__ = '__jump_tag__'
+let s:k_nb_digits  = 5 " works with ~1 million jumps. Should be enough
 function! lh#tags#jump(tagentry)
   let last = len(s:lines)+1
   " Assert s:tagentry.filename == expand('%:p')
   let filename = expand('%:p')
 
-  let l = s:k_tag_name__.last
+  let tag_name = s:k_tag_name__.repeat('0', s:k_nb_digits-strlen(last)).last
+  let l = tag_name
 	\ . "\t" . (filename)
 	\ . "\t" . (a:tagentry.cmd)
 
+
+  " test whether a new digit is used. In that case renumber every tags to have
+  " a lexical order
   call add(s:lines, l)
   call writefile(s:lines, s:tags_jump)
-  exe 'tag '.s:k_tag_name__.last
+  exe 'tag '.tag_name
 endfunction
 
 " # Tag dialog {{{2
@@ -436,7 +458,7 @@ function! s:ChooseTagEntry(tagrawinfos, tagpattern)
     " 3- Display
     let dialog = lh#buffer#dialog#new(
 	  \ "tags-selector(".a:tagpattern.")",
-	  \ "lh-tags ".g:loaded_lh_tags_vim.": Select a tag to jump to",
+	  \ "lh-tags ".g:loaded_lh_tags.": Select a tag to jump to",
 	  \ '', 0,
 	  \ 'LHTags_select', tags)
     let dialog.maxNameLen    = maxNameLen
