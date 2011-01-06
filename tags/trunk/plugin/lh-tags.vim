@@ -3,8 +3,8 @@
 " File:		plugin/lh-tags.vim                                        {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "		<URL:http://code.google.com/p/lh-vim/>
-" Version:	0.2.1
-let s:version = 'v0.2.1'
+" Version:	0.2.2
+let s:version = 'v0.2.2'
 " Created:	04th Jan 2007
 " Last Update:	$Date$
 "------------------------------------------------------------------------
@@ -48,7 +48,7 @@ let s:version = 'v0.2.1'
 " Avoid global reinclusion {{{2
 let s:cpo_save=&cpo
 set cpo&vim
-if exists("g:loaded_lh_tags_vim") && !exists('g:force_reload_lh_tags_vim')
+if exists("g:loaded_lh_tags") && !exists('g:force_reload_lh_tags')
   let &cpo=s:cpo_save
   finish 
 endif
@@ -58,7 +58,7 @@ let s:tags_executable = lh#option#get('tags_executable', 'ctags', 'bg')
 let s:script = expand('<sfile>:p')
 
 if !executable(s:tags_executable)
-  let g:loaded_lh_tags_vim = s:script.' not loaded as ``'.s:tags_executable."'' is not available in $PATH"
+  let g:loaded_lh_tags = s:script.' not loaded as ``'.s:tags_executable."'' is not available in $PATH"
   finish
 endif
 
@@ -102,7 +102,7 @@ command! -nargs=* -complete=custom,LHTComplete
       \		LHTags call lh#tags#command(<f-args>)
 
 " ======================================================================
-let g:loaded_lh_tags_vim = s:version
+let g:loaded_lh_tags = s:version
 let &cpo=s:cpo_save
 "=============================================================================
 " vim600: set fdm=marker:
