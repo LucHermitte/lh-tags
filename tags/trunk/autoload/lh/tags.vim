@@ -450,6 +450,10 @@ function! s:ChooseTagEntry(tagrawinfos, tagpattern)
       call add(tagsinfo, taginfo)
       let nr+= 1
     endfor
+    if len(tagsinfo) == 2 " [0] == header
+      call s:JumpToTag('sp', a:tagrawinfos[1])
+      return -1
+    endif
     let maxNameLen = s:ComputeMaxNameLength(tagsinfo, fullsignature)
 
     " 2- Prepare the lines to display
