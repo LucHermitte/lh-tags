@@ -3,10 +3,10 @@
   "version" : "dev",
   "author" : "Luc Hermitte <http://code.google.com/p/lh-vim/wiki/contact>",
   "maintainer" : "Luc Hermitte <http://code.google.com/p/lh-vim/wiki/contact>",
-  "repository" : {"type": "svn", "url": "http://code.google.com/p/lh-vim/source/browse/#svn/tags/trunk"},
+  "repository" : {"type": "svn", "url": "http://lh-vim.googlecode.com/svn/tags/trunk"},
   "dependencies" : {
-      "lh-vim-lib" : {"type" : "svn", "url" : "http://code.google.com/p/lh-vim/source/browse/#svn/vim-lib/trunk"},
-      "system-tools" : {"type": "svn", "url": "http://code.google.com/p/lh-vim/source/browse/#svn/system-tools/trunk"}
+      "lh-vim-lib" : {"type" : "svn", "url" : "http://lh-vim.googlecode.com/svn/vim-lib/trunk"},
+      "system-tools" : {"type": "svn", "url": "http://lh-vim.googlecode.com/svn/system-tools/trunk"}
   },
   "description" : "ctags base updating, and browing"
 }
