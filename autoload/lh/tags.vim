@@ -3,7 +3,7 @@
 " File:		autoload/lh/tags.vim                                    {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "		<URL:http://code.google.com/p/lh-vim/>
-" Version:	0.2.3
+" Version:	0.2.4
 " Created:	02nd Oct 2008
 " Last Update:	$Date$
 "------------------------------------------------------------------------
@@ -14,6 +14,8 @@
 "------------------------------------------------------------------------
 " Installation:	«install details»
 " History:
+" 	v0.2.4: 26th Aug 2011
+" 	(*) tags jumping fixed to support the use of buffer-local &tags
 " 	v0.2.3: 23rd Dec 2010
 " 	(*) system() calls catch errors
 " 	v0.2.2: 26th May 2010
@@ -83,7 +85,7 @@ endfunction
 " ######################################################################
 " ## Misc Functions     {{{1
 " # Version {{{2
-let s:k_version = 223
+let s:k_version = 224
 function! lh#tags#version()
   return s:k_version
 endfunction
@@ -284,6 +286,9 @@ function! lh#tags#jump(tagentry)
   " a lexical order
   call add(s:lines, l)
   call writefile(s:lines, s:tags_jump)
+  if exists('&l:tags')
+    exe 'setlocal tags+='.s:tags_jump
+  endif
   exe 'tag '.tag_name
 endfunction
 
