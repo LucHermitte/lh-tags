@@ -3,7 +3,9 @@
 " File:		autoload/lh/tags.vim                                    {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "		<URL:http://code.google.com/p/lh-vim/>
-" Version:	0.2.4
+" License:      GPLv3 with exceptions
+"               <URL:http://code.google.com/p/lh-vim/wiki/License>
+" Version:	1.0.0
 " Created:	02nd Oct 2008
 " Last Update:	$Date$
 "------------------------------------------------------------------------
@@ -14,6 +16,7 @@
 "------------------------------------------------------------------------
 " Installation:	«install details»
 " History:
+" 	v1.0.0: GPLv3
 " 	v0.2.4: 26th Aug 2011
 " 	(*) tags jumping fixed to support the use of buffer-local &tags
 " 	v0.2.3: 23rd Dec 2010

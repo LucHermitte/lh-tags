@@ -3,8 +3,10 @@
 " File:		plugin/lh-tags.vim                                        {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "		<URL:http://code.google.com/p/lh-vim/>
-" Version:	0.2.2
-let s:version = 'v0.2.2'
+" License:      GPLv3 with exceptions
+"               <URL:http://code.google.com/p/lh-vim/wiki/License>
+" Version:	1.0.0
+let s:version = '1.0.0'
 " Created:	04th Jan 2007
 " Last Update:	$Date$
 "------------------------------------------------------------------------
@@ -17,6 +19,8 @@ let s:version = 'v0.2.2'
 "------------------------------------------------------------------------
 " Installation:	«install details»
 " History:	
+"       v3.0.0:
+"       (*) GPLv3
 " 	v0.2.0: 03rd Oct 2008
 " 	(*) code moved to an autoload plugin
 " 	v0.1.3: 30th Sep 2008

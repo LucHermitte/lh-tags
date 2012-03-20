@@ -1,10 +1,12 @@
 "=============================================================================
 " $Id$
-" File:		cpp_lh-tags-hooks.vim                                           {{{1
+" File:		ftplugin/cpp/cpp_lh-tags-hooks.vim                {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "		<URL:http://hermitte.free.fr/vim/>
-" Version:	0.1.3
-let s:version = 'v0.1.3'
+" License:      GPLv3 with exceptions
+"               <URL:http://code.google.com/p/lh-vim/wiki/License>
+" Version:	1.0.0
+let s:version = '1.0.0'
 " Created:	29th Sep 2008
 " Last Update:	$Date$
 "------------------------------------------------------------------------
