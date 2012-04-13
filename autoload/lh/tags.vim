@@ -85,6 +85,12 @@ function! s:TagsSelectPolicy()
   return select_policy
 endfunction
 
+function! s:RecursiveFlagOrAll()
+  let recurse = lh#option#get('tags_must_go_recursive', 1)
+  let res = recurse ? ' -R' : ' *'
+  return res
+endfunction
+
 " ######################################################################
 " ## Misc Functions     {{{1
 " # Version {{{2
@@ -183,7 +189,7 @@ function! s:UpdateTags_for_All(ctags_pathname)
   endif
   " todo => use project directory
   "
-  let cmd_line .= ' && '.lh#tags#cmd_line(s:CtagsFilename()).' -R'
+  let cmd_line .= ' && '.lh#tags#cmd_line(s:CtagsFilename()).s:RecursiveFlagOrAll()
   call s:System(cmd_line)
 endfunction
 
