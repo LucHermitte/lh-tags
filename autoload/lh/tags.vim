@@ -439,6 +439,20 @@ function! s:ComputeMaxNameLength(tagsinfo, fullsignature)
   return maxNameLen
 endfunction
 
+" lh#tags#uniq_sort() {{{3
+function! lh#tags#uniq_sort(tagrawinfos)
+  let uniq_sort_tmp = {} " sometimes, taginfo entries are duplicated
+  for tagrawinfo in (a:tagrawinfos)
+    let taginfo = s:PrepareTagEntry(tagrawinfo)
+    let stored_taginfo = taginfo
+    let stored_taginfo['cmd'] = tagrawinfo.cmd
+    let uniq_sort_tmp[string(taginfo)] = stored_taginfo
+  endfor
+  let g:criteria = 'name'
+  let uniq_sorted = sort(values(uniq_sort_tmp), 'LH_Tabs_Sort')
+  return uniq_sorted
+endfunction
+
 " s:ChooseTagEntry() {{{3
 function! s:ChooseTagEntry(tagrawinfos, tagpattern)
   if     len(a:tagrawinfos) <= 1 | return 0
@@ -448,15 +462,7 @@ function! s:ChooseTagEntry(tagrawinfos, tagpattern)
   else
     let fullsignature = 0
     " 1-  Prepare the tags
-    let uniq_sort_tmp = {} " sometimes, taginfo entries are duplicated
-    for tagrawinfo in (a:tagrawinfos)
-      let taginfo = s:PrepareTagEntry(tagrawinfo)
-      let stored_taginfo = taginfo
-      let stored_taginfo['cmd'] = tagrawinfo.cmd
-      let uniq_sort_tmp[string(taginfo)] = stored_taginfo
-    endfor
-    let g:criteria = 'name'
-    let uniq_sorted = sort(values(uniq_sort_tmp), 'LH_Tabs_Sort')
+    let uniq_sorted = lh#tags#uniq_sort(a:tagrawinfos)
     let tagsinfo = [ s:tag_header ]
     let nr=1
     for taginfo in (uniq_sorted)
