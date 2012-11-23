@@ -5,8 +5,8 @@
 "		<URL:http://code.google.com/p/lh-vim/>
 " License:      GPLv3 with exceptions
 "               <URL:http://code.google.com/p/lh-vim/wiki/License>
-" Version:      1.0.0
-let s:version = '1.0.0'
+" Version:      1.1.0
+let s:version = '1.1.0'
 " Created:      20th Mar 2012
 " Last Update:  $Date$
 " }}}1
