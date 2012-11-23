@@ -5,7 +5,7 @@
 "		<URL:http://code.google.com/p/lh-vim/>
 " License:      GPLv3 with exceptions
 "               <URL:http://code.google.com/p/lh-vim/wiki/License>
-" Version:	1.0.0
+" Version:	1.1.0
 " Created:	02nd Oct 2008
 " Last Update:	$Date$
 "------------------------------------------------------------------------
@@ -16,6 +16,10 @@
 "------------------------------------------------------------------------
 " Installation:	«install details»
 " History:
+" 	v1.1.0:
+" 	(*) new option: tags_to_spellfile that activates the automated
+" 	    generation of spellfiles that contains all symbols from the
+" 	    (re-)generated tagfile.
 " 	v1.0.0: GPLv3
 " 	v0.2.4: 26th Aug 2011
 " 	(*) tags jumping fixed to support the use of buffer-local &tags
@@ -129,6 +133,35 @@ endfunction
 " ======================================================================
 
 " ======================================================================
+" # spellfile generating functions {{{2
+" If the option generate spellfile contain a string, use that string to
+" generate a spellfile that contains all the symbols from the tag file.
+" This script is not (yet?) in charge of updating automatically the 'spellfile'
+" option.
+" ======================================================================
+" Update the spellfile {{{3
+function! s:UpdateSpellfile(ctags_pathname)
+  let spellfilename = lh#option#get('tags_to_spellfile', '')
+  if empty(spellfilename)
+    return 
+  endif
+  let spellfile = fnamemodify(a:ctags_pathname, ':h') . '/'.spellfilename
+  try
+    let tags_save = &tags
+    let &tags = a:ctags_pathname
+    let lTags = taglist('.*') 
+    let lSymbols = map(copy(taglist('.*')), 'v:val.name')
+    let lSymbols = lh#list#unique_sort2(lSymbols)
+    call writefile(lSymbols, spellfile)
+    " echo  'mkspell! '.spellfile
+    silent exe  'mkspell! '.spellfile
+    echomsg spellfile .' updated.'
+  finally
+    let &tags = tags_save
+  endtry
+endfunction
+
+" ======================================================================
 " # Tags generating functions {{{2
 " ======================================================================
 " Purge all references to {source_name} in the tags file {{{3
@@ -228,6 +261,8 @@ function! lh#tags#run(tag_function, force)
 
     let Fn = function("s:".a:tag_function)
     call Fn(ctags_pathname)
+    " Update spellfile
+    call s:UpdateSpellfile(ctags_pathname)
   catch /tags-error:/
     call lh#common#error_msg(v:exception)
     return 0
