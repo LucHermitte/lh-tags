@@ -664,8 +664,8 @@ function! s:Find(cmd_edit, cmd_split, tagpattern)
 endfunction
 
 " lh#tags#split_open() {{{3
-function! lh#tags#split_open()
-  let id = eval(s:TagsSelectPolicy())
+function! lh#tags#split_open(...)
+  let id = a:0 == 0 ? eval(s:TagsSelectPolicy()) : a:1
   :call s:Find('e', 'sp', id.'$')
 endfunction
 

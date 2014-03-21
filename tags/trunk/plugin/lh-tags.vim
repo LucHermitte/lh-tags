@@ -97,6 +97,10 @@ nnoremap <silent> <Plug>CTagsSplitOpen     :call lh#tags#split_open()<cr>
 if !hasmapto('<Plug>CTagsSplitOpen', 'n')
   nmap <silent> <c-w><m-down>  <Plug>CTagsSplitOpen
 endif
+vnoremap <silent> <Plug>CTagsSplitOpen     <C-\><C-n>:call lh#tags#split_open(lh#visual#selection())<cr>
+if !hasmapto('<Plug>CTagsSplitOpen', 'v')
+  vmap <silent> <c-w><m-down>  <Plug>CTagsSplitOpen
+endif
 
 " ######################################################################
 " Tag command {{{1
