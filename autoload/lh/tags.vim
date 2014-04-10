@@ -5,7 +5,7 @@
 "		<URL:http://code.google.com/p/lh-vim/>
 " License:      GPLv3 with exceptions
 "               <URL:http://code.google.com/p/lh-vim/wiki/License>
-" Version:	1.1.0
+" Version:	1.2.0
 " Created:	02nd Oct 2008
 " Last Update:	$Date$
 "------------------------------------------------------------------------
@@ -16,6 +16,8 @@
 "------------------------------------------------------------------------
 " Installation:	«install details»
 " History:
+" 	v1.2.0:
+" 	(*) Injects &l:tags automatically in the new file opened
 " 	v1.1.0:
 " 	(*) new option: tags_to_spellfile that activates the automated
 " 	    generation of spellfiles that contains all symbols from the
@@ -98,7 +100,7 @@ endfunction
 " ######################################################################
 " ## Misc Functions     {{{1
 " # Version {{{2
-let s:k_version = 224
+let s:k_version = 120
 function! lh#tags#version()
   return s:k_version
 endfunction
@@ -506,7 +508,7 @@ function! s:ChooseTagEntry(tagrawinfos, tagpattern)
       let nr+= 1
     endfor
     if len(tagsinfo) == 2 " [0] == header
-      call s:JumpToTag('sp', a:tagrawinfos[1])
+      call s:JumpToTag(s:BuildTagsData('sp'), a:tagrawinfos[1])
       return -1
     endif
     let maxNameLen = s:ComputeMaxNameLength(tagsinfo, fullsignature)
@@ -610,11 +612,10 @@ function! LHTags_select(results, ...)
     throw "lh-tags: We are not supposed to select several tags"
   endif
   let selection = a:results.selection[0]
-  let info = b:info
   if a:0 == 0
-    let cmd = b:cmd
+    let tags_data = b:tags_data
   else
-    let cmd = a:1[0]
+    let tags_data = s:BuildTagsData(a:1[0])
   endif
 
   let choices = a:results.dialog.choices
@@ -622,13 +623,28 @@ function! LHTags_select(results, ...)
   " echomsg '-> '.info[selection-1].filename . ": ".info[selection-1].cmd
   if exists('s:quit') | :quit | endif
   " call s:JumpToTag(cmd, info[selection-1])
-  call s:JumpToTag(cmd, b:tagsinfo[selection])
+  call s:JumpToTag(tags_data, b:tagsinfo[selection])
+endfunction
+
+function! s:BuildTagsData(cmd)
+  let tags_data = {
+        \ 'cmd' : (a:cmd),
+        \ 'previous_tags' : (&l:tags)
+        \}
+  return tags_data
 endfunction
 
 " s:JumpToTag() {{{3
-function! s:JumpToTag(cmd, taginfo)
+function! s:JumpToTag(tags_data, taginfo)
   let filename = a:taginfo.filename
-  call lh#buffer#jump(filename, a:cmd)
+  call lh#buffer#jump(filename, a:tags_data.cmd)
+  " Inject local tags in newly opened file 2/2
+  let tags = split(a:tags_data.previous_tags, ',')
+  for tag in tags
+    if filereadable(tag)
+      exe 'setlocal tags+='.tag
+    endif
+  endfor
   " Execute the search
   call lh#tags#jump(a:taginfo)
   return 
@@ -650,15 +666,15 @@ function! s:Find(cmd_edit, cmd_split, tagpattern)
   endif
   " call confirm( "taglist(".a:tagpattern.")=".len(info), '&Ok', 1)
   if len(info) == 1
-    call s:JumpToTag(a:cmd_split, info[0])
+    call s:JumpToTag(s:BuildTagsData(a:cmd_split), info[0])
   else
+    let tags_data = s:BuildTagsData(a:cmd_edit)
     let which = s:ChooseTagEntry(info, a:tagpattern)
     if which >= 0 && which < len(info)
       echoerr "Assert: not expected path"
-      call s:JumpToTag(a:cmd_edit, info[which])
+      call s:JumpToTag(tags_data, info[which])
     else
-      let b:info = info
-      let b:cmd = a:cmd_edit
+      let b:tags_data = tags_data
     endif
   endif
 endfunction
