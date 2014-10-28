@@ -109,6 +109,59 @@ endif
 command! -nargs=* -complete=custom,LHTComplete
       \		LHTags call lh#tags#command(<f-args>)
 
+" todo: 
+" * filter on +/- f\%[unction]
+" * filter on +/- a\%[ttribute]
+" * filter on +/#/- v\%[isibility] (pub/pro/pri)
+
+" Command completion  {{{1
+let s:commands = '^LHT\%[ags]'
+function! LHTComplete(ArgLead, CmdLine, CursorPos)  
+  let cmd = matchstr(a:CmdLine, s:commands)
+  let cmdpat = '^'.cmd
+
+  let tmp = substitute(a:CmdLine, '\s*\S\+', 'Z', 'g')
+  let pos = strlen(tmp)
+  let lCmdLine = strlen(a:CmdLine)
+  let fromLast = strlen(a:ArgLead) + a:CursorPos - lCmdLine 
+  " The argument to expand, but cut where the cursor is
+  let ArgLead = strpart(a:ArgLead, 0, fromLast )
+  let ArgsLead = strpart(a:CmdLine, 0, a:CursorPos )
+  if 0
+    call confirm( "a:AL = ". a:ArgLead."\nAl  = ".ArgLead
+	  \ . "\nAsL = ".ArgsLead
+	  \ . "\nx=" . fromLast
+	  \ . "\ncut = ".strpart(a:CmdLine, a:CursorPos)
+	  \ . "\nCL = ". a:CmdLine."\nCP = ".a:CursorPos
+	  \ . "\ntmp = ".tmp."\npos = ".pos
+	  \, '&Ok', 1)
+  endif
+
+  " Build the pattern for taglist() -> all arguements are joined with '.*'
+  " let pattern = ArgsLead
+  let pattern = a:CmdLine
+  " ignore the command
+  let pattern = substitute(pattern, '^\S\+\s\+', '', '')
+  let pattern = substitute(pattern, '\s\+', '.*', 'g')
+  let tags = taglist(pattern)
+  if 0
+    call confirm ("pattern".pattern."\n->".string(tags), '&Ok', 1)
+  endif
+
+  " Keep only tag names
+  let lRes = []
+  call lh#list#Transform(tags, lRes, 'v:val.name')
+
+  " No need (yet) to descend into the hierarchy
+  call map(lRes, 'matchstr(v:val, '.string(ArgLead).'.".\\{-}\\>")')
+  let lRes = lh#list#unique_sort(lRes)
+  let res = join(lRes, "\n")
+  if 0
+    call confirm (string(res), '&Ok', 1)
+  endif
+  return res
+endfunction
+
 " ======================================================================
 let g:loaded_lh_tags = s:version
 let &cpo=s:cpo_save
