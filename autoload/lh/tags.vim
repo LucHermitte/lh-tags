@@ -1,45 +1,43 @@
 "=============================================================================
-" $Id$
-" File:		autoload/lh/tags.vim                                    {{{1
-" Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
-"		<URL:http://code.google.com/p/lh-vim/>
+" File:         autoload/lh/tags.vim                                    {{{1
+" Author:       Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
+"               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
-"               <URL:http://code.google.com/p/lh-vim/wiki/License>
-" Version:	1.2.0
-" Created:	02nd Oct 2008
-" Last Update:	$Date$
+"               <URL:http://github.com/LucHermitte/lh-tags/License.md>
+" Version:      1.2.1
+let s:k_version = '1.2.1'
+" Created:      02nd Oct 2008
 "------------------------------------------------------------------------
-" Description:	
-" 	Small plugin related to tags files. 
-" 	(Deported functions)
-" 
+" Description:
+"       Small plugin related to tags files.
+"       (Deported functions)
+"
 "------------------------------------------------------------------------
-" Installation:	«install details»
 " History:
-" 	v1.2.0:
-" 	(*) Injects &l:tags automatically in the new file opened
-" 	v1.1.0:
-" 	(*) new option: tags_to_spellfile that activates the automated
-" 	    generation of spellfiles that contains all symbols from the
-" 	    (re-)generated tagfile.
-" 	v1.0.0: GPLv3
-" 	v0.2.4: 26th Aug 2011
-" 	(*) tags jumping fixed to support the use of buffer-local &tags
-" 	v0.2.3: 23rd Dec 2010
-" 	(*) system() calls catch errors
-" 	v0.2.2: 26th May 2010
-" 	(*) s/s:tags/&_jump/g
-" 	(*) hook to run ctags with the default options, plus other ones
-" 	v0.2.1: 22nd Apr 2010
-" 	(*) Do not reuse a search buffer
-" 	(*) Jumps are pushed into the tagstack
-" 	v0.2.0: 03rd Oct 2008
-" 	(*) code moved to an autoload plugin
-" TODO:		
-" 	(*) Have behaviour similars to the one from the quickfix mode
-" 	(possibility to close and reopen the search window; prev&next moves)
-" 	(*) Show/hide declarations -- merge declaration and definitions
-" 	(*) exclude patterns
+"       v1.2.0:
+"       (*) Injects &l:tags automatically in the new file opened
+"       v1.1.0:
+"       (*) new option: tags_to_spellfile that activates the automated
+"           generation of spellfiles that contains all symbols from the
+"           (re-)generated tagfile.
+"       v1.0.0: GPLv3
+"       v0.2.4: 26th Aug 2011
+"       (*) tags jumping fixed to support the use of buffer-local &tags
+"       v0.2.3: 23rd Dec 2010
+"       (*) system() calls catch errors
+"       v0.2.2: 26th May 2010
+"       (*) s/s:tags/&_jump/g
+"       (*) hook to run ctags with the default options, plus other ones
+"       v0.2.1: 22nd Apr 2010
+"       (*) Do not reuse a search buffer
+"       (*) Jumps are pushed into the tagstack
+"       v0.2.0: 03rd Oct 2008
+"       (*) code moved to an autoload plugin
+" TODO:
+"       (*) Have behaviour similars to the one from the quickfix mode
+"       (possibility to close and reopen the search window; prev&next moves)
+"       (*) Show/hide declarations -- merge declaration and definitions
+"       (*) exclude patterns
 " }}}1
 "=============================================================================
 
@@ -100,7 +98,6 @@ endfunction
 " ######################################################################
 " ## Misc Functions     {{{1
 " # Version {{{2
-let s:k_version = 120
 function! lh#tags#version()
   return s:k_version
 endfunction
@@ -145,13 +142,13 @@ endfunction
 function! s:UpdateSpellfile(ctags_pathname)
   let spellfilename = lh#option#get('tags_to_spellfile', '')
   if empty(spellfilename)
-    return 
+    return
   endif
   let spellfile = fnamemodify(a:ctags_pathname, ':h') . '/'.spellfilename
   try
-    let tags_save = &tags
-    let &tags = a:ctags_pathname
-    let lTags = taglist('.*') 
+    let tags_save = &l:tags
+    let &l:tags = a:ctags_pathname
+    let lTags = taglist('.*')
     let lSymbols = map(copy(taglist('.*')), 'v:val.name')
     let lSymbols = lh#list#unique_sort2(lSymbols)
     call writefile(lSymbols, spellfile)
@@ -159,7 +156,7 @@ function! s:UpdateSpellfile(ctags_pathname)
     silent exe  'mkspell! '.spellfile
     echomsg spellfile .' updated.'
   finally
-    let &tags = tags_save
+    let &l:tags = tags_save
   endtry
 endfunction
 
@@ -172,9 +169,9 @@ function! s:PurgeFileReferences(ctags_pathname, source_name)
     let temp_tags      = tempname()
     " it exists => must be changed
     let cmd_line = 'grep -v '
-	  \ .shellescape('	'.lh#path#to_regex(a:source_name).'	').' '.shellescape(a:ctags_pathname) 
-	  " \.' > '.shellescape(temp_tags)
-	  " The last redirection may cause troubles on windows
+          \ .shellescape('      '.lh#path#to_regex(a:source_name).'     ').' '.shellescape(a:ctags_pathname)
+          " \.' > '.shellescape(temp_tags)
+          " The last redirection may cause troubles on windows
     let tags =  s:System(cmd_line)
     call writefile(split(tags,'\n'), a:ctags_pathname, "b")
     " using a single cmd_line with && causes troubles under windows ...
@@ -206,7 +203,7 @@ function! s:UpdateTags_for_ModifiedFile(ctags_pathname)
   let cmd_line .= ' && mv -f '.temp_tags.' '.a:ctags_pathname
   call s:System(cmd_line)
   call delete(temp_name)
-  
+
   return ';'
 endfunction
 
@@ -218,9 +215,9 @@ function! s:UpdateTags_for_All(ctags_pathname)
   call delete(a:ctags_pathname)
   runtime autoload/lh/system.vim
   if exists('*lh#system#SysCD')
-	let cmd_line  = lh#system#SysCD(ctags_dirname)
+        let cmd_line  = lh#system#SysCD(ctags_dirname)
   else
-	let cmd_line  = 'cd '.ctags_dirname
+        let cmd_line  = 'cd '.ctags_dirname
   endif
   " todo => use project directory
   "
@@ -324,8 +321,8 @@ function! lh#tags#jump(tagentry)
 
   let tag_name = s:k_tag_name__.repeat('0', s:k_nb_digits-strlen(last)).last
   let l = tag_name
-	\ . "\t" . (filename)
-	\ . "\t" . (a:tagentry.cmd)
+        \ . "\t" . (filename)
+        \ . "\t" . (a:tagentry.cmd)
 
 
   " test whether a new digit is used. In that case renumber every tags to have
@@ -391,7 +388,7 @@ endfunction
 function! lh#tags#tag_name(taginfo)
   " @todo: use keywords dependent on the ft
   let scope  = s:GetKey(a:taginfo,
-	\ [ 'struct', 'class', 'namespace', 'enum', 'union' ])
+        \ [ 'struct', 'class', 'namespace', 'enum', 'union' ])
   " if the id begins with the scope name, it means there is no need to care the
   " scope into account twice
   if (strlen(scope) != 0) && (a:taginfo.name !~ '^'.scope.'::')
@@ -404,20 +401,20 @@ endfunction
 
 " s:Fullname() {{{3
 function! s:Fullname(taginfo, fullsignature)
-  let fullname = a:taginfo.name 
+  let fullname = a:taginfo.name
   let fullname .= (a:fullsignature && has_key(a:taginfo, 'signature'))
-	\ ? (a:taginfo.signature) 
-	\ : ''
+        \ ? (a:taginfo.signature)
+        \ : ''
   return fullname
 endfunction
 
 " s:TagEntry() {{{3
 function! s:TagEntry(taginfo, nameLen, fullsignature)
   let res = "  ".s:RightJustify(a:taginfo.nr,2).' '
-	\ .s:LeftJustify(a:taginfo.pri, 3).' '
-	\ .s:LeftJustify(a:taginfo.kind, 4).' '
-	\ .s:LeftJustify(s:Fullname(a:taginfo, a:fullsignature), a:nameLen)
-	\ .' '.a:taginfo.filename 
+        \ .s:LeftJustify(a:taginfo.pri, 3).' '
+        \ .s:LeftJustify(a:taginfo.kind, 4).' '
+        \ .s:LeftJustify(s:Fullname(a:taginfo, a:fullsignature), a:nameLen)
+        \ .' '.a:taginfo.filename
   return res
 endfunction
 
@@ -425,13 +422,13 @@ endfunction
 function! s:PrepareTagEntry0(tagrawinfo, nr)
   let kind = a:tagrawinfo.kind . ' ' . s:AccessSpecifier(a:tagrawinfo)
   let taginfo = {
-	\ 'nr'              : a:nr,
-	\ 'pri'             : '@@@',
-	\ 'kind'            : kind,
-	\ 'filename'        : a:tagrawinfo.filename,
-	\ 'signature'       : s:GetKey(a:tagrawinfo, ['signature']),
-	\ 'name'            : lh#tags#tag_name(a:tagrawinfo)
-	\ }
+        \ 'nr'              : a:nr,
+        \ 'pri'             : '@@@',
+        \ 'kind'            : kind,
+        \ 'filename'        : a:tagrawinfo.filename,
+        \ 'signature'       : s:GetKey(a:tagrawinfo, ['signature']),
+        \ 'name'            : lh#tags#tag_name(a:tagrawinfo)
+        \ }
   return taginfo
 endfunction
 
@@ -439,22 +436,22 @@ endfunction
 function! s:PrepareTagEntry(tagrawinfo)
   let kind = a:tagrawinfo.kind . ' ' . s:AccessSpecifier(a:tagrawinfo)
   let taginfo = {
-	\ 'pri'             : '@@@',
-	\ 'kind'            : kind,
-	\ 'filename'        : a:tagrawinfo.filename,
-	\ 'signature'       : s:GetKey(a:tagrawinfo, ['signature']),
-	\ 'name'            : lh#tags#tag_name(a:tagrawinfo)
-	\ }
+        \ 'pri'             : '@@@',
+        \ 'kind'            : kind,
+        \ 'filename'        : a:tagrawinfo.filename,
+        \ 'signature'       : s:GetKey(a:tagrawinfo, ['signature']),
+        \ 'name'            : lh#tags#tag_name(a:tagrawinfo)
+        \ }
   return taginfo
 endfunction
 
 let s:tag_header = {
-	\ 'nr'              : '#',
-	\ 'pri'             : 'pri',
-	\ 'kind'            : 'kind',
-	\ 'filename'        : 'file',
-	\ 'name'            : 'name'
-	\ }
+        \ 'nr'              : '#',
+        \ 'pri'             : 'pri',
+        \ 'kind'            : 'kind',
+        \ 'filename'        : 'file',
+        \ 'name'            : 'name'
+        \ }
 
 " s:BuildTagsMenu() {{{3
 function! s:BuildTagsMenu(tagsinfo, maxNameLen, fullsignature)
@@ -518,10 +515,10 @@ function! s:ChooseTagEntry(tagrawinfos, tagpattern)
 
     " 3- Display
     let dialog = lh#buffer#dialog#new(
-	  \ "tags-selector(".a:tagpattern.")",
-	  \ "lh-tags ".g:loaded_lh_tags.": Select a tag to jump to",
-	  \ '', 0,
-	  \ 'LHTags_select', tags)
+          \ "tags-selector(".a:tagpattern.")",
+          \ "lh-tags ".g:loaded_lh_tags.": Select a tag to jump to",
+          \ '', 0,
+          \ 'LHTags_select', tags)
     let dialog.maxNameLen    = maxNameLen
     let dialog.fullsignature = fullsignature
     call s:Postinit(tagsinfo)
@@ -536,10 +533,10 @@ function! LH_Tabs_Sort(lhs, rhs)
   else
     let lhs = a:lhs[g:criteria]
     let rhs = a:rhs[g:criteria]
-    let res 
-	  \ = lhs < rhs ? -1
-	  \ : lhs == rhs ? 0
-	  \ : 1
+    let res
+          \ = lhs < rhs ? -1
+          \ : lhs == rhs ? 0
+          \ : 1
     return res
   endif
 endfunction
@@ -647,7 +644,7 @@ function! s:JumpToTag(tags_data, taginfo)
   endfor
   " Execute the search
   call lh#tags#jump(a:taginfo)
-  return 
+  return
   try
     let save_magic=&magic
     set nomagic

@@ -1,21 +1,15 @@
 "=============================================================================
-" $Id$
 " File:		ftplugin/cpp/cpp_lh-tags-hooks.vim                {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
-"		<URL:http://hermitte.free.fr/vim/>
+"               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
-"               <URL:http://code.google.com/p/lh-vim/wiki/License>
-" Version:	1.0.0
-let s:version = '1.0.0'
+"               <URL:http://github.com/LucHermitte/lh-tags/License.md>
+" Version:	1.2.1
+let s:version = '1.2.1'
 " Created:	29th Sep 2008
-" Last Update:	$Date$
 "------------------------------------------------------------------------
-" Description:	«description»
-" 
-"------------------------------------------------------------------------
-" Installation:	«install details»
-" History:	«history»
-" TODO:		«missing features»
+" Description:
+"       Tags navigation specializations for C++.
 " }}}1
 "=============================================================================
 

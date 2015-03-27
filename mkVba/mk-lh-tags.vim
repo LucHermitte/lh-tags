@@ -1,23 +1,22 @@
 "=============================================================================
-" $Id$
 " File:         mkVba/mk-lh-tags.vim                              {{{1
 " Author:       Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
-"		<URL:http://code.google.com/p/lh-vim/>
+"		<URL:http://code.google.com/p/lh-vim/lh-tags>
 " License:      GPLv3 with exceptions
-"               <URL:http://code.google.com/p/lh-vim/wiki/License>
-" Version:      1.2.0
-let s:version = '1.2.0'
+"               <URL:http://github.com/LucHermitte/lh-tags/License.md>
+" Version:      1.2.1
+let s:version = '1.2.1'
 " Created:      20th Mar 2012
-" Last Update:  $Date$
+" Last Update:  27th Mar 2015
 " }}}1
 "=============================================================================
 
 let s:project = 'lh-tags'
 cd <sfile>:p:h
-try 
+try
   let save_rtp = &rtp
   let &rtp = expand('<sfile>:p:h:h').','.&rtp
-  exe '27,$MkVimball! '.s:project.'-'.s:version
+  exe '18,$MkVimball! '.s:project.'-'.s:version
   set modifiable
   set buftype=
 finally

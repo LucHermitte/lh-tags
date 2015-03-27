@@ -1,42 +1,39 @@
 "=============================================================================
-" $Id$
-" File:		plugin/lh-tags.vim                                        {{{1
-" Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
-"		<URL:http://code.google.com/p/lh-vim/>
+" File:         plugin/lh-tags.vim                                        {{{1
+" Author:       Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
+"               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
-"               <URL:http://code.google.com/p/lh-vim/wiki/License>
-" Version:	1.0.0
-let s:version = '1.0.0'
-" Created:	04th Jan 2007
-" Last Update:	$Date$
+"               <URL:http://github.com/LucHermitte/lh-tags/License.md>
+" Version:      1.2.1
+let s:k_version = '1.2.1'
+" Created:      04th Jan 2007
+" Last Update:  27th Mar 2015
 "------------------------------------------------------------------------
-" Description:	
-" 	Small plugin related to tags files. 
-" 	It helps:
-" 	- generate tag files
-" 	- navigate (or more precisely: find the right tags)
-" 
+" Description:
+"       Small plugin related to tags files.
+"       It helps:
+"       - generate tag files
+"       - navigate (or more precisely: find the right tags)
+"
 "------------------------------------------------------------------------
-" Installation:	«install details»
-" History:	
-"       v3.0.0:
+" History:
+"       v1.0.0:
 "       (*) GPLv3
-" 	v0.2.0: 03rd Oct 2008
-" 	(*) code moved to an autoload plugin
-" 	v0.1.3: 30th Sep 2008
-" 	(*) Langage hooks
-" 	(*) ShowTags command
-" 	(*) :LHTags command (that supports auto completion)
-" 	v0.1.2: 11th Sep 2007
-" 	(*) Fix a path problem on file save
-" 	(*) Using a scratch buffer
-" 	v0.1.1:
-" 	(*) Using 'nomagic' when manually jumping to tags
-" 	v0.1.0: 
-" 	(*) Initial Version
+"       v0.2.0: 03rd Oct 2008
+"       (*) code moved to an autoload plugin
+"       v0.1.3: 30th Sep 2008
+"       (*) Langage hooks
+"       (*) ShowTags command
+"       (*) :LHTags command (that supports auto completion)
+"       v0.1.2: 11th Sep 2007
+"       (*) Fix a path problem on file save
+"       (*) Using a scratch buffer
+"       v0.1.1:
+"       (*) Using 'nomagic' when manually jumping to tags
+"       v0.1.0:
+"       (*) Initial Version
 " TODO:
 " @todo use --abort-- in the scratch buffer
-" @todo update tags history
 " @todo inline help for sort
 " @todo filter (like :g/:v)
 " @todo toggle display signature
@@ -54,7 +51,7 @@ let s:cpo_save=&cpo
 set cpo&vim
 if exists("g:loaded_lh_tags") && !exists('g:force_reload_lh_tags')
   let &cpo=s:cpo_save
-  finish 
+  finish
 endif
 "------------------------------------------------------------------------
 " Needs ctags executable {{{2
@@ -97,9 +94,9 @@ nnoremap <silent> <Plug>CTagsSplitOpen     :call lh#tags#split_open()<cr>
 if !hasmapto('<Plug>CTagsSplitOpen', 'n')
   nmap <silent> <c-w><m-down>  <Plug>CTagsSplitOpen
 endif
-vnoremap <silent> <Plug>CTagsSplitOpen     <C-\><C-n>:call lh#tags#split_open(lh#visual#selection())<cr>
+xnoremap <silent> <Plug>CTagsSplitOpen     <C-\><C-n>:call lh#tags#split_open(lh#visual#selection())<cr>
 if !hasmapto('<Plug>CTagsSplitOpen', 'v')
-  vmap <silent> <c-w><m-down>  <Plug>CTagsSplitOpen
+  xmap <silent> <c-w><m-down>  <Plug>CTagsSplitOpen
 endif
 
 " ######################################################################
@@ -107,34 +104,34 @@ endif
 " ======================================================================
 
 command! -nargs=* -complete=custom,LHTComplete
-      \		LHTags call lh#tags#command(<f-args>)
+      \         LHTags call lh#tags#command(<f-args>)
 
-" todo: 
+" todo:
 " * filter on +/- f\%[unction]
 " * filter on +/- a\%[ttribute]
 " * filter on +/#/- v\%[isibility] (pub/pro/pri)
 
 " Command completion  {{{1
 let s:commands = '^LHT\%[ags]'
-function! LHTComplete(ArgLead, CmdLine, CursorPos)  
+function! LHTComplete(ArgLead, CmdLine, CursorPos)
   let cmd = matchstr(a:CmdLine, s:commands)
   let cmdpat = '^'.cmd
 
   let tmp = substitute(a:CmdLine, '\s*\S\+', 'Z', 'g')
   let pos = strlen(tmp)
   let lCmdLine = strlen(a:CmdLine)
-  let fromLast = strlen(a:ArgLead) + a:CursorPos - lCmdLine 
+  let fromLast = strlen(a:ArgLead) + a:CursorPos - lCmdLine
   " The argument to expand, but cut where the cursor is
   let ArgLead = strpart(a:ArgLead, 0, fromLast )
   let ArgsLead = strpart(a:CmdLine, 0, a:CursorPos )
   if 0
     call confirm( "a:AL = ". a:ArgLead."\nAl  = ".ArgLead
-	  \ . "\nAsL = ".ArgsLead
-	  \ . "\nx=" . fromLast
-	  \ . "\ncut = ".strpart(a:CmdLine, a:CursorPos)
-	  \ . "\nCL = ". a:CmdLine."\nCP = ".a:CursorPos
-	  \ . "\ntmp = ".tmp."\npos = ".pos
-	  \, '&Ok', 1)
+          \ . "\nAsL = ".ArgsLead
+          \ . "\nx=" . fromLast
+          \ . "\ncut = ".strpart(a:CmdLine, a:CursorPos)
+          \ . "\nCL = ". a:CmdLine."\nCP = ".a:CursorPos
+          \ . "\ntmp = ".tmp."\npos = ".pos
+          \, '&Ok', 1)
   endif
 
   " Build the pattern for taglist() -> all arguements are joined with '.*'
@@ -163,7 +160,7 @@ function! LHTComplete(ArgLead, CmdLine, CursorPos)
 endfunction
 
 " ======================================================================
-let g:loaded_lh_tags = s:version
+let g:loaded_lh_tags = s:k_version
 let &cpo=s:cpo_save
 "=============================================================================
 " vim600: set fdm=marker:
