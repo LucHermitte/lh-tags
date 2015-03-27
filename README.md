@@ -24,7 +24,7 @@ This plugin has two features:
  * Presents all tags that match the selected text (`META-W-META-DOWN`), of the
    pattern used (`:LHTags`).
  * Can hide, or show, functions signatures (on `s`).
- * Permits to sort the results by `K`ind, `Name`, or `F`ilename.
+ * Permits to sort the results by `K`ind, `N`ame, or `F`ilename.
  * The select tag can be jumped to in the current window (`CR`,
    _double-click_), or in a split window (`o`) -- the tags stack is updated
    along the way.
@@ -92,9 +92,12 @@ exe 'setlocal spellfile+='.lh#system#FixPathName(b:project_sources_dir.'/'.b:tag
 
 ## Mappings and commands
 
- * The tags for the current file can be explicitly updated with `CTRL-X_tc` -- this mappings defaults to `&lt;Plug&gt;CtagsUpdateCurrent`
- * All the tags for the current project can be explicitly updated with `CTRL-X_ta` -- this mappings defaults to `&lt;Plug&gt;CtagsUpdateAll`
- * Tags matching the current word (or selection) will be presented on `META-W-META-DOWN` -- these two mappings default to `&lt;Plug&gt;CtagsSplitOpen`
+ * The tags for the current file can be explicitly updated with `CTRL-X_tc` --
+   this mappings defaults to `<Plug>CtagsUpdateCurrent`
+ * All the tags for the current project can be explicitly updated with
+   `CTRL-X_ta` -- this mappings defaults to `<Plug>CtagsUpdateAll`
+ * Tags matching the current word (or selection) will be presented on
+   `META-W-META-DOWN` -- these two mappings default to `<Plug>CtagsSplitOpen`
 
  * We can also present the tags that match a pattern with `:LHTags` command
    (this command supports auto-completion on tag names)
