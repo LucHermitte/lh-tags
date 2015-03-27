@@ -36,8 +36,6 @@ let s:k_version = '1.2.1'
 " @todo use --abort-- in the scratch buffer
 " @todo inline help for sort
 " @todo filter (like :g/:v)
-" @todo toggle display signature
-" @todo use keywords dependent on the ft
 " @todo pluggable filters (that will check the number of parameters, their
 " type, etc)
 " }}}1

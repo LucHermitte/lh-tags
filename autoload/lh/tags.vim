@@ -34,7 +34,7 @@ let s:k_version = '1.2.1'
 "       v0.2.0: 03rd Oct 2008
 "       (*) code moved to an autoload plugin
 " TODO:
-"       (*) Have behaviour similars to the one from the quickfix mode
+"       (*) Have behaviour similar to the one from the quickfix mode
 "       (possibility to close and reopen the search window; prev&next moves)
 "       (*) Show/hide declarations -- merge declaration and definitions
 "       (*) exclude patterns
