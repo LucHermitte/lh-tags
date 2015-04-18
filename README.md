@@ -25,9 +25,13 @@ This plugin has two features:
    pattern used (`:LHTags`).
  * Can hide, or show, functions signatures (on `s`).
  * Permits to sort the results by `K`ind, `N`ame, or `F`ilename.
+ * Can filter the results on any (ctags) field (_kind_, _name_, _filename_,
+   _signature_, _namespace_, ...)
  * The select tag can be jumped to in the current window (`CR`,
    _double-click_), or in a split window (`o`) -- the tags stack is updated
    along the way.
+
+![LHTags and filter demo](doc/screencast-LHTags.gif ":LHTags and filter demo")
 
 ## Usage
 
@@ -110,14 +114,13 @@ exe 'setlocal spellfile+='.lh#system#FixPathName(b:project_sources_dir.'/'.b:tag
  * Have behaviour similar to the one from the quickfix mode (possibility to
    close and reopen the search window; prev&next moves)
  * Show/hide declarations -- merge declaration and definitions
- * filter (like :g/:v)
  * pluggable filters (that will check the number of parameters, their type, etc)
 
 
 ## Design Choices
 
 ## Installation
-  * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib), [system-tools](http://github.com/LucHermitte/vim-system-tools) (which I plan to merge into lh-vim-lib)
+  * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v3.2.14, [system-tools](http://github.com/LucHermitte/vim-system-tools) (which I plan to merge into lh-vim-lib)
   * With [vim-addon-manager](https://github.com/MarcWeber/vim-addon-manager), install lh-brackets (this is the preferred method because of the dependencies)
 ```vim
 ActivateAddons lh-tags

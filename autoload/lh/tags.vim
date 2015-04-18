@@ -4,8 +4,8 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/License.md>
-" Version:      1.2.1
-let s:k_version = '1.2.1'
+" Version:      1.3.0
+let s:k_version = '1.3.0'
 " Created:      02nd Oct 2008
 "------------------------------------------------------------------------
 " Description:
@@ -14,6 +14,8 @@ let s:k_version = '1.2.1'
 "
 "------------------------------------------------------------------------
 " History:
+"       v1.3.0:
+"       (*) filter tag browsing
 "       v1.2.0:
 "       (*) Injects &l:tags automatically in the new file opened
 "       v1.1.0:
@@ -409,10 +411,11 @@ function! s:Fullname(taginfo, fullsignature)
 endfunction
 
 " s:TagEntry() {{{3
+let s:len_fields = { 'pri': 0, 'kind': 0}
 function! s:TagEntry(taginfo, nameLen, fullsignature)
-  let res = "  ".s:RightJustify(a:taginfo.nr,2).' '
-        \ .s:LeftJustify(a:taginfo.pri, 3).' '
-        \ .s:LeftJustify(a:taginfo.kind, 4).' '
+  let res = "  ".s:RightJustify(a:taginfo.nr,3).' '
+        \ .s:LeftJustify(a:taginfo.pri, 3+s:len_fields.pri).' '
+        \ .s:LeftJustify(a:taginfo.kind, 4+s:len_fields.kind).' '
         \ .s:LeftJustify(s:Fullname(a:taginfo, a:fullsignature), a:nameLen)
         \ .' '.a:taginfo.filename
   return res
@@ -521,6 +524,7 @@ function! s:ChooseTagEntry(tagrawinfos, tagpattern)
           \ 'LHTags_select', tags)
     let dialog.maxNameLen    = maxNameLen
     let dialog.fullsignature = fullsignature
+    let dialog.filters       = {}
     call s:Postinit(tagsinfo)
     return -1
   endif
@@ -551,6 +555,50 @@ function! s:Sort(field)
   call lh#buffer#dialog#update(b:dialog)
 endfunction
 
+" s:FilterUI() {{{3
+function! s:FilterUI() abort
+  " 1- determine list of possible fields
+  let fields = keys(b:alltagsinfo[1])
+  let fields = filter(fields, 'v:val !~ "\\<\\(cmd\\|nr\\)\\>"')
+  " 2- ask which field
+  let field = WHICH('COMBO', "Filter on:", join(map(copy(fields), '"&".v:val'), "\n"))
+  " todo: manage exit
+  " 3- ask the filter expression
+  let filters = b:dialog.filters
+  if field == 'kind'
+    let kinds = lh#list#possible_values(b:alltagsinfo[1:], 'kind')
+    call map(kinds, 'v:val[0]')
+    let which = split(CHECK('Which kinds to display? ', join(map(copy(kinds), '"&".v:val'), "\n")), '\zs\ze')
+    let filter = match(which, '0')==-1 ? '' : '['.join(lh#list#mask(kinds, which), '').']'
+  else
+    let filter = get(filters, field, '')
+    let filter = INPUT('Which filter for '.field.'? ', filter)
+  endif
+  " Update tile to print the current filter, and do filter!
+  let b:tagsinfo[0][field] = substitute(b:tagsinfo[0][field], '<.*', '', '')
+  if !empty(filter)
+    let filters[field] = filter
+    let b:tagsinfo[0][field] .= ' <'.filter.'>'
+  else
+    silent! unlet filters[field]
+  endif
+  if match(keys(s:len_fields), field) >= 0
+    let s:len_fields[field] = empty(filter) ? 0 : 3 + len(filter)
+  endif
+  " 4- Update!
+  let b:tagsinfo = copy(b:alltagsinfo)
+  " todo: remember the sort criteria
+  " TODO: handle positive and negative filters
+  for fd in fields
+    if has_key(filters, fd)
+      call filter(b:tagsinfo, 'v:val.nr=="#" || v:val[fd] =~ filters[fd]')
+    endif
+  endfor
+  let tags = s:BuildTagsMenu(b:tagsinfo, b:dialog.maxNameLen, b:dialog.fullsignature)
+  let b:dialog.choices = tags
+  call lh#buffer#dialog#update(b:dialog)
+endfunction
+
 " s:ToggleSignature() {{{3
 function! s:ToggleSignature()
   let b:dialog.fullsignature = 1 - b:dialog.fullsignature
@@ -562,17 +610,20 @@ endfunction
 
 " s:Postinit() {{{3
 function! s:Postinit(tagsinfo)
-  let b:tagsinfo = a:tagsinfo
+  let b:alltagsinfo = a:tagsinfo " reference
+  let b:tagsinfo = copy(b:alltagsinfo) " the one that'll get filtered, ...
 
   nnoremap <silent> <buffer> K :call <sid>Sort('kind')<cr>
   nnoremap <silent> <buffer> N :call <sid>Sort('name')<cr>
   nnoremap <silent> <buffer> F :call <sid>Sort('filename')<cr>
   nnoremap <silent> <buffer> s :call <sid>ToggleSignature()<cr>
+  nnoremap <silent> <buffer> f :call <sid>FilterUI()<cr>
   exe "nnoremap <silent> <buffer> o :call lh#buffer#dialog#select(line('.'), ".b:dialog.id.", 'sp')<cr>"
 
   call lh#buffer#dialog#add_help(b:dialog, '@| o                       : Split (O)pen in a new buffer if not yet opened', 'long')
   call lh#buffer#dialog#add_help(b:dialog, '@| K, N, or F              : Sort by (K)ind, (N)ame, or (F)ilename', 'long')
   call lh#buffer#dialog#add_help(b:dialog, '@| s                       : Toggle full (s)signature display', 'long')
+  call lh#buffer#dialog#add_help(b:dialog, '@| f                       : Filter results', 'long')
 
   if has("syntax")
     syn clear
@@ -688,7 +739,7 @@ endfunction
 " Internal functions {{{2
 " ======================================================================
 " Command execution  {{{3
-function! lh#tags#command(...)
+function! lh#tags#command(...) abort
   let id = join(a:000, '.*')
   :call s:Find('e', 'sp', id)
 endfunction

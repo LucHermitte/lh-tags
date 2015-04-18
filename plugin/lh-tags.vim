@@ -4,10 +4,10 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/License.md>
-" Version:      1.2.1
-let s:k_version = '1.2.1'
+" Version:      1.3.0
+let s:k_version = '1.3.0'
 " Created:      04th Jan 2007
-" Last Update:  27th Mar 2015
+" Last Update:  18th Apr 2015
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -17,6 +17,9 @@ let s:k_version = '1.2.1'
 "
 "------------------------------------------------------------------------
 " History:
+"       v1.3.0:
+"       (*) Tags browsing enabled even without ctags installed
+"       (*) Tags filtering
 "       v1.0.0:
 "       (*) GPLv3
 "       v0.2.0: 03rd Oct 2008
@@ -51,39 +54,6 @@ if exists("g:loaded_lh_tags") && !exists('g:force_reload_lh_tags')
   let &cpo=s:cpo_save
   finish
 endif
-"------------------------------------------------------------------------
-" Needs ctags executable {{{2
-let s:tags_executable = lh#option#get('tags_executable', 'ctags', 'bg')
-let s:script = expand('<sfile>:p')
-
-if !executable(s:tags_executable)
-  let g:loaded_lh_tags = s:script.' not loaded as ``'.s:tags_executable."'' is not available in $PATH"
-  finish
-endif
-
-" ######################################################################
-" Tag generation {{{1
-" ======================================================================
-" Mappings {{{2
-" inoremap <expr> ; lh#tags#run('UpdateTags_for_ModifiedFile',';')
-
-nnoremap <silent> <Plug>CTagsUpdateCurrent :call lh#tags#update_current()<cr>
-if !hasmapto('<Plug>CTagsUpdateCurrent', 'n')
-  nmap <silent> <c-x>tc  <Plug>CTagsUpdateCurrent
-endif
-
-nnoremap <silent> <Plug>CTagsUpdateAll     :call lh#tags#update_all()<cr>
-if !hasmapto('<Plug>CTagsUpdateAll', 'n')
-  nmap <silent> <c-x>ta  <Plug>CTagsUpdateAll
-endif
-
-
-" ======================================================================
-" Auto command for automatically tagging a file when saved {{{2
-augroup LH_TAGS
-  au!
-  autocmd BufWritePost,FileWritePost * if ! lh#option#get('LHT_no_auto', 0) | call lh#tags#run('UpdateTags_for_SavedFile',0) | endif
-aug END
 
 " ######################################################################
 " Tag browsing {{{1
@@ -111,7 +81,7 @@ command! -nargs=* -complete=custom,LHTComplete
 
 " Command completion  {{{1
 let s:commands = '^LHT\%[ags]'
-function! LHTComplete(ArgLead, CmdLine, CursorPos)
+function! LHTComplete(ArgLead, CmdLine, CursorPos) abort
   let cmd = matchstr(a:CmdLine, s:commands)
   let cmdpat = '^'.cmd
 
@@ -132,7 +102,7 @@ function! LHTComplete(ArgLead, CmdLine, CursorPos)
           \, '&Ok', 1)
   endif
 
-  " Build the pattern for taglist() -> all arguements are joined with '.*'
+  " Build the pattern for taglist() -> all arguments are joined with '.*'
   " let pattern = ArgsLead
   let pattern = a:CmdLine
   " ignore the command
@@ -141,6 +111,10 @@ function! LHTComplete(ArgLead, CmdLine, CursorPos)
   let tags = taglist(pattern)
   if 0
     call confirm ("pattern".pattern."\n->".string(tags), '&Ok', 1)
+  endif
+  if empty(tags)
+    echomsg "No matching tags found"
+    return ''
   endif
 
   " Keep only tag names
@@ -156,6 +130,40 @@ function! LHTComplete(ArgLead, CmdLine, CursorPos)
   endif
   return res
 endfunction
+
+" ######################################################################
+" Tag generation {{{1
+" ======================================================================
+" Needs ctags executable {{{2
+let s:tags_executable = lh#option#get('tags_executable', 'ctags', 'bg')
+let s:script = expand('<sfile>:p')
+
+if !executable(s:tags_executable)
+  let g:loaded_lh_tags = s:script.' partially loaded as ``'.s:tags_executable."'' is not available in $PATH"
+  let &cpo=s:cpo_save
+  finish
+endif
+
+" Mappings {{{2
+" inoremap <expr> ; lh#tags#run('UpdateTags_for_ModifiedFile',';')
+
+nnoremap <silent> <Plug>CTagsUpdateCurrent :call lh#tags#update_current()<cr>
+if !hasmapto('<Plug>CTagsUpdateCurrent', 'n')
+  nmap <silent> <c-x>tc  <Plug>CTagsUpdateCurrent
+endif
+
+nnoremap <silent> <Plug>CTagsUpdateAll     :call lh#tags#update_all()<cr>
+if !hasmapto('<Plug>CTagsUpdateAll', 'n')
+  nmap <silent> <c-x>ta  <Plug>CTagsUpdateAll
+endif
+
+
+" ======================================================================
+" Auto command for automatically tagging a file when saved {{{2
+augroup LH_TAGS
+  au!
+  autocmd BufWritePost,FileWritePost * if ! lh#option#get('LHT_no_auto', 0) | call lh#tags#run('UpdateTags_for_SavedFile',0) | endif
+aug END
 
 " ======================================================================
 let g:loaded_lh_tags = s:k_version
