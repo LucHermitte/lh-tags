@@ -21,13 +21,13 @@ This plugin has two features:
  * Is, of course, [parametrisable](options).
 
 ### Tags selection
- * Presents all tags that match the selected text (`META-W-META-DOWN`), of the
+ * Presents all tags that match the selected text (`META-W-META-DOWN`), or the
    pattern used (`:LHTags`).
  * Can hide, or show, functions signatures (on `s`).
  * Permits to sort the results by `K`ind, `N`ame, or `F`ilename.
  * Can filter the results on any (ctags) field (_kind_, _name_, _filename_,
    _signature_, _namespace_, ...)
- * The select tag can be jumped to in the current window (`CR`,
+ * The selected tag can be jumped to in the current window (`CR`,
    _double-click_), or in a split window (`o`) -- the tags stack is updated
    along the way.
 
@@ -39,7 +39,7 @@ In order to use lh-tags, I highly recommend to use a plugin like
 [local_vimrc](http://github.com/LucHermitte/local_vimrc).
 
 In the buffer local section, you'll have to:
- * adjust `(bg):tags_options_{ft}` is the default values don't suit you -- I
+ * adjust `(bg):tags_options_{ft}` if the default values don't suit you -- I
    often add exclusion lists in my projects.
  * set `b:tags_dirname` to the project root directory -- when my projects are
    compiled with CMake+whatever I use the variables from CMake encapsulation of
