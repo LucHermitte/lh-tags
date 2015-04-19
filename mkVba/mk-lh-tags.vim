@@ -4,10 +4,10 @@
 "		<URL:http://code.google.com/p/lh-vim/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/License.md>
-" Version:      1.3.0
-let s:version = '1.3.0'
+" Version:      1.4.0
+let s:version = '1.4.0'
 " Created:      20th Mar 2012
-" Last Update:  18th Apr 2015
+" Last Update:  19th Apr 2015
 " }}}1
 "=============================================================================
 

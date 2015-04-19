@@ -52,8 +52,8 @@ For instance, a typical `_vimrc_local.vim` file will contain:
 let b:project_sources_dir = g:FooBarProject_config.paths.sources
 ...
 " ======================[ tags generation {{{2
-" lh#system#FixPathName() comes from system-tools
-let b:tags_dirname = lh#system#FixPathName(b:project_sources_dir)
+" lh#path#fix() comes from lh-vim-lib
+let b:tags_dirname = lh#path#fix(b:project_sources_dir)
 let b:tags_options = ' --exclude="*.dox" --exclude="html" --exclude="*.xml" --exclude="*.xsd" --exclude=".*sw*"'
 let b:tags_options .= ' --exclude="*.txt" --exclude="cmake" --exclude="*.cmake" --exclude="*.o" --exclude="*.os" --exclude="*.tags" --exclude=tags --exclude="*.tar"'
 exe 'setlocal tags+='.(b:tags_dirname).'/tags'
@@ -89,9 +89,9 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
 " #### In _vimrc_local.vim
 " spell files
 setlocal spellfile=
-exe 'setlocal spellfile+='.lh#system#FixPathName(b:project_sources_dir).'/ignore.utf-8.add'
+exe 'setlocal spellfile+='.lh#path#fix(b:project_sources_dir).'/ignore.utf-8.add'
 let b:tags_to_spellfile = 'code-symbols.utf-8.add'
-exe 'setlocal spellfile+='.lh#system#FixPathName(b:project_sources_dir.'/'.b:tags_to_spellfile)
+exe 'setlocal spellfile+='.lh#path#fix(b:project_sources_dir.'/'.b:tags_to_spellfile)
 ```
 
 ## Mappings and commands
@@ -120,7 +120,7 @@ exe 'setlocal spellfile+='.lh#system#FixPathName(b:project_sources_dir.'/'.b:tag
 ## Design Choices
 
 ## Installation
-  * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v3.2.14, [system-tools](http://github.com/LucHermitte/vim-system-tools) (which I plan to merge into lh-vim-lib)
+  * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v3.3.0
   * With [vim-addon-manager](https://github.com/MarcWeber/vim-addon-manager), install lh-brackets (this is the preferred method because of the dependencies)
 ```vim
 ActivateAddons lh-tags
@@ -128,13 +128,11 @@ ActivateAddons lh-tags
   * or you can clone the git repositories
 ```
 git clone git@github.com:LucHermitte/lh-vim-lib.git
-git clone git@github.com:LucHermitte/vim-system-tools.git
 git clone git@github.com:LucHermitte/lh-tags.git
 ```
   * or with Vundle/NeoBundle:
 ```vim
 Bundle 'LucHermitte/lh-vim-lib'
-Bundle 'LucHermitte/vim-system-tools'
 Bundle 'LucHermitte/lh-tags'
 ```
 

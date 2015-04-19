@@ -4,8 +4,8 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/License.md>
-" Version:      1.3.0
-let s:k_version = '1.3.0'
+" Version:      1.4.0
+let s:k_version = '1.4.0'
 " Created:      02nd Oct 2008
 "------------------------------------------------------------------------
 " Description:
@@ -14,6 +14,8 @@ let s:k_version = '1.3.0'
 "
 "------------------------------------------------------------------------
 " History:
+"       v1.4.0:
+"       (*) Dependency to system-tools removed
 "       v1.3.0:
 "       (*) filter tag browsing
 "       v1.2.0:
@@ -215,9 +217,9 @@ function! s:UpdateTags_for_All(ctags_pathname)
   let ctags_dirname  = s:CtagsDirname()
 
   call delete(a:ctags_pathname)
-  runtime autoload/lh/system.vim
-  if exists('*lh#system#SysCD')
-        let cmd_line  = lh#system#SysCD(ctags_dirname)
+  runtime autoload/lh/os.vim
+  if exists('*lh#os#sys_cd')
+        let cmd_line  = lh#os#sys_cd(ctags_dirname)
   else
         let cmd_line  = 'cd '.ctags_dirname
   endif

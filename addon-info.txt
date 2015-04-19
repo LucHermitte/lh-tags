@@ -5,8 +5,7 @@
   "maintainer" : "Luc Hermitte <http://github.com/LucHermitte>",
   "repository" : {"type": "git", "url": "git@github.com:LucHermitte/lh-tags.git"},
   "dependencies" : {
-      "lh-vim-lib" : {"type" : "git", "url" : "git@github.com:LucHermitte/lh-vim-lib.git"},
-      "system-tools" : {"type": "git", "url": "git@github.com:LucHermitte/vim-system-tools.git"}
+      "lh-vim-lib" : {"type" : "git", "url" : "git@github.com:LucHermitte/lh-vim-lib.git"}
   },
   "description" : "ctags database updating, and browsing"
 }
