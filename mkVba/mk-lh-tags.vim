@@ -4,10 +4,10 @@
 "		<URL:http://code.google.com/p/lh-vim/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/License.md>
-" Version:      1.4.0
-let s:version = '1.4.0'
+" Version:      1.4.1
+let s:version = '1.4.1'
 " Created:      20th Mar 2012
-" Last Update:  19th Apr 2015
+" Last Update:  17th Nov 2015
 " }}}1
 "=============================================================================
 
@@ -27,3 +27,4 @@ autoload/lh/tags.vim
 ftplugin/cpp/cpp_lh-tags-hooks.vim
 lh-tags-addon-info.txt
 plugin/lh-tags.vim
+VimFlavor
