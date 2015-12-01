@@ -4,8 +4,8 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/License.md>
-" Version:      1.4.1
-let s:k_version = '1.4.1'
+" Version:      1.4.2
+let s:k_version = '1.4.2'
 " Created:      02nd Oct 2008
 "------------------------------------------------------------------------
 " Description:
@@ -14,6 +14,8 @@ let s:k_version = '1.4.1'
 "
 "------------------------------------------------------------------------
 " History:
+"       v1.4.2:
+"       (*) Better flags for C++ analysis
 "       v1.4.1:
 "       (*) abort added to functions
 "       v1.4.0:
@@ -53,11 +55,10 @@ set cpo&vim
 
 " ######################################################################
 " ## Options {{{1
-let g:tags_options_c   = '--c++-kinds=+p --fields=+imaS --extra=+q'
+let g:tags_options_c   = '--c++-kinds=+pf --fields=+imaS --extra=+q'
 " let g:tags_options_cpp = '--c++-kinds=+p --fields=+imaS --extra=+q'
 let g:tags_options_vim = '--fields=+mS --extra=+q'
-let g:tags_options_cpp = '--c++-kinds=+p --fields=+imaS --extra=+q --language-force=C++'
-" let g:tags_options_cpp = '--c++-kinds=+p --fields=+iaS --extra=+q --language-force=cpp'
+let g:tags_options_cpp = '--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'
 
 function! s:CtagsExecutable() abort
   let tags_executable = lh#option#get('tags_executable', 'ctags', 'bg')
