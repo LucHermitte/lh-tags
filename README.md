@@ -108,7 +108,7 @@ exe 'setlocal spellfile+='.lh#path#fix(b:project_sources_dir.'/'.b:tags_to_spell
 
 ## To Do
 
- * Auto-magically build `tags_dirname` from other variables (`&tags` with a
+ * Auto-magically build `b:tags_dirname` from other variables (`&tags` with a
    compatible tags file specified with an absolute path, or root VCS directory)
  * This feature will require background generation for the first time.
  * Have behaviour similar to the one from the quickfix mode (possibility to
@@ -124,6 +124,11 @@ exe 'setlocal spellfile+='.lh#path#fix(b:project_sources_dir.'/'.b:tags_to_spell
   * With [vim-addon-manager](https://github.com/MarcWeber/vim-addon-manager), install lh-tags (this is the preferred method because of the dependencies)
 ```vim
 ActivateAddons lh-tags
+```
+  * or with [vim-flavor](http://github.com/kana/vim-flavor) which also supports
+    dependencies
+```
+flavor 'LucHermitte/lh-tags'
 ```
   * or you can clone the git repositories
 ```
