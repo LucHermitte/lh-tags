@@ -114,11 +114,11 @@ OPTIONS                                 *lhtags-options* {{{1
 MAPPINGS AND COMMANDS                   *lhtag-mappings* {{{1
 
  * The tags for the current file can be explicitly updated with *CTRL-X_tc* --
-   this mappings defaults to *<Plug>CtagsUpdateCurrent*
+   this mappings defaults to *<Plug>CTagsUpdateCurrent*
  * All the tags for the current project can be explicitly updated with
-   *CTRL-X_ta* -- this mappings defaults to *<Plug>CtagsUpdateAll*
+   *CTRL-X_ta* -- this mappings defaults to *<Plug>CTagsUpdateAll*
  * Tags matching the current word (or selection) will be presented on
-   *<M-W><M-Down>* -- these two mappings default to *<Plug>CtagsSplitOpen*
+   *<C-W><M-Down>* -- these two mappings default to *<Plug>CTagsSplitOpen*
 
  * We can also present the tags that match a pattern with *:LHTags* command
    (this command supports auto-completion on tag names)
