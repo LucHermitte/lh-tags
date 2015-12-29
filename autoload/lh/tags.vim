@@ -275,7 +275,13 @@ function! lh#tags#run(tag_function, force) abort
   finally
   endtry
 
-  echo ctags_pathname . ' updated.'
+  " Force a redraw right before output if we have less than 2 lines to display
+  " messages, so that the common case of updating ctags during a write doesn't
+  " cause a pause that requires the user to press enter.
+  if &cmdheight < 2
+    redraw
+  endif
+  echomsg ctags_pathname . ' updated.'
   return 1
 endfunction
 
