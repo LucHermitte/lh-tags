@@ -3,7 +3,7 @@
 " Author:       Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
-"               <URL:http://github.com/LucHermitte/lh-tags/License.md>
+"               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
 " Version:      1.4.2
 let s:k_version = '1.4.2'
 " Created:      02nd Oct 2008
@@ -105,23 +105,29 @@ endfunction
 " ######################################################################
 " ## Misc Functions     {{{1
 " # Version {{{2
-function! lh#tags#version() abort
+function! lh#tags#version()
   return s:k_version
 endfunction
 
-" # Debug {{{2
-function! lh#tags#verbose(level) abort
-  let s:verbose = a:level
+" # Debug   {{{2
+let s:verbose = get(s:, 'verbose', 0)
+function! lh#tags#verbose(...)
+  if a:0 > 0 | let s:verbose = a:1 | endif
+  return s:verbose
+endfunction
+
+function! s:Log(expr, ...)
+  call call('lh#log#this',[a:expr]+a:000)
+endfunction
+
+function! s:Verbose(expr, ...)
+  if s:verbose
+    call call('s:Log',[a:expr]+a:000)
+  endif
 endfunction
 
 function! lh#tags#debug(expr) abort
   return eval(a:expr)
-endfunction
-
-function! s:Verbose(expr) abort
-  if exists('s:verbose') && s:verbose
-    echomsg a:expr
-  endif
 endfunction
 
 " # s:System {{{2
