@@ -4,8 +4,8 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      1.4.2
-let s:k_version = '1.4.2'
+" Version:      1.5.0
+let s:k_version = '1.5.0'
 " Created:      02nd Oct 2008
 "------------------------------------------------------------------------
 " Description:
@@ -14,6 +14,8 @@ let s:k_version = '1.4.2'
 "
 "------------------------------------------------------------------------
 " History:
+"       v1.5.0:
+"       (*) New function lh#tags#ctags_flavor()
 "       v1.4.2:
 "       (*) Better flags for C++ analysis
 "       v1.4.1:
@@ -67,6 +69,19 @@ endfunction
 
 function! lh#tags#ctags_is_installed() abort
   return executable(s:CtagsExecutable())
+endfunction
+
+function! lh#tags#ctags_flavor() abort
+  " @since version 1.5.0
+  call assert_true(lh#tags#ctags_is_installed())
+  let ctags_version = s:System(s:CtagsExecutable(). ' --version')
+  if ctags_version =~ 'Universal Ctags'
+    return 'utags'
+  elseif ctags_version =~ 'Exuberant Ctags'
+    return 'etags'
+  else
+    return ctags_version
+  endif
 endfunction
 
 function! s:CtagsOptions() abort
