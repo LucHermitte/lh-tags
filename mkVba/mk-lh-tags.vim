@@ -1,11 +1,11 @@
 "=============================================================================
 " File:         mkVba/mk-lh-tags.vim                              {{{1
 " Author:       Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
-"		<URL:http://code.google.com/p/lh-vim/lh-tags>
+"               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      1.5.1
-let s:version = '1.5.1'
+" Version:      1.5.2
+let s:version = '1.5.2'
 " Created:      20th Mar 2012
 " Last Update:  24th May 2016
 " }}}1

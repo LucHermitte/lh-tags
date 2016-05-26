@@ -4,8 +4,8 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      1.5.1
-let s:k_version = '1.5.1'
+" Version:      1.5.2
+let s:k_version = '1.5.2'
 " Created:      02nd Oct 2008
 "------------------------------------------------------------------------
 " Description:
@@ -14,6 +14,8 @@ let s:k_version = '1.5.1'
 "
 "------------------------------------------------------------------------
 " History:
+"       v1.5.2:
+"       (*) Universal ctags offers a --fields=+x{c++.properties} option
 "       v1.5.1:
 "       (*) Remove assert_true() call.
 "       v1.5.0:
@@ -58,68 +60,6 @@ set cpo&vim
 "------------------------------------------------------------------------
 
 " ######################################################################
-" ## Options {{{1
-let g:tags_options_c   = '--c++-kinds=+pf --fields=+imaS --extra=+q'
-" let g:tags_options_cpp = '--c++-kinds=+p --fields=+imaS --extra=+q'
-let g:tags_options_vim = '--fields=+mS --extra=+q'
-let g:tags_options_cpp = '--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'
-
-function! s:CtagsExecutable() abort
-  let tags_executable = lh#option#get('tags_executable', 'ctags', 'bg')
-  return tags_executable
-endfunction
-
-function! lh#tags#ctags_is_installed() abort
-  return executable(s:CtagsExecutable())
-endfunction
-
-function! lh#tags#ctags_flavor() abort
-  " @since version 1.5.0
-  " call assert_true(lh#tags#ctags_is_installed())
-  let ctags_version = s:System(s:CtagsExecutable(). ' --version')
-  if ctags_version =~ 'Universal Ctags'
-    return 'utags'
-  elseif ctags_version =~ 'Exuberant Ctags'
-    return 'etags'
-  else
-    return ctags_version
-  endif
-endfunction
-
-function! s:CtagsOptions() abort
-  let ctags_options = ' --tag-relative=yes'
-  let ctags_options .= ' '.lh#option#get('tags_options_'.&ft, '')
-  let ctags_options .= ' '.lh#option#get('tags_options', '', 'wbg')
-  return ctags_options
-endfunction
-
-function! s:CtagsDirname() abort
-  let ctags_dirname = lh#option#get('tags_dirname', '', 'b').'/'
-  return ctags_dirname
-endfunction
-
-function! s:CtagsFilename() abort
-  let ctags_filename = lh#option#get('tags_filename', 'tags', 'bg')
-  return ctags_filename
-endfunction
-
-function! lh#tags#cmd_line(ctags_pathname) abort
-  let cmd_line = s:CtagsExecutable().' '.s:CtagsOptions().' -f '.a:ctags_pathname
-  return cmd_line
-endfunction
-
-function! s:TagsSelectPolicy() abort
-  let select_policy = lh#option#get('tags_select', "expand('<cword>')", 'bg')
-  return select_policy
-endfunction
-
-function! s:RecursiveFlagOrAll() abort
-  let recurse = lh#option#get('tags_must_go_recursive', 1)
-  let res = recurse ? ' -R' : ' *'
-  return res
-endfunction
-
-" ######################################################################
 " ## Misc Functions     {{{1
 " # Version {{{2
 function! lh#tags#version()
@@ -154,6 +94,76 @@ function! s:System(cmd_line) abort
   if v:shell_error
     throw "Cannot execute system call (".a:cmd_line."): ".res
   endif
+  return res
+endfunction
+
+" ######################################################################
+" ## Options {{{1
+
+" Function: s:CtagsExecutable() {{{2
+function! s:CtagsExecutable() abort
+  let tags_executable = lh#option#get('tags_executable', 'ctags', 'bg')
+  return tags_executable
+endfunction
+
+" Function: lh#tags#ctags_is_installed() {{{2
+function! lh#tags#ctags_is_installed() abort
+  return executable(s:CtagsExecutable())
+endfunction
+
+" Function: lh#tags#ctags_flavor() {{{2
+function! lh#tags#ctags_flavor() abort
+  " @since version 1.5.0
+  " call assert_true(lh#tags#ctags_is_installed())
+  let ctags_version = s:System(s:CtagsExecutable(). ' --version')
+  if ctags_version =~ 'Universal Ctags'
+    return 'utags'
+  elseif ctags_version =~ 'Exuberant Ctags'
+    return 'etags'
+  else
+    return ctags_version
+  endif
+endfunction
+
+" # The options {{{2
+let g:tags_options_c   = '--c++-kinds=+pf --fields=+imaS --extra=+q'
+" let g:tags_options_cpp = '--c++-kinds=+p --fields=+imaS --extra=+q'
+let g:tags_options_vim = '--fields=+mS --extra=+q'
+let g:tags_options_cpp = '--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'
+if lh#tags#ctags_is_installed() && lh#tags#ctags_flavor() == 'utags'
+  let g:tags_options_cpp = substitute(g:tags_options_cpp, '--fields=\S\+', '&x{c++.properties}', '')
+endif
+
+function! s:CtagsOptions() abort
+  let ctags_options = ' --tag-relative=yes'
+  let ctags_options .= ' '.lh#option#get('tags_options_'.&ft, '')
+  let ctags_options .= ' '.lh#option#get('tags_options', '', 'wbg')
+  return ctags_options
+endfunction
+
+function! s:CtagsDirname() abort
+  let ctags_dirname = lh#option#get('tags_dirname', '', 'b').'/'
+  return ctags_dirname
+endfunction
+
+function! s:CtagsFilename() abort
+  let ctags_filename = lh#option#get('tags_filename', 'tags', 'bg')
+  return ctags_filename
+endfunction
+
+function! lh#tags#cmd_line(ctags_pathname) abort
+  let cmd_line = s:CtagsExecutable().' '.s:CtagsOptions().' -f '.a:ctags_pathname
+  return cmd_line
+endfunction
+
+function! s:TagsSelectPolicy() abort
+  let select_policy = lh#option#get('tags_select', "expand('<cword>')", 'bg')
+  return select_policy
+endfunction
+
+function! s:RecursiveFlagOrAll() abort
+  let recurse = lh#option#get('tags_must_go_recursive', 1)
+  let res = recurse ? ' -R' : ' *'
   return res
 endfunction
 
