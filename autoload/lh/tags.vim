@@ -4,8 +4,8 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      1.6.1
-let s:k_version = '1.6.1'
+" Version:      1.6.2
+let s:k_version = '1.6.2'
 " Created:      02nd Oct 2008
 "------------------------------------------------------------------------
 " Description:
@@ -14,6 +14,9 @@ let s:k_version = '1.6.1'
 "
 "------------------------------------------------------------------------
 " History:
+"       v1.6.2:
+"       (*) Don't override g:tags_options with g:lh#tags#options
+"           TODO: merge these two into g:lh#tags#options
 "       v1.6.1:
 "       (*) Bug fix for lh#tags#option_force_lang in C++
 "       v1.6.0:
@@ -134,6 +137,7 @@ endfunction
 " # The options {{{2
 "
 " Forcing ft -> ctags languages {{{3
+" list {{{4
 let s:force_lang = {
       \ 'ada' : 'Ada',
       \ 'ant' : 'Ant',
@@ -196,7 +200,7 @@ let s:force_lang = {
 
 function! s:BuildForceLangOption() abort " {{{4
   for [ft, lang] in items(s:force_lang)
-    call lh#let#if_undef('g:tags_options.'.ft.'.force', string(lang))
+    call lh#let#if_undef('g:lh#tags#options.'.ft.'.force', string(lang))
   endfor
 endfunction
 call s:BuildForceLangOption()
@@ -216,7 +220,7 @@ let s:func_kinds =
 function! s:BuildFuncKinds()
   for [pat, fts] in items(s:func_kinds)
     for ft in fts
-      call lh#let#if_undef('g:tags_options.'.ft.'.func_kind', string(pat))
+      call lh#let#if_undef('g:lh#tags#options.'.ft.'.func_kind', string(pat))
     endfor
   endfor
 endfunction
@@ -224,12 +228,12 @@ call s:BuildFuncKinds()
 
 " Function: lh#tags#option_force_lang(ft) {{{3
 function! lh#tags#option_force_lang(ft) abort
-  return lh#option#get('tags_options.'.a:ft.'.force')
+  return lh#option#get('g:lh#tags#options.'.a:ft.'.force')
 endfunction
 
 " Function: lh#tags#func_kind(ft) {{{3
 function! lh#tags#func_kind(ft) abort
-  return lh#option#get('tags_options.'.a:ft.'.func_kind', 'f')
+  return lh#option#get('g:lh#tags#options.'.a:ft.'.func_kind', 'f')
 endfunction
 
 " Fields options {{{3
