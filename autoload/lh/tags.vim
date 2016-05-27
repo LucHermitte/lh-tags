@@ -4,8 +4,8 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      1.5.2
-let s:k_version = '1.5.2'
+" Version:      1.6.0
+let s:k_version = '1.6.0'
 " Created:      02nd Oct 2008
 "------------------------------------------------------------------------
 " Description:
@@ -14,6 +14,10 @@ let s:k_version = '1.5.2'
 "
 "------------------------------------------------------------------------
 " History:
+"       v1.6.0:
+"       (*) New functions to get:
+"           - ctags kinds associated to function/method definitions
+"           - ctags language associated to vim filetype
 "       v1.5.2:
 "       (*) Universal ctags offers a --fields=+x{c++.properties} option
 "       v1.5.1:
@@ -126,42 +130,144 @@ function! lh#tags#ctags_flavor() abort
 endfunction
 
 " # The options {{{2
+"
+" Forcing ft -> ctags languages {{{3
+let s:force_lang = {
+      \ 'ada' : 'Ada',
+      \ 'ant' : 'Ant',
+      \ 'asm' : 'Asm',
+      \ 'automake' : 'Automake',
+      \ 'awk' : 'Awk',
+      \ 'c' : 'C',
+      \ 'cs' : 'C#',
+      \ 'c++' : 'C++',
+      \ 'clojure' : 'Clojure',
+      \ 'cobol' : 'Cobol',
+      \ 'css' : 'CSS',
+      \ 'tags' : 'ctags',
+      \ 'd' : 'D',
+      \ 'dosbatch' : 'DosBatch',
+      \ 'dts' : 'DTS',
+      \ 'eiffel' : 'Eiffel',
+      \ 'erlang' : 'Erlang',
+      \ 'falcon' : 'Falcon',
+      \ 'lex' : 'Flex',
+      \ 'fortran' : 'Fortran',
+      \ 'go' : 'Go',
+      \ 'html' : 'HTML',
+      \ 'java' : 'Java',
+      \ 'jproperties' : 'JavaProperties',
+      \ 'javascript' : 'JavaScript',
+      \ 'json' : 'JSON',
+      \ 'lisp' : 'Lisp',
+      \ 'lua' : 'Lua',
+      \ 'make' : 'Make',
+      \ 'matlab' : 'MatLab',
+      \ 'objc' : 'ObjectiveC',
+      \ 'ocaml' : 'OCaml',
+      \ 'pascal' : 'Pascal',
+      \ 'perl' : 'Perl',
+      \ 'perl6' : 'Perl6',
+      \ 'php' : 'PHP',
+      \ 'python' : 'Python',
+      \ 'r' : 'R',
+      \ 'rrst' : 'reStructuredText',
+      \ 'rexx' : 'REXX',
+      \ 'ruby' : 'Ruby',
+      \ 'rust' : 'Rust',
+      \ 'scheme' : 'Scheme',
+      \ 'sh' : 'Sh',
+      \ 'slang' : 'SLang',
+      \ 'sml' : 'SML',
+      \ 'sql' : 'SQL',
+      \ 'svg' : 'SVG',
+      \ 'systemverilog' : 'SystemVerilog',
+      \ 'tcl' : 'Tcl',
+      \ 'tex' : 'Tex',
+      \ 'vera' : 'Vera',
+      \ 'verilog' : 'Verilog',
+      \ 'vhdl' : 'VHDL',
+      \ 'vim' : 'Vim',
+      \ 'xslt' : 'XSLT',
+      \ 'yacc' : 'YACC',
+      \ }
+
+function! s:BuildForceLangOption() abort " {{{4
+  for [ft, lang] in items(s:force_lang)
+    call lh#let#if_undef('g:tags_options.'.ft.'.force', string(lang))
+  endfor
+endfunction
+call s:BuildForceLangOption()
+
+" function kinds {{{3
+" The ctags kind for function implementation may be f in C, C++, but m in Java,
+" C#, ...
+let s:func_kinds =
+      \ { 'r': ['ada']
+      \ , 'm': ['java', 'cs']
+      \ , '[mf]' : ['javascript', 'objc', 'ocaml']
+      \ , '[pf]' : ['pascal']
+      \ , 's' : ['perl']
+      \ , '[bsm]' : ['perl6']
+      \ , '[fF]' : ['rust']
+      \ }
+function! s:BuildFuncKinds()
+  for [pat, fts] in items(s:func_kinds)
+    for ft in fts
+      call lh#let#if_undef('g:tags_options.'.ft.'.func_kind', string(pat))
+    endfor
+  endfor
+endfunction
+call s:BuildFuncKinds()
+
+" Function: lh#tags#option_force_lang(ft) {{{3
+function! lh#tags#option_force_lang(ft) abort
+  return lh#option#get('tags_options.'.a:ft.'.force')
+endfunction
+
+" Function: lh#tags#func_kind(ft) {{{3
+function! lh#tags#func_kind(ft) abort
+  return lh#option#get('tags_options.'.a:ft.'.func_kind', 'f')
+endfunction
+
+" Fields options {{{3
 let g:tags_options_c   = '--c++-kinds=+pf --fields=+imaS --extra=+q'
 " let g:tags_options_cpp = '--c++-kinds=+p --fields=+imaS --extra=+q'
 let g:tags_options_vim = '--fields=+mS --extra=+q'
 let g:tags_options_cpp = '--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'
+let g:tags_options_java = '--c++-kinds=+acefgimp --fields=+imaSft --extra=+q --language-force=C++'
 if lh#tags#ctags_is_installed() && lh#tags#ctags_flavor() == 'utags'
   let g:tags_options_cpp = substitute(g:tags_options_cpp, '--fields=\S\+', '&x{c++.properties}', '')
 endif
 
-function! s:CtagsOptions() abort
+function! s:CtagsOptions() abort " {{{3
   let ctags_options = ' --tag-relative=yes'
   let ctags_options .= ' '.lh#option#get('tags_options_'.&ft, '')
   let ctags_options .= ' '.lh#option#get('tags_options', '', 'wbg')
   return ctags_options
 endfunction
 
-function! s:CtagsDirname() abort
+function! s:CtagsDirname() abort " {{{3
   let ctags_dirname = lh#option#get('tags_dirname', '', 'b').'/'
   return ctags_dirname
 endfunction
 
-function! s:CtagsFilename() abort
+function! s:CtagsFilename() abort " {{{3
   let ctags_filename = lh#option#get('tags_filename', 'tags', 'bg')
   return ctags_filename
 endfunction
 
-function! lh#tags#cmd_line(ctags_pathname) abort
+function! lh#tags#cmd_line(ctags_pathname) abort " {{{3
   let cmd_line = s:CtagsExecutable().' '.s:CtagsOptions().' -f '.a:ctags_pathname
   return cmd_line
 endfunction
 
-function! s:TagsSelectPolicy() abort
+function! s:TagsSelectPolicy() abort " {{{3
   let select_policy = lh#option#get('tags_select', "expand('<cword>')", 'bg')
   return select_policy
 endfunction
 
-function! s:RecursiveFlagOrAll() abort
+function! s:RecursiveFlagOrAll() abort " {{{3
   let recurse = lh#option#get('tags_must_go_recursive', 1)
   let res = recurse ? ' -R' : ' *'
   return res
