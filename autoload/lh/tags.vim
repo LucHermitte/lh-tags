@@ -4,8 +4,8 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      1.6.0
-let s:k_version = '1.6.0'
+" Version:      1.6.1
+let s:k_version = '1.6.1'
 " Created:      02nd Oct 2008
 "------------------------------------------------------------------------
 " Description:
@@ -14,6 +14,8 @@ let s:k_version = '1.6.0'
 "
 "------------------------------------------------------------------------
 " History:
+"       v1.6.1:
+"       (*) Bug fix for lh#tags#option_force_lang in C++
 "       v1.6.0:
 "       (*) New functions to get:
 "           - ctags kinds associated to function/method definitions
@@ -140,7 +142,7 @@ let s:force_lang = {
       \ 'awk' : 'Awk',
       \ 'c' : 'C',
       \ 'cs' : 'C#',
-      \ 'c++' : 'C++',
+      \ 'cpp' : 'C++',
       \ 'clojure' : 'Clojure',
       \ 'cobol' : 'Cobol',
       \ 'css' : 'CSS',
