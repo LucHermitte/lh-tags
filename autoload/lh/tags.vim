@@ -228,12 +228,12 @@ call s:BuildFuncKinds()
 
 " Function: lh#tags#option_force_lang(ft) {{{3
 function! lh#tags#option_force_lang(ft) abort
-  return lh#option#get('g:lh#tags#options.'.a:ft.'.force')
+  return lh#option#get('lh#tags#options.'.a:ft.'.force')
 endfunction
 
 " Function: lh#tags#func_kind(ft) {{{3
 function! lh#tags#func_kind(ft) abort
-  return lh#option#get('g:lh#tags#options.'.a:ft.'.func_kind', 'f')
+  return lh#option#get('lh#tags#options.'.a:ft.'.func_kind', 'f')
 endfunction
 
 " Fields options {{{3
