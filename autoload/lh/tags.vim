@@ -4,8 +4,8 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      1.6.2
-let s:k_version = '1.6.2'
+" Version:      1.6.3
+let s:k_version = '1.6.3'
 " Created:      02nd Oct 2008
 "------------------------------------------------------------------------
 " Description:
@@ -14,6 +14,9 @@ let s:k_version = '1.6.2'
 "
 "------------------------------------------------------------------------
 " History:
+"       v1.6.3:
+"       (*) Support ctags flavour w/o '--version' in lh#tags#flavour()
+"           See lh-brackets issue#10
 "       v1.6.2:
 "       (*) Don't override g:tags_options with g:lh#tags#options
 "           TODO: merge these two into g:lh#tags#options
@@ -108,7 +111,7 @@ endfunction
 
 " ######################################################################
 " ## Options {{{1
-
+" ======================================================================
 " Function: s:CtagsExecutable() {{{2
 function! s:CtagsExecutable() abort
   let tags_executable = lh#option#get('tags_executable', 'ctags', 'bg')
@@ -124,14 +127,22 @@ endfunction
 function! lh#tags#ctags_flavor() abort
   " @since version 1.5.0
   " call assert_true(lh#tags#ctags_is_installed())
-  let ctags_version = s:System(s:CtagsExecutable(). ' --version')
-  if ctags_version =~ 'Universal Ctags'
-    return 'utags'
-  elseif ctags_version =~ 'Exuberant Ctags'
-    return 'etags'
-  else
-    return ctags_version
-  endif
+  try
+    let ctags_executable = s:CtagsExecutable()
+    if !lh#tags#ctags_is_installed()
+      return 'echo "No '.ctags_executable.' binary found: "'
+    endif
+    let ctags_version = s:System(s:CtagsExecutable(). ' --version')
+    if ctags_version =~ 'Universal Ctags'
+      return 'utags'
+    elseif ctags_version =~ 'Exuberant Ctags'
+      return 'etags'
+    else
+      return ctags_version
+    endif
+  catch /.*/
+    return "bsd?"
+  endtry
 endfunction
 
 " # The options {{{2
@@ -281,8 +292,6 @@ endfunction
 
 " ######################################################################
 " ## Tags generation {{{1
-" ======================================================================
-
 " ======================================================================
 " # spellfile generating functions {{{2
 " If the option generate spellfile contain a string, use that string to
@@ -458,7 +467,7 @@ endfunction
 
 " ######################################################################
 " ## Tag browsing {{{1
-"
+" ======================================================================
 " # Tag push/pop {{{2
 " internal tmp tags file {{{3
 if !exists('s:tags_jump')
@@ -522,7 +531,8 @@ endfunction
 let s:access_table = {
       \ 'public'    : '+',
       \ 'protected' : '#',
-      \ 'private'   : '-'
+      \ 'private'   : '-',
+      \ 'friend'    : '*'
       \}
 
 function! s:AccessSpecifier(taginfo) abort
