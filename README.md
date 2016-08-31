@@ -41,22 +41,28 @@ In order to use lh-tags, I highly recommend to use a plugin like
 In the buffer local section, you'll have to:
  * adjust `(bg):tags_options_{ft}` if the default values don't suit you -- I
    often add exclusion lists in my projects.
- * set `b:tags_dirname` to the project root directory -- when my projects are
-   compiled with CMake+whatever I use the variables from CMake encapsulation of
-   [BuildToolsWrapper](http://github.com/LucHermitte/vim-build-tools-wrapper)
-   to set `b:tags_dirname`.
+ * to be sure where the root directory of the source files is:
+   * either set `b:tags_dirname`, or `b:project_sources_dir`, or
+     `b:BTW_project_config._.paths.sources` to the project root directory --
+     when my projects are compiled with CMake+whatever I use the variables
+     from CMake encapsulation of
+     [BuildToolsWrapper](http://github.com/LucHermitte/vim-build-tools-wrapper)
+     to set `b:tags_dirname`.
+   * or be sure there is a `.git/` or a `.svn/` subdirectory in the root
+     directory of the source code.
 
 For instance, a typical `_vimrc_local.vim` file will contain:
 ```vim
 " Local vimrc variable for source dir
 let b:project_sources_dir = g:FooBarProject_config.paths.sources
+" or
+LetIfUndef b:BTW_project_config._ = g:FooBarProject_config
 ...
 " ======================[ tags generation {{{2
 " lh#path#fix() comes from lh-vim-lib
-let b:tags_dirname = lh#path#fix(b:project_sources_dir)
 let b:tags_options = ' --exclude="*.dox" --exclude="html" --exclude="*.xml" --exclude="*.xsd" --exclude=".*sw*"'
 let b:tags_options .= ' --exclude="*.txt" --exclude="cmake" --exclude="*.cmake" --exclude="*.o" --exclude="*.os" --exclude="*.tags" --exclude=tags --exclude="*.tar"'
-exe 'setlocal tags+='.(b:tags_dirname).'/tags'
+call lh#tags#update_tagfiles() " uses b:project_sources_dir/BTW_project_config
 ```
 
 Then, you'll have to generate the `tags` database once (`<C-X>ta`), then you
@@ -64,9 +70,21 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
 
 ## Options
 
- * `b:tags_dirname` defaults to empty string for the current directory; you'll
-   have to set this option to the root of your project
- * `(bg):tags_options` defaults to empty string; you'll have to adjust these
+ * `b:tags_dirname` defaults to an empty string for the current directory;
+   you'll have to set this option to the root of your project.
+   If you leave it unset, it will be set on first tags generation to (in
+   order):
+
+   * `b:project_sources_dir`, which is used by some of
+     [mu-template](http://github.com/LucHermitte/mu-template) templates ;
+   - or `(bg):BTW_project_config._.paths.sources`, which is used by
+     [BuildToolsWrapper](http://github.com/LucHermitte/vim-build-tools-wrapper)
+     to define project settings
+   * or where `.git/` is found in parent directories ;
+   * or where `.svn/` is found in parent directories ;
+   * or asked to the end-user (previous values are recorded in case several
+     files from a same project are opened).
+ * `(bg):tags_options` defaults to an empty string; you'll have to adjust these
    options to your needs.
  * `(bg):tags_options_{ft}` defaults to:
     * c: `'--c++-kinds=+p --fields=+imaS --extra=+q'`
@@ -84,7 +102,8 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
  * `(bg):LHT_no_auto` defaults to 0; set it to 1 if you want to disable the
    automatic incremental update.
  * `(bg):tags_to_spellfile` defaults to empty string; this option permits to
-   add all the tags to Vim spellchecker ignore list.  
+   add all the tags to Vim spellchecker ignore list.
+
 ```vim
 " #### In _vimrc_local.vim
 " spell files
@@ -108,19 +127,19 @@ exe 'setlocal spellfile+='.lh#path#fix(b:project_sources_dir.'/'.b:tags_to_spell
 
 ## To Do
 
- * Auto-magically build `b:tags_dirname` from other variables (`&tags` with a
-   compatible tags file specified with an absolute path, or root VCS directory)
+ * Enhance the way `&tags` is updated to follow `b:tags_dirname`.
  * This feature will require background generation for the first time.
  * Have behaviour similar to the one from the quickfix mode (possibility to
    close and reopen the search window; prev&next moves)
  * Show/hide declarations -- merge declaration and definitions
- * pluggable filters (that will check the number of parameters, their type, etc)
+ * Pluggable filters (that will check the number of parameters, their type, etc)
+ * Simplify `tags_options`. Have a `tag_crt_languages` instead.
 
 
 ## Design Choices
 
 ## Installation
-  * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v3.3.0
+  * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v3.12.0
   * With [vim-addon-manager](https://github.com/MarcWeber/vim-addon-manager), install lh-tags (this is the preferred method because of the dependencies)
 ```vim
 ActivateAddons lh-tags

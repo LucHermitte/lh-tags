@@ -4,16 +4,22 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      1.6.3
-let s:k_version = '1.6.3'
+" Version:      1.7.0
+let s:k_version = '1.7.0'
 " Created:      02nd Oct 2008
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
 "       (Deported functions)
 "
+" TODO:
+"       Find a way to update update &tags correctly when tags are searched and
+"       not at another moment.
+"
 "------------------------------------------------------------------------
 " History:
+"       v1.7.0:
+"       (*) Auto detect project root directory
 "       v1.6.3:
 "       (*) Support ctags flavour w/o '--version' in lh#tags#flavour()
 "           See lh-brackets issue#10
@@ -112,18 +118,19 @@ endfunction
 " ######################################################################
 " ## Options {{{1
 " ======================================================================
-" Function: s:CtagsExecutable() {{{2
+" # ctags executable {{{2
+" Function: s:CtagsExecutable() {{{3
 function! s:CtagsExecutable() abort
   let tags_executable = lh#option#get('tags_executable', 'ctags', 'bg')
   return tags_executable
 endfunction
 
-" Function: lh#tags#ctags_is_installed() {{{2
+" Function: lh#tags#ctags_is_installed() {{{3
 function! lh#tags#ctags_is_installed() abort
   return executable(s:CtagsExecutable())
 endfunction
 
-" Function: lh#tags#ctags_flavor() {{{2
+" Function: lh#tags#ctags_flavor() {{{3
 function! lh#tags#ctags_flavor() abort
   " @since version 1.5.0
   " call assert_true(lh#tags#ctags_is_installed())
@@ -264,9 +271,76 @@ function! s:CtagsOptions() abort " {{{3
   return ctags_options
 endfunction
 
-function! s:CtagsDirname() abort " {{{3
-  let ctags_dirname = lh#option#get('tags_dirname', '', 'b').'/'
+let s:project_roots = get(s:, 'project_roots', [])
+function! s:GetPlausibleRoot() abort " {{{3
+  let crt = expand('%:p:h')
+  let compatible_paths = filter(copy(s:project_roots), 'lh#path#is_in(crt, v:val)')
+  if len(compatible_paths) == 1
+    return compatible_paths[0]
+  endif
+  if len(compatible_paths) > 1
+    let ctags_dirname = lh#path#select_one(compatible_paths, "ctags needs to know the current project root directory")
+    if !empty(ctags_dirname)
+      return ctags_dirname
+    endif
+  endif
+  let ctags_dirname = INPUT("ctags needs to know the current project root directory.\n-> ", expand('%:p:h'))
+  if !empty(ctags_dirname)
+    call lh#path#munge(s:project_roots, ctags_dirname)
+  endif
   return ctags_dirname
+endfunction
+
+function! s:FetchCtagsDirname() abort " {{{3
+  " call assert_true(!exists('b:tags_dirname'))
+  if exists('b:project_sources_dir')
+    return b:project_sources_dir
+  endif
+  let config = lh#option#get('BTW_project_config')
+  if lh#option#is_set(config) && has_key(config, '_')
+    let ctags_dirname = get(get(config._, 'paths', {}), 'sources', '')
+    if !empty(ctags_dirname)
+      return ctags_dirname
+    else
+      call lh#common#warning_msg('BTW_project_config is set, but `BTW_project_config._.paths.sources` is empty')
+    endif
+  endif
+  let ctags_dirname = lh#vcs#get_git_root()
+  if !empty(ctags_dirname)
+    return matchstr(ctags_dirname, '.*\ze\.git$')
+  endif
+  let ctags_dirname = lh#vcs#get_svn_root()
+  if !empty(ctags_dirname)
+    return matchstr(ctags_dirname, '.*\ze\.svn$')
+  endif
+
+  return s:GetPlausibleRoot()
+endfunction
+
+function! s:CtagsDirname(...) abort " {{{3
+  " Will be searched in descending priority in:
+  " - b:tags_dirname
+  " - BTW_project_config._.paths.sources (BTW)
+  " - b:project_source_dir (mu-template)
+  " - Where .git/ is found is parent dirs
+  " - Where .svn/ is found in parent dirs
+  " - confirm box for %:p:h, and remember previous paths
+  if ! exists('b:tags_dirname')
+    let b:tags_dirname = s:FetchCtagsDirname()
+  endif
+
+  let res = lh#path#to_dirname(b:tags_dirname)
+  " TODO: find another way to autodetect tags paths
+  if a:0 == 0 || a:1 == '1'
+    call lh#tags#update_tagfiles()
+  endif
+  return res
+endfunction
+
+" Function: lh#tags#update_tagfiles() {{{3
+function! lh#tags#update_tagfiles() abort
+  call s:CtagsDirname(0)
+  exe 'setlocal tags+='.lh#path#fix(lh#path#to_dirname(b:tags_dirname).s:CtagsFilename())
 endfunction
 
 function! s:CtagsFilename() abort " {{{3

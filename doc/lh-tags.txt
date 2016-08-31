@@ -1,5 +1,5 @@
-*lh-tags.txt*           lh-tags (v1.4.1)
-                        For Vim version 7+.    Last change: 01st Dec 2015
+*lh-tags.txt*           lh-tags (v1.7.0)
+                        For Vim version 7+.    Last change: 31st Aug 2016
 
                         By Luc Hermitte
                         luc {dot} hermitte {at} gmail {dot} com
@@ -58,21 +58,26 @@ In order to use lh-tags, I highly recommend to use a plugin like
 In the buffer local section, you'll have to:
  * adjust |(bg):tags_options_{ft}| if the default values don't suit you -- I
    often add exclusion lists in my projects.
- * set |b:tags_dirname| to the project root directory -- when my projects are
-   compiled with CMake+whatever I use the variables from CMake encapsulation of
-   [BuildToolsWrapper](http://github.com/LucHermitte/vim-build-tools-wrapper)
-   to set |b:tags_dirname|.
+ * to be sure where the root directory of the source files is:
+   * either set |b:tags_dirname|, or |b:project_sources_dir|, or
+     |BTW_project_config._.paths.sources| to the project root directory --
+     when my projects are compiled with CMake+whatever I use the variables
+     from CMake encapsulation of
+     [BuildToolsWrapper](http://github.com/LucHermitte/vim-build-tools-wrapper)
+     to set |b:tags_dirname|.
+   * or be sure there is a `.git/` or a `.svn/` subdirectory in the root
+     directory of the source code.
 
 For instance, a typical `_vimrc_local.vim` file will contain: >
     " Local vimrc variable for source dir
     let b:project_sources_dir = g:FooBarProject_config.paths.sources
+    " or
+    LetIfUndef b:BTW_project_config._ = g:FooBarProject_config
     ...
     " ======================[ tags generation {{{2
-    " lh#path#fix() comes from lh-vim-lib
-    let b:tags_dirname = lh#path#fix(b:project_sources_dir)
     let b:tags_options = ' --exclude="*.dox" --exclude="html" --exclude="*.xml" --exclude="*.xsd" --exclude=".*sw*"'
     let b:tags_options .= ' --exclude="*.txt" --exclude="cmake" --exclude="*.cmake" --exclude="*.o" --exclude="*.os" --exclude="*.tags" --exclude=tags --exclude="*.tar"'
-    exe 'setlocal tags+='.(b:tags_dirname).'/tags'
+    call lh#tags#update_tagfiles() " uses b:project_sources_dir/BTW_project_config
 
 Then, you'll have to generate the `tags` database once (`<C-X>ta`), then you
 can enjoy lh-tag automagic update of the database, and improved tag selection.
@@ -80,10 +85,19 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
 ------------------------------------------------------------------------------
 OPTIONS                                 *lhtags-options* {{{1
 
- * *b:tags_dirname* defaults to empty string for the current directory; you'll
-   have to set this option to the root of your project
- * *(bg):tags_options* defaults to empty string; you'll have to adjust these
-   options to your needs.
+ * *b:tags_dirname* defaults to an empty string for the current directory;
+   you'll have to set this option to the root of your project.
+   If you leave it unset, it will be set on first tags generation to (in
+   order):
+   - |b:project_sources_dir|, which is used by some of |mu-template| templates ;
+   - or `(bg):BTW_project_config._.paths.sources`, which is used by
+     |BuildToolsWrapper| to define project settings
+   - or where `.git/` is found in parent directories ;
+   - or where `.svn/` is found in parent directories ;
+   - or asked to the end-user (previous values are recorded in case several
+     files from a same project are opened).
+ * *(bg):tags_options* defaults to an empty string; you'll have to adjust
+   these options to your needs.
  * *(bg):tags_options_{ft}* defaults to:
     * c: `'--c++-kinds=+p --fields=+imaS --extra=+q'`
     * cpp: `'--c++-kinds=+p --fields=+imaS --extra=+q --language-force=C++'`
@@ -126,15 +140,15 @@ MAPPINGS AND COMMANDS                   *lhtag-mappings* {{{1
 ------------------------------------------------------------------------------
 TO DO                                   *lhtags-todo* {{{1
 
- * Auto-magically build |b:tags_dirname| from other variables (`&tags` with a
-   compatible tags file specified with an absolute path, or root VCS directory)
+ * Enhance the way |'tags'| is updated to follow |b:tags_dirname|.
  * This feature will require background generation for the first time.
  * Have behaviour similar to the one from the quickfix mode (possibility to
    close and reopen the search window; prev&next moves)
  * Show/hide declarations -- merge declaration and definitions
- * pluggable filters (that will check the number of parameters, their type, etc)
+ * Pluggable filters (that will check the number of parameters, their type, etc)
+ * Simplify `tags_options`. Have a `tag_crt_languages` instead.
 
 ------------------------------------------------------------------------------
- © Luc Hermitte, 2015, <http://github.com/LucHermitte/lh-tags>, CC by SA 3.0 {{{1
+ © Luc Hermitte, 2008-2016, <http://github.com/LucHermitte/lh-tags>, CC by SA 3.0 {{{1
  VIM: let b:VS_language = 'american'
  vim:ts=8:sw=4:tw=80:fo=tcq2:isk=!-~,^*,^\|,^\":ft=help:fdm=marker:
