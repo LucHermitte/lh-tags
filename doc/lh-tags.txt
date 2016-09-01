@@ -77,8 +77,9 @@ For instance, a typical `_vimrc_local.vim` file will contain: >
     " ======================[ tags generation {{{2
     " Be sure tags are automatically updated on the current file 
     LetIfUndef b:lh_tags_options.no_auto 0
-    let b:tags_options = ' --exclude="*.dox" --exclude="html" --exclude="*.xml" --exclude="*.xsd" --exclude=".*sw*"'
-    let b:tags_options .= ' --exclude="*.txt" --exclude="cmake" --exclude="*.cmake" --exclude="*.o" --exclude="*.os" --exclude="*.tags" --exclude=tags --exclude="*.tar"'
+    " Declare the indexed filetypes
+    call lh#tags#add_indexed_ft('c', 'cpp')
+    " Update Vim &tags option w/ the tag file produced for the current project
     call lh#tags#update_tagfiles() " uses b:project_sources_dir/BTW_project_config
 
 Then, you'll have to generate the `tags` database once (`<C-X>ta`), then you
@@ -98,6 +99,12 @@ OPTIONS                                 *lhtags-options* {{{1
    - or where `.svn/` is found in parent directories ;
    - or asked to the end-user (previous values are recorded in case several
      files from a same project are opened).
+ * *lh#tags#add_indexed_ft()* 
+   Manages the filetypes whose files will be indexed. Other files are ignored.
+   This sets the local option *b:lh_tags_options.indexed_ft* -- prefer this
+   function when using |local_vimrc| to configure project.
+   It's also possible to set the global option *b:lh_tags_options.indexed_ft*
+   that'll be used instead. It's meant to be used when no project are defined.
  * *(bg):tags_options* defaults to an empty string; you'll have to adjust
    these options to your needs.
  * *(bg):tags_options_{ft}* defaults to:

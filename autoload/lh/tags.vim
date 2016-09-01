@@ -22,6 +22,9 @@ let s:k_version = '2.0.0'
 "       v2.0.0:
 "       (*) s/lh#tags#options/lh_tags_options/
 "           because b:lh#tags#options isn't a valid variable name
+"       (*) Add indexed filetype to specify which files will be indexed
+"           TODO: Add also a blacklist option
+"       (*) Use ctags `--language=` option
 "       v1.7.0:
 "       (*) Auto detect project root directory
 "       v1.6.3:
@@ -73,7 +76,6 @@ let s:k_version = '2.0.0'
 "       (*) Have behaviour similar to the one from the quickfix mode
 "       (possibility to close and reopen the search window; prev&next moves)
 "       (*) Show/hide declarations -- merge declaration and definitions
-"       (*) exclude patterns
 " }}}1
 "=============================================================================
 
@@ -272,6 +274,13 @@ function! s:CtagsOptions() abort " {{{3
   let ctags_options = ' --tag-relative=yes'
   let ctags_options .= ' '.lh#option#get('tags_options_'.&ft, '')
   let ctags_options .= ' '.lh#option#get('tags_options', '', 'wbg')
+  let fts = lh#option#get('lh_tags_options.indexed_ft')
+  if lh#option#is_set(fts)
+    let langs = map(copy(fts), 'get(s:force_lang, v:val, "")')
+    " TODO: warn about filetypes unknown to ctags
+    call filter(langs, '!empty(v:val)')
+    let ctags_options .= ' --languages='.join(langs, ',')
+  endif
   return ctags_options
 endfunction
 
@@ -345,6 +354,17 @@ endfunction
 function! lh#tags#update_tagfiles() abort
   call s:CtagsDirname(0)
   exe 'setlocal tags+='.lh#path#fix(lh#path#to_dirname(b:tags_dirname).s:CtagsFilename())
+endfunction
+
+function! s:is_ft_indexed(ft) abort " {{{3
+  " This option needs to be set in each project!
+  let indexed_ft = lh#option#get('lh_tags_options.indexed_ft', [])
+  return index(indexed_ft, a:ft) >= 0
+endfunction
+
+" Function: lh#tags#add_indexed_ft([ft list]) {{{3
+function! lh#tags#add_indexed_ft(...) abort
+  return call('lh#let#_push_options', ['b:lh_tags_options.indexed_ft'] + a:000)
 endfunction
 
 function! s:CtagsFilename() abort " {{{3
@@ -467,11 +487,14 @@ endfunction
 " ======================================================================
 " generate tags for the current saved file {{{3
 function! s:UpdateTags_for_SavedFile(ctags_pathname) abort
+  " Work on the current file -> &ft, expand('%')
+  if ! s:is_ft_indexed(&ft) " redundant check
+    return
+  endif
   let ctags_dirname  = s:CtagsDirname()
   let source_name    = lh#path#relative_to(expand('%:p'), ctags_dirname)
 
   call s:PurgeFileReferences(a:ctags_pathname, source_name)
-  return
   let cmd_line = 'cd '.ctags_dirname
   let cmd_line .= ' && ' . lh#tags#cmd_line(a:ctags_pathname).' --append '.source_name
   call s:System(cmd_line)
@@ -482,6 +505,11 @@ endfunction
 " See this function as a /template method/.
 function! lh#tags#run(tag_function, force) abort
   try
+    if a:tag_function == 'UpdateTags_for_SavedFile' && !s:is_ft_indexed(&ft)
+    call s:Verbose("Ignoring ctags generation on %1: `%2` is an unsupported filetype", a:tag_function, &ft)
+      return 0
+    endif
+    call s:Verbose("Run ctags on %1 %2", a:tag_function, a:force ? "(forcing)": "")
     let ctags_dirname  = s:CtagsDirname()
     if strlen(ctags_dirname)==1
       if a:force
