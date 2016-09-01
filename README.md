@@ -1,4 +1,4 @@
-# lh-tags: a ctags wrapper for Vim
+# lh-tags v2.0.0: a ctags wrapper for Vim
 
 ## Introduction
 

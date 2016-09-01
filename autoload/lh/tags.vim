@@ -4,9 +4,10 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      1.7.0
-let s:k_version = '1.7.0'
+" Version:      2.0.0
+let s:k_version = '2.0.0'
 " Created:      02nd Oct 2008
+" Last Update:  01st Sep 2016
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -18,6 +19,7 @@ let s:k_version = '1.7.0'
 "
 "------------------------------------------------------------------------
 " History:
+"       v2.0.0:
 "       v1.7.0:
 "       (*) Auto detect project root directory
 "       v1.6.3:

@@ -1,5 +1,5 @@
-*lh-tags.txt*           lh-tags (v1.7.0)
-                        For Vim version 7+.    Last change: 31st Aug 2016
+*lh-tags.txt*           lh-tags (v2.0.0)
+                        For Vim version 7+.    Last change: 01st Sep 2016
 
                         By Luc Hermitte
                         luc {dot} hermitte {at} gmail {dot} com
