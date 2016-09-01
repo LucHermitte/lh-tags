@@ -59,6 +59,8 @@ let b:project_sources_dir = g:FooBarProject_config.paths.sources
 LetIfUndef b:BTW_project_config._ = g:FooBarProject_config
 ...
 " ======================[ tags generation {{{2
+" Be sure tags are automatically updated on the current file 
+LetIfUndef b:lh_tags_options.no_auto 0
 " lh#path#fix() comes from lh-vim-lib
 let b:tags_options = ' --exclude="*.dox" --exclude="html" --exclude="*.xml" --exclude="*.xsd" --exclude=".*sw*"'
 let b:tags_options .= ' --exclude="*.txt" --exclude="cmake" --exclude="*.cmake" --exclude="*.o" --exclude="*.os" --exclude="*.tags" --exclude=tags --exclude="*.tar"'
@@ -99,8 +101,10 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
  * `(bg):tags_select` defaults to `'expand('<cword>')'`; this policy says how
    the current word under the cursor is selected by normal mode mapping
    `META-W-META-DOWN`.
- * `(bg):LHT_no_auto` defaults to 0; set it to 1 if you want to disable the
-   automatic incremental update.
+ * `(bg):lh_tags_options.no_auto` defaults to 1; set it to 0 if you want to enable the
+   automatic incremental update.  
+   Warning: this has changed in version 2.0.0; it used to be named
+   `(bg):LHT_no_auto`, and it have the opposite default value.
  * `(bg):tags_to_spellfile` defaults to empty string; this option permits to
    add all the tags to Vim spellchecker ignore list.
 

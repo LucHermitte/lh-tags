@@ -75,6 +75,8 @@ For instance, a typical `_vimrc_local.vim` file will contain: >
     LetIfUndef b:BTW_project_config._ = g:FooBarProject_config
     ...
     " ======================[ tags generation {{{2
+    " Be sure tags are automatically updated on the current file 
+    LetIfUndef b:lh_tags_options.no_auto 0
     let b:tags_options = ' --exclude="*.dox" --exclude="html" --exclude="*.xml" --exclude="*.xsd" --exclude=".*sw*"'
     let b:tags_options .= ' --exclude="*.txt" --exclude="cmake" --exclude="*.cmake" --exclude="*.o" --exclude="*.os" --exclude="*.tags" --exclude=tags --exclude="*.tar"'
     call lh#tags#update_tagfiles() " uses b:project_sources_dir/BTW_project_config
@@ -111,8 +113,10 @@ OPTIONS                                 *lhtags-options* {{{1
  * *(bg):tags_select* defaults to `'expand('<cword>')'`; this policy says how
    the current word under the cursor is selected by normal mode mapping
    |<M-W><M-Down>|
- * *(bg):LHT_no_auto* defaults to 0; set it to 1 if you want to disable the
+ * *(bg):lh_tags_options.no_auto* defaults to 1; set it to 0 if you want to enable the
    automatic incremental update.
+   Warning: this has changed in version 2.0.0; it used to be named
+   *(bg):LHT_no_auto* , and to have the opposite default value.
  * *(bg):tags_to_spellfile* defaults to empty string; this option permits to
    add all the tags to Vim spellchecker ignore list.
 >
