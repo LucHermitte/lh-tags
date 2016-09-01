@@ -80,6 +80,9 @@ let s:k_version = '2.0.0'
 "       (*) Have behaviour similar to the one from the quickfix mode
 "       (possibility to close and reopen the search window; prev&next moves)
 "       (*) Show/hide declarations -- merge declaration and definitions
+"       (*) Remove ctags `--language-force=` option
+"           Check it's okay w/ lh-dev/lh-refactor
+"       (*) Generate tags in the background (yes we can!)
 " }}}1
 "=============================================================================
 
