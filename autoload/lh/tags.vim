@@ -107,6 +107,12 @@ function! s:Verbose(expr, ...)
   endif
 endfunction
 
+function! s:Callstack(...)
+  if s:verbose
+    call call('lh#log#callstack',a:000)
+  endif
+endfunction
+
 function! lh#tags#debug(expr) abort
   return eval(a:expr)
 endfunction
@@ -286,6 +292,7 @@ endfunction
 
 let s:project_roots = get(s:, 'project_roots', [])
 function! s:GetPlausibleRoot() abort " {{{3
+  call s:Callstack("Request plausible root")
   let crt = expand('%:p:h')
   let compatible_paths = filter(copy(s:project_roots), 'lh#path#is_in(crt, v:val)')
   if len(compatible_paths) == 1
