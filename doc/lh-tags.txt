@@ -105,12 +105,17 @@ OPTIONS                                 *lhtags-options* {{{1
    function when using |local_vimrc| to configure project.
    It's also possible to set the global option *b:lh_tags_options.indexed_ft*
    that'll be used instead. It's meant to be used when no project are defined.
- * *(bg):tags_options* defaults to an empty string; you'll have to adjust
+ * *(bg):lh_tags_options.flags* defaults to an empty string; It contains extra
+   flags you could pass to `ctags` execution. You'll have to adjust
    these options to your needs.
- * *(bg):tags_options_{ft}* defaults to:
-    * c: `'--c++-kinds=+p --fields=+imaS --extra=+q'`
-    * cpp: `'--c++-kinds=+p --fields=+imaS --extra=+q --language-force=C++'`
-    * vim: `'--fields=+mS --extra=+q'`
+   Warning: This was renamed from *(bg):tags_options* in version 2.0.0.
+ * *(bg):lh_tags_options.{ft}.flags* defaults to:
+    * c:    `'--c++-kinds=+p --fields=+imaS --extra=+q'`
+    * cpp:  `'--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'`
+            `'x{c++.properties}` will also be added when using Universal ctags
+    * java: `'--c++-kinds=+acefgimp --fields=+imaSft --extra=+q --language-force=Java'`
+    * vim:  `'--fields=+mS --extra=+q'`
+   Warning: This was renamed from *(bg):tags_options_{ft}* in version 2.0.0.
  * *(bg):tags_filename* defaults to `'tags'`; in case you want your `tags` file
    to have another name.
  * *(bg):tags_executable* defaults to `ctags`; you should not need to change

@@ -25,6 +25,8 @@ let s:k_version = '2.0.0'
 "       (*) Add indexed filetype to specify which files will be indexed
 "           TODO: Add also a blacklist option
 "       (*) Use ctags `--language=` option
+"       (*) Rename (wbg):tags_options to  (wbg):lh_tags_options.flags
+"       (*) Rename (wbg):tags_options_{ft} to  (wbg):lh_tags_options.{ft}
 "       v1.7.0:
 "       (*) Auto detect project root directory
 "       v1.6.3:
@@ -267,19 +269,20 @@ function! lh#tags#func_kind(ft) abort
 endfunction
 
 " Fields options {{{3
-let g:tags_options_c   = '--c++-kinds=+pf --fields=+imaS --extra=+q'
-" let g:tags_options_cpp = '--c++-kinds=+p --fields=+imaS --extra=+q'
-let g:tags_options_vim = '--fields=+mS --extra=+q'
-let g:tags_options_cpp = '--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'
-let g:tags_options_java = '--c++-kinds=+acefgimp --fields=+imaSft --extra=+q --language-force=C++'
+" They'll get overriden everytime this file is loaded
+LetIfUndef g:lh_tags_options {}
+let g:lh_tags_options.c.flags    = '--c++-kinds=+pf --fields=+imaS --extra=+q'
+let g:lh_tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'
+let g:lh_tags_options.java.flags = '--c++-kinds=+acefgimp --fields=+imaSft --extra=+q --language-force=Java'
+let g:lh_tags_options.vim.flags  = '--fields=+mS --extra=+q'
 if lh#tags#ctags_is_installed() && lh#tags#ctags_flavor() == 'utags'
-  let g:tags_options_cpp = substitute(g:tags_options_cpp, '--fields=\S\+', '&x{c++.properties}', '')
+  let g:lh_tags_options.cpp.flags = substitute(g:lh_tags_options.cpp.flags, '--fields=\S\+', '&x{c++.properties}', '')
 endif
 
 function! s:CtagsOptions() abort " {{{3
   let ctags_options = ' --tag-relative=yes'
-  let ctags_options .= ' '.lh#option#get('tags_options_'.&ft, '')
-  let ctags_options .= ' '.lh#option#get('tags_options', '', 'wbg')
+  let ctags_options .= ' '.lh#option#get('lh_tags_options.'.&ft.'.flags', '')
+  let ctags_options .= ' '.lh#option#get('lh_tags_options.flags', '', 'wbg')
   let fts = lh#option#get('lh_tags_options.indexed_ft')
   if lh#option#is_set(fts)
     let langs = map(copy(fts), 'get(s:force_lang, v:val, "")')

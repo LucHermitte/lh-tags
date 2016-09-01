@@ -61,9 +61,9 @@ LetIfUndef b:BTW_project_config._ = g:FooBarProject_config
 " ======================[ tags generation {{{2
 " Be sure tags are automatically updated on the current file 
 LetIfUndef b:lh_tags_options.no_auto 0
-" lh#path#fix() comes from lh-vim-lib
-let b:tags_options = ' --exclude="*.dox" --exclude="html" --exclude="*.xml" --exclude="*.xsd" --exclude=".*sw*"'
-let b:tags_options .= ' --exclude="*.txt" --exclude="cmake" --exclude="*.cmake" --exclude="*.o" --exclude="*.os" --exclude="*.tags" --exclude=tags --exclude="*.tar"'
+" Declare the indexed filetypes
+call lh#tags#add_indexed_ft('c', 'cpp')
+" Update Vim &tags option w/ the tag file produced for the current project
 call lh#tags#update_tagfiles() " uses b:project_sources_dir/BTW_project_config
 ```
 
@@ -86,12 +86,17 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
    * or where `.svn/` is found in parent directories ;
    * or asked to the end-user (previous values are recorded in case several
      files from a same project are opened).
- * `(bg):tags_options` defaults to an empty string; you'll have to adjust these
-   options to your needs.
- * `(bg):tags_options_{ft}` defaults to:
-    * c: `'--c++-kinds=+p --fields=+imaS --extra=+q'`
-    * cpp: `'--c++-kinds=+p --fields=+imaS --extra=+q --language-force=C++'`
-    * vim: `'--fields=+mS --extra=+q'`
+ * `(bg):lh_tags_options.flags` defaults to an empty string; It contains extra
+   flags you could pass to `ctags` execution. You'll have to adjust
+   these options to your needs.
+ * `(bg):lh_tags_options.{ft}.flags` defaults to:
+    * c:    `'--c++-kinds=+p --fields=+imaS --extra=+q'`
+    * cpp:  `'--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'`
+            `'x{c++.properties}` will also be added when using Universal ctags
+    * java: `'--c++-kinds=+acefgimp --fields=+imaSft --extra=+q --language-force=Java'`
+    * vim:  `'--fields=+mS --extra=+q'`
+
+   Warning: This was renamed from `(bg):tags_options_{ft}` in version 2.0.0.
  * `(bg):tags_filename` defaults to `'tags'`; in case you want your `tags` file
    to have another name.
  * `(bg):tags_executable` defaults to `ctags`; you should not need to change
