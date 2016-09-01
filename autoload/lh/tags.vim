@@ -27,6 +27,7 @@ let s:k_version = '2.0.0'
 "       (*) Use ctags `--language=` option
 "       (*) Rename (wbg):tags_options to  (wbg):tags_options.flags
 "       (*) Rename (wbg):tags_options_{ft} to  (wbg):tags_options.{ft}.flags
+"       (*) Fix: UpdateTags_for_SavedFile
 "       v1.7.0:
 "       (*) Auto detect project root directory
 "       v1.6.3:
@@ -503,6 +504,8 @@ function! s:UpdateTags_for_SavedFile(ctags_pathname) abort
   endif
   let ctags_dirname  = s:CtagsDirname()
   let source_name    = lh#path#relative_to(expand('%:p'), ctags_dirname)
+  " lh#path#relative_to() expects to work on dirname => it'll return a dirname
+  let source_name    = substitute(source_name, '[/\\]$', '', '')
 
   call s:PurgeFileReferences(a:ctags_pathname, source_name)
   let cmd_line = 'cd '.ctags_dirname
