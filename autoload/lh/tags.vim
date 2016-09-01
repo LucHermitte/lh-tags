@@ -20,14 +20,16 @@ let s:k_version = '2.0.0'
 "------------------------------------------------------------------------
 " History:
 "       v2.0.0:
+"       (*) s/lh#tags#options/lh_tags_options/
+"           because b:lh#tags#options isn't a valid variable name
 "       v1.7.0:
 "       (*) Auto detect project root directory
 "       v1.6.3:
 "       (*) Support ctags flavour w/o '--version' in lh#tags#flavour()
 "           See lh-brackets issue#10
 "       v1.6.2:
-"       (*) Don't override g:tags_options with g:lh#tags#options
-"           TODO: merge these two into g:lh#tags#options
+"       (*) Don't override g:tags_options with g:lh_tags_options
+"           TODO: merge these two into g:lh_tags_options
 "       v1.6.1:
 "       (*) Bug fix for lh#tags#option_force_lang in C++
 "       v1.6.0:
@@ -220,7 +222,7 @@ let s:force_lang = {
 
 function! s:BuildForceLangOption() abort " {{{4
   for [ft, lang] in items(s:force_lang)
-    call lh#let#if_undef('g:lh#tags#options.'.ft.'.force', string(lang))
+    call lh#let#if_undef('g:lh_tags_options.'.ft.'.force', string(lang))
   endfor
 endfunction
 call s:BuildForceLangOption()
@@ -240,7 +242,7 @@ let s:func_kinds =
 function! s:BuildFuncKinds()
   for [pat, fts] in items(s:func_kinds)
     for ft in fts
-      call lh#let#if_undef('g:lh#tags#options.'.ft.'.func_kind', string(pat))
+      call lh#let#if_undef('g:lh_tags_options.'.ft.'.func_kind', string(pat))
     endfor
   endfor
 endfunction
@@ -248,12 +250,12 @@ call s:BuildFuncKinds()
 
 " Function: lh#tags#option_force_lang(ft) {{{3
 function! lh#tags#option_force_lang(ft) abort
-  return lh#option#get('lh#tags#options.'.a:ft.'.force')
+  return lh#option#get('lh_tags_options.'.a:ft.'.force')
 endfunction
 
 " Function: lh#tags#func_kind(ft) {{{3
 function! lh#tags#func_kind(ft) abort
-  return lh#option#get('lh#tags#options.'.a:ft.'.func_kind', 'f')
+  return lh#option#get('lh_tags_options.'.a:ft.'.func_kind', 'f')
 endfunction
 
 " Fields options {{{3
