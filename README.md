@@ -19,7 +19,9 @@ This plugin has two features:
    `tags` file.
  * Can be run on the whole project, when needed
  * Is, of course, [parametrisable](#options).
- * Can be run asynchronously (this is the default starting from Vim 7.4-1980)
+ * Can be run asynchronously (this is the default starting from Vim 7.4-1980).
+   When this happens, [airline](https://github.com/vim-airline/vim-airline)
+   will display information about the background jobs.
  * Can be done on a third-party project freshly cloned/checked out without a
    need to define any configuration file for 
    [local_vimrc](http://github.com/LucHermitte/local_vimrc).
@@ -161,7 +163,7 @@ exe 'setlocal spellfile+='.lh#path#fix(b:project_sources_dir.'/'.b:tags_to_spell
 ## Design Choices
 
 ## Installation
-  * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v3.13.0
+  * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v3.13.1
   * With [vim-addon-manager](https://github.com/MarcWeber/vim-addon-manager), install lh-tags (this is the preferred method because of the dependencies)
 ```vim
 ActivateAddons lh-tags

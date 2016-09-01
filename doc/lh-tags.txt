@@ -37,7 +37,9 @@ TAGS GENERATION                         *lhtags-generation* {{{2
    `tags` file.
  * Can be run on the whole project, when needed
  * Is, of course, parametrisable (see |lhtags-options|).
- * Can be run asynchronously (this is the default starting from Vim 7.4-1980)
+ * Can be run asynchronously (this is the default starting from Vim 7.4-1980).
+   When this happens, |airline| <https://github.com/vim-airline/vim-airline>
+   will display information about the background jobs.
  * Can be done on a third-party project freshly cloned/checked out without a
    need to define any configuration file for |local_vimrc|.
  * Doesn't have external dependencies other than `ctags` and `cd`.

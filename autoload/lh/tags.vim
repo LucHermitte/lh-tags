@@ -135,10 +135,10 @@ function! s:System(cmd_line) abort
 endfunction
 
 " # s:System {{{2
-function! s:AsynchSystem(cmd_line, FinishedCB) abort
+function! s:AsynchSystem(cmd_line, txt, FinishedCB) abort
   call s:Verbose(a:cmd_line)
   if s:RunInBackground()
-    call lh#async#queue(a:cmd_line, {'close_cb': a:FinishedCB})
+    call lh#async#queue({'txt': a:txt, 'cmd': a:cmd_line, 'close_cb': a:FinishedCB})
     let res = 0
   else
     let res = system(a:cmd_line)
@@ -514,7 +514,7 @@ function! s:UpdateTags_for_All(ctags_pathname, FinishedCB) abort
   " todo => use project directory
   "
   let cmd_line .= ' && '.lh#tags#cmd_line(s:CtagsFilename()).s:RecursiveFlagOrAll()
-  call s:AsynchSystem(cmd_line, function(a:FinishedCB, ['']))
+  call s:AsynchSystem(cmd_line, 'ctags *', function(a:FinishedCB, ['']))
 endfunction
 
 " ======================================================================
@@ -532,7 +532,7 @@ function! s:UpdateTags_for_SavedFile(ctags_pathname, FinishedCB) abort
   call s:PurgeFileReferences(a:ctags_pathname, source_name)
   let cmd_line = 'cd '.ctags_dirname
   let cmd_line .= ' && ' . lh#tags#cmd_line(a:ctags_pathname).' --append '.source_name
-  call s:AsynchSystem(cmd_line, function(a:FinishedCB, [ ' (triggered by '.source_name.' modification)']))
+  call s:AsynchSystem(cmd_line, 'ctags '.expand('%:t'), function(a:FinishedCB, [ ' (triggered by '.source_name.' modification)']))
 endfunction
 
 " ======================================================================
