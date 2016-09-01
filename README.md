@@ -65,6 +65,9 @@ LetIfUndef b:tags_options.no_auto 0
 call lh#tags#add_indexed_ft('c', 'cpp')
 " Update Vim &tags option w/ the tag file produced for the current project
 call lh#tags#update_tagfiles() " uses b:project_sources_dir/BTW_project_config
+" Register ITK/OTB extensions as C++ extensions (universal ctags!)
+silent! unlet b:tags_options.cpp.flags
+LetIfUndef b:tags_options.cpp.flags '--map-C++=+.txx'
 ```
 
 Then, you'll have to generate the `tags` database once (`<C-X>ta`), then you
