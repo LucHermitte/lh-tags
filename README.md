@@ -18,16 +18,16 @@ This plugin has two features:
    this file is parsed -- its previous information is deleted from the current
    `tags` file.
  * Can be run on the whole project, when needed
- * Is, of course, [parametrisable](options).
+ * Is, of course, [parametrisable](#options).
  * Can be run asynchronously (this is the default starting from Vim 7.4-1980)
  * Can be done on a third-party project freshly cloned/checked out without a
    need to define any configuration file for 
    [local_vimrc](http://github.com/LucHermitte/local_vimrc).
  * Doesn't have external dependencies other than `ctags` and `cd`.
-   BTW, I highly recommend [universal ctags](github.com/universal-ctags/ctags)
+   BTW, I highly recommend [universal ctags](http://github.com/universal-ctags/ctags)
    over exhuberant ctags.
  * Is project friendly: i.e. multiple projects can be opened simultaneously in
-   a vim session, and we can run `ctags` on each on them with different
+   a vim session, and we can run `ctags` on each of them with different
    specialized options to produced dedicaded tag files.
 
 ### Tags selection

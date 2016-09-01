@@ -41,10 +41,10 @@ TAGS GENERATION                         *lhtags-generation* {{{2
  * Can be done on a third-party project freshly cloned/checked out without a
    need to define any configuration file for |local_vimrc|.
  * Doesn't have external dependencies other than `ctags` and `cd`.
-   BTW, I highly recommend [universal ctags](github.com/universal-ctags/ctags)
+   BTW, I highly recommend [universal ctags](http://github.com/universal-ctags/ctags)
    over exhuberant ctags.
  * Is project friendly: i.e. multiple projects can be opened simultaneously in
-   a vim session, and we can run `ctags` on each on them with different
+   a vim session, and we can run `ctags` on each of them with different
    specialized options to produced dedicaded tag files.
 
 TAGS SELECTION                          *lhtags-selection* {{{2
