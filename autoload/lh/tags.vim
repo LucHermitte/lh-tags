@@ -29,6 +29,7 @@ let s:k_version = '2.0.0'
 "       (*) Rename (wbg):tags_options_{ft} to  (wbg):tags_options.{ft}.flags
 "       (*) Fix: UpdateTags_for_SavedFile
 "       (*) Fix s:PurgeFileReferences
+"       (*) Generate tags in the background
 "       v1.7.0:
 "       (*) Auto detect project root directory
 "       v1.6.3:
@@ -82,7 +83,6 @@ let s:k_version = '2.0.0'
 "       (*) Show/hide declarations -- merge declaration and definitions
 "       (*) Remove ctags `--language-force=` option
 "           Check it's okay w/ lh-dev/lh-refactor
-"       (*) Generate tags in the background (yes we can!)
 " }}}1
 "=============================================================================
 
@@ -134,6 +134,22 @@ function! s:System(cmd_line) abort
   return res
 endfunction
 
+" # s:System {{{2
+function! s:AsynchSystem(cmd_line, FinishedCB) abort
+  call s:Verbose(a:cmd_line)
+  if s:RunInBackground()
+    call lh#async#queue(a:cmd_line, {'close_cb': a:FinishedCB})
+    let res = 0
+  else
+    let res = system(a:cmd_line)
+    call a:FinishedCB()
+  endif
+  if v:shell_error
+    throw "Cannot execute system call (".a:cmd_line."): ".res
+  endif
+  return res
+endfunction
+
 " ######################################################################
 " ## Options {{{1
 " ======================================================================
@@ -172,6 +188,7 @@ function! lh#tags#ctags_flavor() abort
 endfunction
 
 " # The options {{{2
+let s:has_jobs = exists('*job_start') && has("patch-7.4.1980")
 "
 " Forcing ft -> ctags languages {{{3
 " list {{{4
@@ -403,6 +420,10 @@ function! s:RecursiveFlagOrAll() abort " {{{3
   return res
 endfunction
 
+function! s:RunInBackground() abort " {{{3
+  return lh#option#get('tags_options.run_in_bg', s:has_jobs)
+endfunction
+
 " ######################################################################
 " ## Tags generation {{{1
 " ======================================================================
@@ -480,7 +501,7 @@ endfunction
 
 " ======================================================================
 " generate tags for all files {{{3
-function! s:UpdateTags_for_All(ctags_pathname) abort
+function! s:UpdateTags_for_All(ctags_pathname, FinishedCB) abort
   let ctags_dirname  = s:CtagsDirname()
 
   call delete(a:ctags_pathname)
@@ -493,12 +514,12 @@ function! s:UpdateTags_for_All(ctags_pathname) abort
   " todo => use project directory
   "
   let cmd_line .= ' && '.lh#tags#cmd_line(s:CtagsFilename()).s:RecursiveFlagOrAll()
-  call s:System(cmd_line)
+  call s:AsynchSystem(cmd_line, function(a:FinishedCB, ['']))
 endfunction
 
 " ======================================================================
 " generate tags for the current saved file {{{3
-function! s:UpdateTags_for_SavedFile(ctags_pathname) abort
+function! s:UpdateTags_for_SavedFile(ctags_pathname, FinishedCB) abort
   " Work on the current file -> &ft, expand('%')
   if ! s:is_ft_indexed(&ft) " redundant check
     return
@@ -511,10 +532,17 @@ function! s:UpdateTags_for_SavedFile(ctags_pathname) abort
   call s:PurgeFileReferences(a:ctags_pathname, source_name)
   let cmd_line = 'cd '.ctags_dirname
   let cmd_line .= ' && ' . lh#tags#cmd_line(a:ctags_pathname).' --append '.source_name
-  call s:System(cmd_line)
+  call s:AsynchSystem(cmd_line, function(a:FinishedCB, [ ' (triggered by '.source_name.' modification)']))
 endfunction
 
 " ======================================================================
+" (private) Conclude tag generation {{{3
+function! s:TagGenerated(ctags_pathname, msg, ...) abort
+  call s:Verbose('%1 generated', a:ctags_pathname)
+  call s:UpdateSpellfile(a:ctags_pathname)
+  echomsg a:ctags_pathname . ' updated'.a:msg.'.'
+endfunction
+
 " (public) Run a tag generating function {{{3
 " See this function as a /template method/.
 function! lh#tags#run(tag_function, force) abort
@@ -540,13 +568,10 @@ function! lh#tags#run(tag_function, force) abort
     endif
 
     let Fn = function("s:".a:tag_function)
-    call Fn(ctags_pathname)
-    " Update spellfile
-    call s:UpdateSpellfile(ctags_pathname)
+    call Fn(ctags_pathname, function('s:TagGenerated', [ctags_pathname]))
   catch /tags-error:/
     call lh#common#error_msg(v:exception)
     return 0
-  finally
   endtry
 
   " Force a redraw right before output if we have less than 2 lines to display
@@ -555,7 +580,6 @@ function! lh#tags#run(tag_function, force) abort
   if &cmdheight < 2
     redraw
   endif
-  echomsg ctags_pathname . ' updated.'
   return 1
 endfunction
 

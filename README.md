@@ -19,6 +19,7 @@ This plugin has two features:
    `tags` file.
  * Can be run on the while project, when needed
  * Is, of course, [parametrisable](options).
+ * Can be run asynchronously (this is the default starting from Vim 7.4-1980)
 
 ### Tags selection
  * Presents all tags that match the selected text (`META-W-META-DOWN`), or the
@@ -39,8 +40,8 @@ In order to use lh-tags, I highly recommend to use a plugin like
 [local_vimrc](http://github.com/LucHermitte/local_vimrc).
 
 In the buffer local section, you'll have to:
- * adjust `(bg):tags_options_{ft}` if the default values don't suit you -- I
-   often add exclusion lists in my projects.
+ * adjust `(bg):tags_options.{ft}.flags` if the default values don't suit you
+   -- I used to add exclusion lists in my projects.
  * to be sure where the root directory of the source files is:
    * either set `b:tags_dirname`, or `b:project_sources_dir`, or
      `b:BTW_project_config._.paths.sources` to the project root directory --
@@ -115,6 +116,9 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
    `(bg):LHT_no_auto`, and it have the opposite default value.
  * `(bg):tags_to_spellfile` defaults to empty string; this option permits to
    add all the tags to Vim spellchecker ignore list.
+ * `(bg):tags_options.run_in_bg` ; set to 1 by default.
+   Tells to execute `<Plug>CTagsUpdateCurrent` and `<Plug>CTagsUpdateAll` in
+   background (through |+job| feature).
 
 ```vim
 " #### In _vimrc_local.vim

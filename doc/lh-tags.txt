@@ -37,6 +37,7 @@ TAGS GENERATION                         *lhtags-generation* {{{2
    `tags` file.
  * Can be run on the while project, when needed
  * Is, of course, parametrisable (see |lhtags-options|).
+ * Can be run asynchronously (this is the default starting from Vim 7.4-1980)
 
 TAGS SELECTION                          *lhtags-selection* {{{2
  * Presents all tags that match the selected text (`META-W-META-DOWN`), or the
@@ -56,8 +57,8 @@ In order to use lh-tags, I highly recommend to use a plugin like
 [local_vimrc](http://github.com/LucHermitte/local_vimrc).
 
 In the buffer local section, you'll have to:
- * adjust |(bg):tags_options_{ft}| if the default values don't suit you -- I
-   often add exclusion lists in my projects.
+ * adjust |(bg):tags_options.{ft}.flags| if the default values don't suit you
+ -- I used to add exclusion lists in my projects.
  * to be sure where the root directory of the source files is:
    * either set |b:tags_dirname|, or |b:project_sources_dir|, or
      |BTW_project_config._.paths.sources| to the project root directory --
@@ -75,7 +76,7 @@ For instance, a typical `_vimrc_local.vim` file will contain: >
     LetIfUndef b:BTW_project_config._ = g:FooBarProject_config
     ...
     " ======================[ tags generation {{{2
-    " Be sure tags are automatically updated on the current file 
+    " Be sure tags are automatically updated on the current file
     LetIfUndef b:tags_options.no_auto 0
     " Declare the indexed filetypes
     call lh#tags#add_indexed_ft('c', 'cpp')
@@ -102,7 +103,7 @@ OPTIONS                                 *lhtags-options* {{{1
    - or where `.svn/` is found in parent directories ;
    - or asked to the end-user (previous values are recorded in case several
      files from a same project are opened).
- * *lh#tags#add_indexed_ft()* 
+ * *lh#tags#add_indexed_ft()*
    Manages the filetypes whose files will be indexed. Other files are ignored.
    This sets the local option *b:tags_options.indexed_ft* -- prefer this
    function when using |local_vimrc| to configure project.
@@ -134,6 +135,9 @@ OPTIONS                                 *lhtags-options* {{{1
    *(bg):LHT_no_auto* , and to have the opposite default value.
  * *(bg):tags_to_spellfile* defaults to empty string; this option permits to
    add all the tags to Vim spellchecker ignore list.
+ * *(bg):tags_options.run_in_bg* ; set to 1 by default.
+   Tells to execute |<Plug>CTagsUpdateCurrent| and |<Plug>CTagsUpdateAll| in
+   background (through |+job| feature).
 >
     " #### In _vimrc_local.vim
     " spell files
@@ -141,7 +145,6 @@ OPTIONS                                 *lhtags-options* {{{1
     exe 'setlocal spellfile+='.lh#path#fix(b:project_sources_dir).'/ignore.utf-8.add'
     let b:tags_to_spellfile = 'code-symbols.utf-8.add'
     exe 'setlocal spellfile+='.lh#path#fix(b:project_sources_dir.'/'.b:tags_to_spellfile)
-
 
 ------------------------------------------------------------------------------
 MAPPINGS AND COMMANDS                   *lhtag-mappings* {{{1
@@ -159,13 +162,10 @@ MAPPINGS AND COMMANDS                   *lhtag-mappings* {{{1
 ------------------------------------------------------------------------------
 TO DO                                   *lhtags-todo* {{{1
 
- * Enhance the way |'tags'| is updated to follow |b:tags_dirname|.
- * This feature will require background generation for the first time.
  * Have behaviour similar to the one from the quickfix mode (possibility to
    close and reopen the search window; prev&next moves)
  * Show/hide declarations -- merge declaration and definitions
  * Pluggable filters (that will check the number of parameters, their type, etc)
- * Simplify `tags_options`. Have a `tag_crt_languages` instead.
 
 ------------------------------------------------------------------------------
  © Luc Hermitte, 2008-2016, <http://github.com/LucHermitte/lh-tags>, CC by SA 3.0 {{{1
