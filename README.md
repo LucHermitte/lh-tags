@@ -60,7 +60,7 @@ LetIfUndef b:BTW_project_config._ = g:FooBarProject_config
 ...
 " ======================[ tags generation {{{2
 " Be sure tags are automatically updated on the current file 
-LetIfUndef b:lh_tags_options.no_auto 0
+LetIfUndef b:tags_options.no_auto 0
 " Declare the indexed filetypes
 call lh#tags#add_indexed_ft('c', 'cpp')
 " Update Vim &tags option w/ the tag file produced for the current project
@@ -86,10 +86,10 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
    * or where `.svn/` is found in parent directories ;
    * or asked to the end-user (previous values are recorded in case several
      files from a same project are opened).
- * `(bg):lh_tags_options.flags` defaults to an empty string; It contains extra
+ * `(bg):tags_options.flags` defaults to an empty string; It contains extra
    flags you could pass to `ctags` execution. You'll have to adjust
    these options to your needs.
- * `(bg):lh_tags_options.{ft}.flags` defaults to:
+ * `(bg):tags_options.{ft}.flags` defaults to:
     * c:    `'--c++-kinds=+p --fields=+imaS --extra=+q'`
     * cpp:  `'--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'`
             `'x{c++.properties}` will also be added when using Universal ctags
@@ -106,7 +106,7 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
  * `(bg):tags_select` defaults to `'expand('<cword>')'`; this policy says how
    the current word under the cursor is selected by normal mode mapping
    `META-W-META-DOWN`.
- * `(bg):lh_tags_options.no_auto` defaults to 1; set it to 0 if you want to enable the
+ * `(bg):tags_options.no_auto` defaults to 1; set it to 0 if you want to enable the
    automatic incremental update.  
    Warning: this has changed in version 2.0.0; it used to be named
    `(bg):LHT_no_auto`, and it have the opposite default value.

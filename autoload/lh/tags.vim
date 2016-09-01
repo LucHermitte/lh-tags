@@ -20,21 +20,21 @@ let s:k_version = '2.0.0'
 "------------------------------------------------------------------------
 " History:
 "       v2.0.0:
-"       (*) s/lh#tags#options/lh_tags_options/
+"       (*) s/lh#tags#options/tags_options/
 "           because b:lh#tags#options isn't a valid variable name
 "       (*) Add indexed filetype to specify which files will be indexed
 "           TODO: Add also a blacklist option
 "       (*) Use ctags `--language=` option
-"       (*) Rename (wbg):tags_options to  (wbg):lh_tags_options.flags
-"       (*) Rename (wbg):tags_options_{ft} to  (wbg):lh_tags_options.{ft}
+"       (*) Rename (wbg):tags_options to  (wbg):tags_options.flags
+"       (*) Rename (wbg):tags_options_{ft} to  (wbg):tags_options.{ft}.flags
 "       v1.7.0:
 "       (*) Auto detect project root directory
 "       v1.6.3:
 "       (*) Support ctags flavour w/o '--version' in lh#tags#flavour()
 "           See lh-brackets issue#10
 "       v1.6.2:
-"       (*) Don't override g:tags_options with g:lh_tags_options
-"           TODO: merge these two into g:lh_tags_options
+"       (*) Don't override g:tags_options with g:tags_options
+"           TODO: merge these two into g:tags_options
 "       v1.6.1:
 "       (*) Bug fix for lh#tags#option_force_lang in C++
 "       v1.6.0:
@@ -232,7 +232,7 @@ let s:force_lang = {
 
 function! s:BuildForceLangOption() abort " {{{4
   for [ft, lang] in items(s:force_lang)
-    call lh#let#if_undef('g:lh_tags_options.'.ft.'.force', string(lang))
+    call lh#let#if_undef('g:tags_options.'.ft.'.force', string(lang))
   endfor
 endfunction
 call s:BuildForceLangOption()
@@ -252,7 +252,7 @@ let s:func_kinds =
 function! s:BuildFuncKinds()
   for [pat, fts] in items(s:func_kinds)
     for ft in fts
-      call lh#let#if_undef('g:lh_tags_options.'.ft.'.func_kind', string(pat))
+      call lh#let#if_undef('g:tags_options.'.ft.'.func_kind', string(pat))
     endfor
   endfor
 endfunction
@@ -260,30 +260,30 @@ call s:BuildFuncKinds()
 
 " Function: lh#tags#option_force_lang(ft) {{{3
 function! lh#tags#option_force_lang(ft) abort
-  return lh#option#get('lh_tags_options.'.a:ft.'.force')
+  return lh#option#get('tags_options.'.a:ft.'.force')
 endfunction
 
 " Function: lh#tags#func_kind(ft) {{{3
 function! lh#tags#func_kind(ft) abort
-  return lh#option#get('lh_tags_options.'.a:ft.'.func_kind', 'f')
+  return lh#option#get('tags_options.'.a:ft.'.func_kind', 'f')
 endfunction
 
 " Fields options {{{3
 " They'll get overriden everytime this file is loaded
-LetIfUndef g:lh_tags_options {}
-let g:lh_tags_options.c.flags    = '--c++-kinds=+pf --fields=+imaS --extra=+q'
-let g:lh_tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'
-let g:lh_tags_options.java.flags = '--c++-kinds=+acefgimp --fields=+imaSft --extra=+q --language-force=Java'
-let g:lh_tags_options.vim.flags  = '--fields=+mS --extra=+q'
+LetIfUndef g:tags_options {}
+let g:tags_options.c.flags    = '--c++-kinds=+pf --fields=+imaS --extra=+q'
+let g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'
+let g:tags_options.java.flags = '--c++-kinds=+acefgimp --fields=+imaSft --extra=+q --language-force=Java'
+let g:tags_options.vim.flags  = '--fields=+mS --extra=+q'
 if lh#tags#ctags_is_installed() && lh#tags#ctags_flavor() == 'utags'
-  let g:lh_tags_options.cpp.flags = substitute(g:lh_tags_options.cpp.flags, '--fields=\S\+', '&x{c++.properties}', '')
+  let g:tags_options.cpp.flags = substitute(g:tags_options.cpp.flags, '--fields=\S\+', '&x{c++.properties}', '')
 endif
 
 function! s:CtagsOptions() abort " {{{3
   let ctags_options = ' --tag-relative=yes'
-  let ctags_options .= ' '.lh#option#get('lh_tags_options.'.&ft.'.flags', '')
-  let ctags_options .= ' '.lh#option#get('lh_tags_options.flags', '', 'wbg')
-  let fts = lh#option#get('lh_tags_options.indexed_ft')
+  let ctags_options .= ' '.lh#option#get('tags_options.'.&ft.'.flags', '')
+  let ctags_options .= ' '.lh#option#get('tags_options.flags', '', 'wbg')
+  let fts = lh#option#get('tags_options.indexed_ft')
   if lh#option#is_set(fts)
     let langs = map(copy(fts), 'get(s:force_lang, v:val, "")')
     " TODO: warn about filetypes unknown to ctags
@@ -368,13 +368,13 @@ endfunction
 
 function! s:is_ft_indexed(ft) abort " {{{3
   " This option needs to be set in each project!
-  let indexed_ft = lh#option#get('lh_tags_options.indexed_ft', [])
+  let indexed_ft = lh#option#get('tags_options.indexed_ft', [])
   return index(indexed_ft, a:ft) >= 0
 endfunction
 
 " Function: lh#tags#add_indexed_ft([ft list]) {{{3
 function! lh#tags#add_indexed_ft(...) abort
-  return call('lh#let#_push_options', ['b:lh_tags_options.indexed_ft'] + a:000)
+  return call('lh#let#_push_options', ['b:tags_options.indexed_ft'] + a:000)
 endfunction
 
 function! s:CtagsFilename() abort " {{{3

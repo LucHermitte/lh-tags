@@ -19,7 +19,7 @@ let s:k_version = '2.0.0'
 " History:
 "       v2.0.0:
 "       (*) LHT_no_auto defaults to 1 now, and is renamed to
-"       lh_tags_options.no_auto
+"       tags_options.no_auto
 "       v1.3.0:
 "       (*) Tags browsing enabled even without ctags installed
 "       (*) Tags filtering
@@ -165,7 +165,7 @@ endif
 " Auto command for automatically tagging a file when saved {{{2
 augroup LH_TAGS
   au!
-  autocmd BufWritePost,FileWritePost * if ! lh#option#get('lh_tags_options.no_auto', 1) | call lh#tags#run('UpdateTags_for_SavedFile',0) | endif
+  autocmd BufWritePost,FileWritePost * if ! lh#option#get('tags_options.no_auto', 1) | call lh#tags#run('UpdateTags_for_SavedFile',0) | endif
 aug END
 
 " }}}1
