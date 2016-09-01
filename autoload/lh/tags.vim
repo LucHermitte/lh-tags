@@ -28,6 +28,7 @@ let s:k_version = '2.0.0'
 "       (*) Rename (wbg):tags_options to  (wbg):tags_options.flags
 "       (*) Rename (wbg):tags_options_{ft} to  (wbg):tags_options.{ft}.flags
 "       (*) Fix: UpdateTags_for_SavedFile
+"       (*) Fix s:PurgeFileReferences
 "       v1.7.0:
 "       (*) Auto detect project root directory
 "       v1.6.3:
@@ -435,19 +436,12 @@ endfunction
 " ======================================================================
 " Purge all references to {source_name} in the tags file {{{3
 function! s:PurgeFileReferences(ctags_pathname, source_name) abort
+  call s:Verbose('Purge `%1` references from `%2`', a:source_name, a:ctags_pathname)
   if filereadable(a:ctags_pathname)
-    let temp_tags      = tempname()
-    " it exists => must be changed
-    let cmd_line = 'grep -v '
-          \ .shellescape('      '.lh#path#to_regex(a:source_name).'     ').' '.shellescape(a:ctags_pathname)
-          " \.' > '.shellescape(temp_tags)
-          " The last redirection may cause troubles on windows
-    let tags =  s:System(cmd_line)
-    call writefile(split(tags,'\n'), a:ctags_pathname, "b")
-    " using a single cmd_line with && causes troubles under windows ...
-    " let cmd_line = 'mv -f '.shellescape(temp_tags).' '.shellescape(a:ctags_pathname)
-    " call s:Verbose(cmd_line)
-    " call system(cmd_line)
+    let pattern = '      '.lh#path#to_regex(a:source_name).'     '
+    let tags = readfile(a:ctags_pathname)
+    call filter(tags, 'v:val !~ pattern')
+    call writefile(tags, a:ctags_pathname, "b")
   endif
 endfunction
 
@@ -459,20 +453,24 @@ function! s:UpdateTags_for_ModifiedFile(ctags_pathname) abort
   let temp_name      = tempname()
   let temp_tags      = tempname()
 
-  " 1- purge old references to the source name
-  call s:PurgeFileReferences(a:ctags_pathname, source_name)
+  try
+    " 1- purge old references to the source name
+    call s:PurgeFileReferences(a:ctags_pathname, source_name)
 
-  " 2- save the unsaved contents of the current file
-  call writefile(getline(1, '$'), temp_name, 'b')
+    " 2- save the unsaved contents of the current file
+    call writefile(getline(1, '$'), temp_name, 'b')
 
-  " 3- call ctags, and replace references to the temporary source file to the
-  " real source file
-  let cmd_line = lh#tags#cmd_line(a:ctags_pathname).' '.source_name.' --append'
-  " todo: test the redirection on windows
-  let cmd_line .= ' && sed "s#\t'.temp_name.'\t#\t'.source_name.'\t#" > '.temp_tags
-  let cmd_line .= ' && mv -f '.temp_tags.' '.a:ctags_pathname
-  call s:System(cmd_line)
-  call delete(temp_name)
+    " 3- call ctags, and replace references to the temporary source file to the
+    " real source file
+    let cmd_line = lh#tags#cmd_line(a:ctags_pathname).' '.source_name.' --append'
+    " todo: test the redirection on windows
+    let cmd_line .= ' && sed "s#\t'.temp_name.'\t#\t'.source_name.'\t#" > '.temp_tags
+    let cmd_line .= ' && mv -f '.temp_tags.' '.a:ctags_pathname
+    call s:System(cmd_line)
+  finally
+    call delete(temp_name)
+    call delete(temp_tags)
+  endtry
 
   return ';'
 endfunction
@@ -485,9 +483,9 @@ function! s:UpdateTags_for_All(ctags_pathname) abort
   call delete(a:ctags_pathname)
   runtime autoload/lh/os.vim
   if exists('*lh#os#sys_cd')
-        let cmd_line  = lh#os#sys_cd(ctags_dirname)
+    let cmd_line  = lh#os#sys_cd(ctags_dirname)
   else
-        let cmd_line  = 'cd '.ctags_dirname
+    let cmd_line  = 'cd '.ctags_dirname
   endif
   " todo => use project directory
   "
@@ -503,7 +501,7 @@ function! s:UpdateTags_for_SavedFile(ctags_pathname) abort
     return
   endif
   let ctags_dirname  = s:CtagsDirname()
-  let source_name    = lh#path#relative_to(expand('%:p'), ctags_dirname)
+  let source_name    = lh#path#relative_to(ctags_dirname, expand('%:p'))
   " lh#path#relative_to() expects to work on dirname => it'll return a dirname
   let source_name    = substitute(source_name, '[/\\]$', '', '')
 
