@@ -17,9 +17,18 @@ This plugin has two features:
  * Is incremental: when a file under the watch of lh-tags is modified, only
    this file is parsed -- its previous information is deleted from the current
    `tags` file.
- * Can be run on the while project, when needed
+ * Can be run on the whole project, when needed
  * Is, of course, [parametrisable](options).
  * Can be run asynchronously (this is the default starting from Vim 7.4-1980)
+ * Can be done on a third-party project freshly cloned/checked out without a
+   need to define any configuration file for 
+   [local_vimrc](http://github.com/LucHermitte/local_vimrc).
+ * Doesn't have external dependencies other than `ctags` and `cd`.
+   BTW, I highly recommend [universal ctags](github.com/universal-ctags/ctags)
+   over exhuberant ctags.
+ * Is project friendly: i.e. multiple projects can be opened simultaneously in
+   a vim session, and we can run `ctags` on each on them with different
+   specialized options to produced dedicaded tag files.
 
 ### Tags selection
  * Presents all tags that match the selected text (`META-W-META-DOWN`), or the
@@ -143,19 +152,16 @@ exe 'setlocal spellfile+='.lh#path#fix(b:project_sources_dir.'/'.b:tags_to_spell
 
 ## To Do
 
- * Enhance the way `&tags` is updated to follow `b:tags_dirname`.
- * This feature will require background generation for the first time.
  * Have behaviour similar to the one from the quickfix mode (possibility to
    close and reopen the search window; prev&next moves)
  * Show/hide declarations -- merge declaration and definitions
  * Pluggable filters (that will check the number of parameters, their type, etc)
- * Simplify `tags_options`. Have a `tag_crt_languages` instead.
 
 
 ## Design Choices
 
 ## Installation
-  * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v3.12.0
+  * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v3.13.0
   * With [vim-addon-manager](https://github.com/MarcWeber/vim-addon-manager), install lh-tags (this is the preferred method because of the dependencies)
 ```vim
 ActivateAddons lh-tags
