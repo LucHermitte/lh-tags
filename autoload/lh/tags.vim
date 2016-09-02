@@ -30,12 +30,14 @@ let s:k_version = '2.0.0'
 "       (*) Fix: UpdateTags_for_SavedFile
 "       (*) Fix s:PurgeFileReferences
 "       (*) Generate tags in the background
+"       (*) lh#tags#ctags_flavor() renamed to lh#tags#ctags_flavour()
+"       (*) Add lh#tags#set_lang_map() to set language mappings
 "       (*) Remove ctags `--language-force=` option
 "           Check it's okay w/ lh-dev/lh-refactor
 "       v1.7.0:
 "       (*) Auto detect project root directory
 "       v1.6.3:
-"       (*) Support ctags flavour w/o '--version' in lh#tags#flavour()
+"       (*) Support ctags flavour w/o '--version' in lh#tags#ctags_flavour()
 "           See lh-brackets issue#10
 "       v1.6.2:
 "       (*) Don't override g:tags_options with g:tags_options
@@ -51,7 +53,7 @@ let s:k_version = '2.0.0'
 "       v1.5.1:
 "       (*) Remove assert_true() call.
 "       v1.5.0:
-"       (*) New function lh#tags#ctags_flavor()
+"       (*) New function lh#tags#ctags_flavour()
 "       v1.4.2:
 "       (*) Better flags for C++ analysis
 "       v1.4.1:
@@ -179,8 +181,8 @@ function! lh#tags#ctags_is_installed() abort
   return executable(s:CtagsExecutable())
 endfunction
 
-" Function: lh#tags#ctags_flavor() {{{3
-function! lh#tags#ctags_flavor() abort
+" Function: lh#tags#ctags_flavour() {{{3
+function! lh#tags#ctags_flavour() abort
   " @since version 1.5.0
   " call assert_true(lh#tags#ctags_is_installed())
   try
@@ -313,7 +315,7 @@ let g:tags_options.c.flags    = '--c++-kinds=+pf --fields=+imaS --extra=+q'
 let g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extra=+q'
 let g:tags_options.java.flags = '--c++-kinds=+acefgimp --fields=+imaSft --extra=+q'
 let g:tags_options.vim.flags  = '--fields=+mS --extra=+q'
-if lh#tags#ctags_is_installed() && lh#tags#ctags_flavor() == 'utags'
+if lh#tags#ctags_is_installed() && lh#tags#ctags_flavour() == 'utags'
   let g:tags_options.cpp.flags = substitute(g:tags_options.cpp.flags, '--fields=\S\+', '&x{c++.properties}', '')
 endif
 
@@ -415,6 +417,21 @@ function! lh#tags#add_indexed_ft(...) abort
   return call('lh#let#_push_options', ['b:tags_options.indexed_ft'] + a:000)
 endfunction
 
+" Function: lh#tags#set_lang_map(lang, exts) {{{3
+function! lh#tags#set_lang_map(ft, exts) abort
+  let lang = get(get(g:tags_options, a:ft, {}), 'force', lh#option#unset())
+  if lh#option#is_unset(lang)
+    throw "No language associated to " .a:ft." filetype for ctags!"
+  endif
+  " Be sure the option exists
+  call lh#let#if_undef('b:tags_options.'.a:ft.'.flags', string(''))
+  " Override it
+  if lh#tags#ctags_flavour() == 'utags'
+    let b:tags_options[a:ft].flags = '--map-'.lang.'='.a:exts
+  else
+    let b:tags_options[a:ft].flags = '--langmap='.lang.':'.a:exts
+  endif
+endfunction
 function! s:CtagsFilename() abort " {{{3
   let ctags_filename = lh#option#get('tags_filename', 'tags', 'bg')
   return ctags_filename
@@ -557,7 +574,7 @@ endfunction
 " (private) Conclude tag generation {{{3
 function! s:TagGenerated(ctags_pathname, msg, ...) abort
   if a:0 > 0
-    let g:d = a:000 
+    let g:d = a:000
     let channel = a:1
     let job = a:2
     if job.exitval > 0
@@ -569,7 +586,6 @@ function! s:TagGenerated(ctags_pathname, msg, ...) abort
       return
     endif
   endif
-  call s:Verbose('%1 generated', a:ctags_pathname)
   call s:UpdateSpellfile(a:ctags_pathname)
   echomsg a:ctags_pathname . ' updated'.a:msg.'.'
 endfunction

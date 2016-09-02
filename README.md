@@ -79,7 +79,7 @@ call lh#tags#add_indexed_ft('c', 'cpp')
 call lh#tags#update_tagfiles() " uses b:project_sources_dir/BTW_project_config
 " Register ITK/OTB extensions as C++ extensions (universal ctags!)
 silent! unlet b:tags_options.cpp.flags
-LetIfUndef b:tags_options.cpp.flags '--map-C++=+.txx'
+call lh#tags#set_lang_map('cpp', '+.txx')
 ```
 
 Then, you'll have to generate the `tags` database once (`<C-X>ta`), then you
@@ -101,6 +101,26 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
    * or where `.svn/` is found in parent directories ;
    * or asked to the end-user (previous values are recorded in case several
      files from a same project are opened).
+ * `lh#tags#add_indexed_ft()`  
+   Manages the filetypes whose files will be indexed. Other files are ignored.
+   This sets the local option `b:tags_options.indexed_ft` -- prefer this
+   function when using [local_vimrc](http://github.com/LucHermitte/local_vimrc)
+   to configure project.
+   It's also possible to set the global option `b:tags_options.indexed_ft`
+   that'll be used instead. It's meant to be used when no project are defined.
+   ```vim
+   :call lh#tags#add_indexed_ft('c', 'cpp')
+   ```
+
+ * `lh#tags#set_lang_map()`  
+   Manages the extensions associated to a filetype. You could directly set
+   `b:tags_options.{ft}.flags` to `--langmap=C++:+.txx` or `--map-C++=+.txx`,
+   the point is this tool function helps to set the option to the best
+   possible value according to the current `ctags` flavour (etags or utags).
+   ```vim
+   :call lh#tags#set_lang_map('cpp', '+.txx')
+   ```
+
  * `(bg):tags_options.flags` defaults to an empty string; It contains extra
    flags you could pass to `ctags` execution. You'll have to adjust
    these options to your needs.
