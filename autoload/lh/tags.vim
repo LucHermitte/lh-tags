@@ -134,11 +134,25 @@ function! s:System(cmd_line) abort
   return res
 endfunction
 
-" # s:System {{{2
+" # s:AsyncSystem {{{2
+function! s:async_output_factory()
+  let res = {'output': []}
+  function! s:callback(channel, msg) dict abort
+    let self.output += [ a:msg ]
+  endfunction
+  let res.callback = function('s:callback')
+  return res
+endfunction
+
 function! s:AsynchSystem(cmd_line, txt, FinishedCB) abort
   call s:Verbose(a:cmd_line)
   if s:RunInBackground()
-    call lh#async#queue({'txt': a:txt, 'cmd': a:cmd_line, 'close_cb': a:FinishedCB})
+    let s:async_output = s:async_output_factory()
+    call lh#async#queue({
+          \ 'txt': a:txt,
+          \ 'cmd': a:cmd_line,
+          \ 'close_cb': a:FinishedCB,
+          \ 'callback': function(s:async_output.callback)})
     let res = 0
   else
     let res = system(a:cmd_line)
@@ -542,6 +556,19 @@ endfunction
 " ======================================================================
 " (private) Conclude tag generation {{{3
 function! s:TagGenerated(ctags_pathname, msg, ...) abort
+  if a:0 > 0
+    let g:d = a:000 
+    let channel = a:1
+    let job = a:2
+    if job.exitval > 0
+      redraw
+      call lh#common#warning_msg([a:ctags_pathname . ' generation failed'.a:msg.'.']+s:async_output.output)
+      while ch_status(channel) == 'buffered'
+        echomsg ch_read(channel)
+      endwhile
+      return
+    endif
+  endif
   call s:Verbose('%1 generated', a:ctags_pathname)
   call s:UpdateSpellfile(a:ctags_pathname)
   echomsg a:ctags_pathname . ' updated'.a:msg.'.'
@@ -1033,7 +1060,7 @@ function! s:Find(cmd_edit, cmd_split, tagpattern) abort
     let tags_data = s:BuildTagsData(a:cmd_edit)
     let which = s:ChooseTagEntry(info, a:tagpattern)
     if which >= 0 && which < len(info)
-      echoerr "Assert: not expected path"
+      echoerr "Assert: unexpected path"
       call s:JumpToTag(tags_data, info[which])
     else
       let b:tags_data = tags_data
