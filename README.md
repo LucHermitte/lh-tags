@@ -151,11 +151,11 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
    Tells to execute `<Plug>CTagsUpdateCurrent` and `<Plug>CTagsUpdateAll` in
    background (through |+job| feature).  
    This option is best set in your `.vimrc`. If you want to change or toggle
-   its value, you'd best use the menu `Project->Tags->Run` when running
+   its value, you'd best use the menu `Project->Tags->Generate` when running
    gvim, or the `:Toggle` command: 
 
    ```vim
-   :Toggle PluginlhTagsRun
+   :Toggle ProjectTagsGenerate
    ```
 
 A typical configuration file for
