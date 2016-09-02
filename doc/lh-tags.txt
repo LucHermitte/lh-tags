@@ -122,7 +122,7 @@ OPTIONS                                 *lhtags-options* {{{1
      :call lh#tags#add_indexed_ft('c', 'cpp')
 < * *lh#tags#set_lang_map()*
    Manages the extensions associated to a filetype. You could directly set
-   `b:tags_options.{ft}.flags` to `--langmap=C++:+.txx` or `--map-C++=+.txx`,
+   `b:tags_options.{ft}.langmap` to `--langmap=C++:+.txx` or `--map-C++=+.txx`,
    the point is this tool function helps to set the option to the best
    possible value according to the current `ctags` flavour (etags or utags). >
      :call lh#tags#set_lang_map('cpp', '+.txx')
@@ -183,6 +183,8 @@ TO DO                                   *lhtags-todo* {{{1
    close and reopen the search window; prev&next moves)
  * Show/hide declarations -- merge declaration and definitions
  * Pluggable filters (that will check the number of parameters, their type, etc)
+ * Check on-the-fly generation
+ * Check which global options can be toggled
 
 ------------------------------------------------------------------------------
  © Luc Hermitte, 2008-2016, <http://github.com/LucHermitte/lh-tags>, CC by SA 3.0 {{{1

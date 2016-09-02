@@ -330,9 +330,12 @@ if lh#tags#ctags_is_installed() && lh#tags#ctags_flavour() == 'utags'
 endif
 
 function! s:CtagsOptions() abort " {{{3
+  " TODO: Need to pick various options (kind, langmap, fields, extra...) in
+  " various places (b:, g:) and assemble back something
   let ctags_options = ' --tag-relative=yes'
   let ctags_options .= ' '.lh#option#get('tags_options.'.&ft.'.flags', '')
   let ctags_options .= ' '.lh#option#get('tags_options.flags', '', 'wbg')
+  let ctags_options .= ' '.lh#option#get('tags_options.langmap', '', 'wbg')
   let fts = lh#option#get('tags_options.indexed_ft')
   if lh#option#is_set(fts)
     let langs = map(copy(fts), 'get(s:force_lang, v:val, "")')
@@ -341,6 +344,33 @@ function! s:CtagsOptions() abort " {{{3
     let ctags_options .= ' --languages='.join(langs, ',')
   endif
   return ctags_options
+endfunction
+
+function! s:is_ft_indexed(ft) abort " {{{3
+  " This option needs to be set in each project!
+  let indexed_ft = lh#option#get('tags_options.indexed_ft', [])
+  return index(indexed_ft, a:ft) >= 0
+endfunction
+
+" Function: lh#tags#add_indexed_ft([ft list]) {{{3
+function! lh#tags#add_indexed_ft(...) abort
+  return call('lh#let#_push_options', ['b:tags_options.indexed_ft'] + a:000)
+endfunction
+
+" Function: lh#tags#set_lang_map(lang, exts) {{{3
+function! lh#tags#set_lang_map(ft, exts) abort
+  let lang = get(get(g:tags_options, a:ft, {}), 'force', lh#option#unset())
+  if lh#option#is_unset(lang)
+    throw "No language associated to " .a:ft." filetype for ctags!"
+  endif
+  " Be sure the option exists
+  call lh#let#if_undef('b:tags_options.'.a:ft.'.langmap', string(''))
+  " Override it
+  if lh#tags#ctags_flavour() == 'utags'
+    let b:tags_options[a:ft].langmap = '--map-'.lang.'='.a:exts
+  else
+    let b:tags_options[a:ft].langmap = '--langmap='.lang.':'.a:exts
+  endif
 endfunction
 
 let s:project_roots = get(s:, 'project_roots', [])
@@ -416,32 +446,6 @@ function! lh#tags#update_tagfiles() abort
   exe 'setlocal tags+='.lh#path#fix(lh#path#to_dirname(b:tags_dirname).s:CtagsFilename())
 endfunction
 
-function! s:is_ft_indexed(ft) abort " {{{3
-  " This option needs to be set in each project!
-  let indexed_ft = lh#option#get('tags_options.indexed_ft', [])
-  return index(indexed_ft, a:ft) >= 0
-endfunction
-
-" Function: lh#tags#add_indexed_ft([ft list]) {{{3
-function! lh#tags#add_indexed_ft(...) abort
-  return call('lh#let#_push_options', ['b:tags_options.indexed_ft'] + a:000)
-endfunction
-
-" Function: lh#tags#set_lang_map(lang, exts) {{{3
-function! lh#tags#set_lang_map(ft, exts) abort
-  let lang = get(get(g:tags_options, a:ft, {}), 'force', lh#option#unset())
-  if lh#option#is_unset(lang)
-    throw "No language associated to " .a:ft." filetype for ctags!"
-  endif
-  " Be sure the option exists
-  call lh#let#if_undef('b:tags_options.'.a:ft.'.flags', string(''))
-  " Override it
-  if lh#tags#ctags_flavour() == 'utags'
-    let b:tags_options[a:ft].flags = '--map-'.lang.'='.a:exts
-  else
-    let b:tags_options[a:ft].flags = '--langmap='.lang.':'.a:exts
-  endif
-endfunction
 function! s:CtagsFilename() abort " {{{3
   let ctags_filename = lh#option#get('tags_filename', 'tags', 'bg')
   return ctags_filename
