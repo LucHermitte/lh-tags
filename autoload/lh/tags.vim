@@ -30,6 +30,8 @@ let s:k_version = '2.0.0'
 "       (*) Fix: UpdateTags_for_SavedFile
 "       (*) Fix s:PurgeFileReferences
 "       (*) Generate tags in the background
+"       (*) Remove ctags `--language-force=` option
+"           Check it's okay w/ lh-dev/lh-refactor
 "       v1.7.0:
 "       (*) Auto detect project root directory
 "       v1.6.3:
@@ -81,8 +83,6 @@ let s:k_version = '2.0.0'
 "       (*) Have behaviour similar to the one from the quickfix mode
 "       (possibility to close and reopen the search window; prev&next moves)
 "       (*) Show/hide declarations -- merge declaration and definitions
-"       (*) Remove ctags `--language-force=` option
-"           Check it's okay w/ lh-dev/lh-refactor
 " }}}1
 "=============================================================================
 
@@ -294,8 +294,10 @@ endfunction
 " They'll get overriden everytime this file is loaded
 LetIfUndef g:tags_options {}
 let g:tags_options.c.flags    = '--c++-kinds=+pf --fields=+imaS --extra=+q'
-let g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'
-let g:tags_options.java.flags = '--c++-kinds=+acefgimp --fields=+imaSft --extra=+q --language-force=Java'
+" let g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'
+" let g:tags_options.java.flags = '--c++-kinds=+acefgimp --fields=+imaSft --extra=+q --language-force=Java'
+let g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extra=+q'
+let g:tags_options.java.flags = '--c++-kinds=+acefgimp --fields=+imaSft --extra=+q'
 let g:tags_options.vim.flags  = '--fields=+mS --extra=+q'
 if lh#tags#ctags_is_installed() && lh#tags#ctags_flavor() == 'utags'
   let g:tags_options.cpp.flags = substitute(g:tags_options.cpp.flags, '--fields=\S\+', '&x{c++.properties}', '')
@@ -502,7 +504,7 @@ endfunction
 " ======================================================================
 " generate tags for all files {{{3
 function! s:UpdateTags_for_All(ctags_pathname, FinishedCB) abort
-  let ctags_dirname  = s:CtagsDirname()
+  let ctags_dirname = s:CtagsDirname()
 
   call delete(a:ctags_pathname)
   runtime autoload/lh/os.vim
@@ -514,7 +516,9 @@ function! s:UpdateTags_for_All(ctags_pathname, FinishedCB) abort
   " todo => use project directory
   "
   let cmd_line .= ' && '.lh#tags#cmd_line(s:CtagsFilename()).s:RecursiveFlagOrAll()
-  call s:AsynchSystem(cmd_line, 'ctags *', function(a:FinishedCB, ['']))
+  let msg = 'ctags '.
+        \ lh#option#get('BTW_project_config._.name', fnamemodify(ctags_dirname, ':p:h:t'))
+  call s:AsynchSystem(cmd_line, msg, function(a:FinishedCB, ['']))
 endfunction
 
 " ======================================================================
