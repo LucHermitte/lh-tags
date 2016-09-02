@@ -146,17 +146,26 @@ function! s:async_output_factory()
   return res
 endfunction
 
-function! s:AsynchSystem(cmd_line, txt, FinishedCB) abort
-  call s:Verbose(a:cmd_line)
+function! s:AsynchSystem(cmd_line, txt, FinishedCB, ...) abort
   if s:RunInBackground()
+    call s:Verbose('Register: '.a:cmd_line)
     let s:async_output = s:async_output_factory()
-    call lh#async#queue({
+    let job = {
           \ 'txt': a:txt,
           \ 'cmd': a:cmd_line,
           \ 'close_cb': a:FinishedCB,
-          \ 'callback': function(s:async_output.callback)})
+          \ 'callback': function(s:async_output.callback)}
+    if a:0 > 0
+      let job.before_start_cb = a:1
+    endif
+    call lh#async#queue(job)
     let res = 0
   else
+    if a:0 > 0
+      let Cb = a:1
+      call Cb()
+    endif
+    call s:Verbose(a:cmd_line)
     let res = system(a:cmd_line)
     call a:FinishedCB()
   endif
@@ -204,7 +213,8 @@ function! lh#tags#ctags_flavour() abort
 endfunction
 
 " # The options {{{2
-let s:has_jobs = exists('*job_start') && has("patch-7.4.1980")
+let s:has_jobs     = lh#has#jobs()
+let s:has_partials = lh#has#partials()
 "
 " Forcing ft -> ctags languages {{{3
 " list {{{4
@@ -534,7 +544,7 @@ endfunction
 
 " ======================================================================
 " generate tags for all files {{{3
-function! s:UpdateTags_for_All(ctags_pathname, FinishedCB) abort
+function! s:UpdateTags_for_All(ctags_pathname, ...) abort
   let ctags_dirname = s:CtagsDirname()
 
   call delete(a:ctags_pathname)
@@ -549,12 +559,18 @@ function! s:UpdateTags_for_All(ctags_pathname, FinishedCB) abort
   let cmd_line .= ' && '.lh#tags#cmd_line(s:CtagsFilename()).s:RecursiveFlagOrAll()
   let msg = 'ctags '.
         \ lh#option#get('BTW_project_config._.name', fnamemodify(ctags_dirname, ':p:h:t'))
-  call s:AsynchSystem(cmd_line, msg, function(a:FinishedCB, ['']))
+  if s:has_partials
+    let FinishedCB = a:1
+    call s:AsynchSystem(cmd_line, msg, function(FinishedCB, ['']))
+  else
+    call s:System(cmd_line)
+    return msg
+  endif
 endfunction
 
 " ======================================================================
 " generate tags for the current saved file {{{3
-function! s:UpdateTags_for_SavedFile(ctags_pathname, FinishedCB) abort
+function! s:UpdateTags_for_SavedFile(ctags_pathname, ...) abort
   " Work on the current file -> &ft, expand('%')
   if ! s:is_ft_indexed(&ft) " redundant check
     return
@@ -564,10 +580,20 @@ function! s:UpdateTags_for_SavedFile(ctags_pathname, FinishedCB) abort
   " lh#path#relative_to() expects to work on dirname => it'll return a dirname
   let source_name    = substitute(source_name, '[/\\]$', '', '')
 
-  call s:PurgeFileReferences(a:ctags_pathname, source_name)
   let cmd_line = 'cd '.ctags_dirname
   let cmd_line .= ' && ' . lh#tags#cmd_line(a:ctags_pathname).' --append '.source_name
-  call s:AsynchSystem(cmd_line, 'ctags '.expand('%:t'), function(a:FinishedCB, [ ' (triggered by '.source_name.' modification)']))
+  if s:has_partials
+    let FinishedCB = a:1
+    call s:AsynchSystem(
+          \ cmd_line,
+          \ 'ctags '.expand('%:t'),
+          \ function(FinishedCB, [ ' (triggered by '.source_name.' modification)']),
+          \ function('s:PurgeFileReferences', [a:ctags_pathname, source_name]))
+  else
+    call s:PurgeFileReferences(a:ctags_pathname, source_name)
+    call s:System(cmd_line)
+    return ' (triggered by '.source_name.' modification)'
+  endif
 endfunction
 
 " ======================================================================
@@ -615,7 +641,13 @@ function! lh#tags#run(tag_function, force) abort
     endif
 
     let Fn = function("s:".a:tag_function)
-    call Fn(ctags_pathname, function('s:TagGenerated', [ctags_pathname]))
+    if s:has_partials
+      call Fn(ctags_pathname, function('s:TagGenerated', [ctags_pathname]))
+    else
+      " w/o partials, we can't have jobs either
+      let msg = Fn(ctags_pathname)
+      call s:TagGenerated(ctags_pathname, msg)
+    endif
   catch /tags-error:/
     call lh#common#error_msg(v:exception)
     return 0

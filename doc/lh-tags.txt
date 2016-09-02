@@ -187,4 +187,4 @@ TO DO                                   *lhtags-todo* {{{1
 ------------------------------------------------------------------------------
  © Luc Hermitte, 2008-2016, <http://github.com/LucHermitte/lh-tags>, CC by SA 3.0 {{{1
  VIM: let b:VS_language = 'american'
- vim:ts=8:sw=4:tw=80:fo=tcq2:isk=!-~,^*,^\|,^\":ft=help:fdm=marker:
+ vim:ts=8:sw=4:tw=80:fo=tcq2:ft=help:fdm=marker:
