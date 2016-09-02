@@ -147,17 +147,49 @@ if !executable(s:tags_executable)
   finish
 endif
 
+" ======================================================================
 " Mappings {{{2
 " inoremap <expr> ; lh#tags#run('UpdateTags_for_ModifiedFile',';')
 
 nnoremap <silent> <Plug>CTagsUpdateCurrent :call lh#tags#update_current()<cr>
+let s:map_UpdateCurrent = {'modes': 'n'}
 if !hasmapto('<Plug>CTagsUpdateCurrent', 'n')
   nmap <silent> <c-x>tc  <Plug>CTagsUpdateCurrent
+  let s:map_UpdateCurrent['binding'] = '<c-x>tc'
 endif
 
 nnoremap <silent> <Plug>CTagsUpdateAll     :call lh#tags#update_all()<cr>
+let s:map_UpdateAll = {'modes': 'n'}
 if !hasmapto('<Plug>CTagsUpdateAll', 'n')
   nmap <silent> <c-x>ta  <Plug>CTagsUpdateAll
+  let s:map_UpdateAll['binding'] = '<c-x>ta'
+endif
+
+" Menu {{{2
+if has('gui_running') && has ('menu')
+  amenu          50.97     &Project.-----<sep>-----       Nop
+endif
+call lh#menu#make('anore', '50.97.100',
+      \ '&Project.&Tags.&Update all',
+      \ s:map_UpdateAll,
+      \ ':call lh#tags#update_all()<cr>')
+" TODO inhibit this menu when no_auto is true
+call lh#menu#make('anore', '50.97.101',
+      \ '&Project.&Tags.&Update current',
+      \ s:map_UpdateCurrent,
+      \ ':call lh#tags#update_current()<cr>')
+
+if lh#has#jobs()
+  call lh#let#if_undef('g:tags_options.run_in_bg', 1)
+  if has('gui_running') && has ('menu')
+    amenu          50.97.200 &Project.&Tags.-----<sep>----- Nop
+  endif
+  call lh#menu#def_toggle_item(
+        \ { 'variable': 'tags_options.run_in_bg'
+        \ , 'values': [0, 1]
+        \ , 'menu': { 'priority': '50.98.201', 'name': "&Project.&Tags.&Generate"}
+        \ , 'texts': ['blocked', 'in background']
+        \ })
 endif
 
 

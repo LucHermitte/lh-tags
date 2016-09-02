@@ -147,9 +147,19 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
    `(bg):LHT_no_auto`, and it have the opposite default value.
  * `(bg):tags_to_spellfile` defaults to empty string; this option permits to
    add all the tags to Vim spellchecker ignore list.
- * `(bg):tags_options.run_in_bg` ; set to 1 by default.
+ * `(bg):tags_options.run_in_bg` ; set to 1 by default, if |+job|s are supported.
    Tells to execute `<Plug>CTagsUpdateCurrent` and `<Plug>CTagsUpdateAll` in
-   background (through |+job| feature).
+   background (through |+job| feature).  
+   This option is best set in your `.vimrc`. If you want to change or toggle
+   its value, you'd best use the menu `Project->Tags->Run` when running
+   gvim, or the `:Toggle` command: 
+
+   ```vim
+   :Toggle PluginlhTagsRun
+   ```
+
+A typical configuration file for
+[local_vimrc](http://github.com/LucHermitte/local_vimrc) will be:
 
 ```vim
 " #### In _vimrc_local.vim

@@ -33,7 +33,9 @@ let s:k_version = '2.0.0'
 "       (*) lh#tags#ctags_flavor() renamed to lh#tags#ctags_flavour()
 "       (*) Add lh#tags#set_lang_map() to set language mappings
 "       (*) Remove ctags `--language-force=` option
-"           Check it's okay w/ lh-dev/lh-refactor
+"           Check it's okay w/
+"           [ ] lh-dev/lh-refactor
+"           [X] vif
 "       v1.7.0:
 "       (*) Auto detect project root directory
 "       v1.6.3:
@@ -468,7 +470,7 @@ function! s:RecursiveFlagOrAll() abort " {{{3
 endfunction
 
 function! s:RunInBackground() abort " {{{3
-  return lh#option#get('tags_options.run_in_bg', s:has_jobs)
+  return g:tags_options.run_in_bg
 endfunction
 
 " ######################################################################
