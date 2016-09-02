@@ -495,7 +495,7 @@ endfunction
 function! s:PurgeFileReferences(ctags_pathname, source_name) abort
   call s:Verbose('Purge `%1` references from `%2`', a:source_name, a:ctags_pathname)
   if filereadable(a:ctags_pathname)
-    let pattern = '      '.lh#path#to_regex(a:source_name).'     '
+    let pattern = "\t".lh#path#to_regex(a:source_name)."\t"
     let tags = readfile(a:ctags_pathname)
     call filter(tags, 'v:val !~ pattern')
     call writefile(tags, a:ctags_pathname, "b")
