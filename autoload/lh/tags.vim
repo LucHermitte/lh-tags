@@ -7,7 +7,7 @@
 " Version:      2.0.0
 let s:k_version = '2.0.0'
 " Created:      02nd Oct 2008
-" Last Update:  01st Sep 2016
+" Last Update:  05th Sep 2016
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -151,12 +151,13 @@ endfunction
 function! s:AsynchSystem(cmd_line, txt, FinishedCB, ...) abort
   if s:RunInBackground()
     call s:Verbose('Register: '.a:cmd_line)
-    let s:async_output = s:async_output_factory()
-    let job = {
-          \ 'txt': a:txt,
-          \ 'cmd': a:cmd_line,
-          \ 'close_cb': a:FinishedCB,
-          \ 'callback': function(s:async_output.callback)}
+    let async_output = s:async_output_factory()
+    let job =
+          \ { 'txt': a:txt
+          \ , 'cmd': a:cmd_line
+          \ , 'close_cb': function(a:FinishedCB, [async_output])
+          \ , 'callback': function(async_output.callback)
+          \}
     if a:0 > 0
       let job.before_start_cb = a:1
     endif
@@ -553,22 +554,25 @@ endfunction
 function! s:UpdateTags_for_All(ctags_pathname, ...) abort
   let ctags_dirname = s:CtagsDirname()
 
-  call delete(a:ctags_pathname)
   runtime autoload/lh/os.vim
   if exists('*lh#os#sys_cd')
     let cmd_line  = lh#os#sys_cd(ctags_dirname)
   else
     let cmd_line  = 'cd '.ctags_dirname
   endif
-  " todo => use project directory
-  "
+
   let cmd_line .= ' && '.lh#tags#cmd_line(s:CtagsFilename()).s:RecursiveFlagOrAll()
   let msg = 'ctags '.
         \ lh#option#get('BTW_project_config._.name', fnamemodify(ctags_dirname, ':p:h:t'))
   if s:has_partials
     let FinishedCB = a:1
-    call s:AsynchSystem(cmd_line, msg, function(FinishedCB, ['']))
+    call s:AsynchSystem(
+          \ cmd_line,
+          \ msg,
+          \ function(FinishedCB, ['']),
+          \ function('delete', [a:ctags_pathname]))
   else
+    call delete(a:ctags_pathname)
     call s:System(cmd_line)
     return msg
   endif
@@ -607,11 +611,13 @@ endfunction
 function! s:TagGenerated(ctags_pathname, msg, ...) abort
   if a:0 > 0
     let g:d = a:000
-    let channel = a:1
-    let job = a:2
+    let async_output = a:1
+    let channel = a:2
+    let job = a:3
     if job.exitval > 0
       redraw
-      call lh#common#warning_msg([a:ctags_pathname . ' generation failed'.a:msg.'.']+s:async_output.output)
+      call lh#common#warning_msg([a:ctags_pathname . ' generation failed'.a:msg.'.']+async_output.output)
+      call s:Verbose([a:ctags_pathname . ' generation failed'.a:msg.'.']+async_output.output)
       while ch_status(channel) == 'buffered'
         echomsg ch_read(channel)
       endwhile
@@ -648,7 +654,7 @@ function! lh#tags#run(tag_function, force) abort
 
     let Fn = function("s:".a:tag_function)
     if s:has_partials
-      call Fn(ctags_pathname, function('s:TagGenerated', [ctags_pathname]))
+      call Fn(ctags_pathname, function('s:TagGenerated', [(ctags_pathname)]))
     else
       " w/o partials, we can't have jobs either
       let msg = Fn(ctags_pathname)
