@@ -93,7 +93,6 @@ For instance, a typical `_vimrc_local.vim` file will contain: >
     " Update Vim &tags option w/ the tag file produced for the current project
     call lh#tags#update_tagfiles() " uses b:project_sources_dir/BTW_project_config
     " Register ITK/OTB extensions as C++ extensions
-    silent! unlet b:tags_options.cpp.flags (universal ctags!)
     call lh#tags#set_lang_map('cpp', '+.txx')
 
 Then, you'll have to generate the `tags` database once (`<C-X>ta`), then you
