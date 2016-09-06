@@ -1,4 +1,4 @@
-# lh-tags v2.0.0: a ctags wrapper for Vim
+# lh-tags v2.0.1: a ctags wrapper for Vim
 
 ## Introduction
 
@@ -63,24 +63,6 @@ In the buffer local section, you'll have to:
    * or be sure there is a `.git/` or a `.svn/` subdirectory in the root
      directory of the source code.
 
-For instance, a typical `_vimrc_local.vim` file will contain:
-```vim
-" Local vimrc variable for source dir
-let b:project_sources_dir = g:FooBarProject_config.paths.sources
-" or
-LetIfUndef b:BTW_project_config._ = g:FooBarProject_config
-...
-" ======================[ tags generation {{{2
-" Be sure tags are automatically updated on the current file 
-LetIfUndef b:tags_options.no_auto 0
-" Declare the indexed filetypes
-call lh#tags#add_indexed_ft('c', 'cpp')
-" Update Vim &tags option w/ the tag file produced for the current project
-call lh#tags#update_tagfiles() " uses b:project_sources_dir/BTW_project_config
-" Register ITK/OTB extensions as C++ extensions (universal ctags!)
-call lh#tags#set_lang_map('cpp', '+.txx')
-```
-
 Then, you'll have to generate the `tags` database once (`<C-X>ta`), then you
 can enjoy lh-tag automagic update of the database, and improved tag selection.
 
@@ -144,8 +126,13 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
    automatic incremental update.  
    Warning: this has changed in version 2.0.0; it used to be named
    `(bg):LHT_no_auto`, and it have the opposite default value.
- * `(bg):tags_to_spellfile` defaults to empty string; this option permits to
-   add all the tags to Vim spellchecker ignore list.
+ * `lh#tags#ignore_spelling()` option permits to add all the current tags to
+   Vim spellchecker ignore list. If no parameter is passed to the function, it
+   will assume the dictionary file to be named `code-symbols-spell.{enc}.add`.
+   If no file was specified in `'spellfile'`, one is automatically added to
+   contain words the end-user would want to manually register with `zg` and
+   all.
+ * `(bg):tags_to_spellfile` has been deprecated. See `lh#tags#ignore_spelling()` instead.
  * `(bg):tags_options.run_in_bg` ; set to 1 by default, if |+job|s are supported.
    Tells to execute `<Plug>CTagsUpdateCurrent` and `<Plug>CTagsUpdateAll` in
    background (through |+job| feature).  
@@ -157,17 +144,33 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
    :Toggle ProjectTagsGenerate
    ```
 
+  * `lh#tags#update_tagfiles()` instructs the plugin to automatically set
+   `'tags'` with the current tagfile.
+   This may be deprecated in the future for something less cumbersome to use.
+
 A typical configuration file for
 [local_vimrc](http://github.com/LucHermitte/local_vimrc) will be:
 
 ```vim
 " #### In _vimrc_local.vim
-" spell files
-setlocal spellfile=
-exe 'setlocal spellfile+='.lh#path#fix(b:project_sources_dir).'/ignore.utf-8.add'
-let b:tags_to_spellfile = 'code-symbols.utf-8.add'
-exe 'setlocal spellfile+='.lh#path#fix(b:project_sources_dir.'/'.b:tags_to_spellfile)
-```
+" Local vimrc variable for source dir
+let b:project_sources_dir = g:FooBarProject_config.paths.sources
+" or
+LetIfUndef b:BTW_project_config._ = g:FooBarProject_config
+...
+" ======================[ tags generation {{{2
+" Be sure tags are automatically updated on the current file
+LetIfUndef b:tags_options.no_auto 0
+" Declare the indexed filetypes
+call lh#tags#add_indexed_ft('c', 'cpp')
+" Update Vim &tags option w/ the tag file produced for the current project
+" (the folowing line is the only one which is required in all projects)
+call lh#tags#update_tagfiles() " uses b:project_sources_dir/BTW_project_config
+" Register ITK/OTB extensions as C++ extensions
+call lh#tags#set_lang_map('cpp', '+.txx')
+" Instruct to ignore spelling of code constructs
+call lh#tags#ignore_spelling()
+    ```
 
 ## Mappings and commands
 
@@ -187,12 +190,19 @@ exe 'setlocal spellfile+='.lh#path#fix(b:project_sources_dir.'/'.b:tags_to_spell
    close and reopen the search window; prev&next moves)
  * Show/hide declarations -- merge declaration and definitions
  * Pluggable filters (that will check the number of parameters, their type, etc)
-
+ * Check on-the-fly generation
+ * Get rid of `lh#tags#update_tagfiles()` is possible.
+ * Be able to specify a directory to store all spellfiles automatically.
+   `{prjroot}/spell/`, `{prjroot}/.spell/`?
+ * Document API:
+   * `lh#tags#getnames()`
+   * `lh#tags#command()`
+   * `lh#tags#cmd_line()`
 
 ## Design Choices
 
 ## Installation
-  * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v3.13.1
+  * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v3.14.0
   * With [vim-addon-manager](https://github.com/MarcWeber/vim-addon-manager), install lh-tags (this is the preferred method because of the dependencies)
 ```vim
 ActivateAddons lh-tags

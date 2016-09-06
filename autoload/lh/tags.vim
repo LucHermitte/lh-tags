@@ -4,8 +4,8 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      2.0.0
-let s:k_version = '2.0.0'
+" Version:      2.0.1
+let s:k_version = '2.0.1'
 " Created:      02nd Oct 2008
 " Last Update:  05th Sep 2016
 "------------------------------------------------------------------------
@@ -19,6 +19,8 @@ let s:k_version = '2.0.0'
 "
 "------------------------------------------------------------------------
 " History:
+"       v2.0.1:
+"       (*) Simplify and speeds-up spellfile feature
 "       v2.0.0:
 "       (*) s/lh#tags#options/tags_options/
 "           because b:lh#tags#options isn't a valid variable name
@@ -477,35 +479,6 @@ endfunction
 " ######################################################################
 " ## Tags generation {{{1
 " ======================================================================
-" # spellfile generating functions {{{2
-" If the option generate spellfile contain a string, use that string to
-" generate a spellfile that contains all the symbols from the tag file.
-" This script is not (yet?) in charge of updating automatically the 'spellfile'
-" option.
-" ======================================================================
-" Update the spellfile {{{3
-function! s:UpdateSpellfile(ctags_pathname) abort
-  let spellfilename = lh#option#get('tags_to_spellfile', '')
-  if empty(spellfilename)
-    return
-  endif
-  let spellfile = fnamemodify(a:ctags_pathname, ':h') . '/'.spellfilename
-  try
-    let tags_save = &l:tags
-    let &l:tags = a:ctags_pathname
-    let lTags = taglist('.*')
-    let lSymbols = map(copy(taglist('.*')), 'v:val.name')
-    let lSymbols = lh#list#unique_sort2(lSymbols)
-    call writefile(lSymbols, spellfile)
-    " echo  'mkspell! '.spellfile
-    silent exe  'mkspell! '.spellfile
-    echomsg spellfile .' updated.'
-  finally
-    let &l:tags = tags_save
-  endtry
-endfunction
-
-" ======================================================================
 " # Tags generating functions {{{2
 " ======================================================================
 " Purge all references to {source_name} in the tags file {{{3
@@ -701,6 +674,59 @@ function! lh#tags#update_current() abort
 endfunction
 
 " ######################################################################
+" # spellfile generating functions {{{2
+" If the option generate spellfile contain a string, use that string to
+" generate a spellfile that contains all the symbols from the tag file.
+" This script is not (yet?) in charge of updating automatically the 'spellfile'
+" option.
+" ======================================================================
+" Function: lh#tags#ignore_spelling([spellfilename]) {{{3
+" Tells lh-tags to use a spell file
+function! lh#tags#ignore_spelling(...) abort
+  let spelldirname  = lh#path#to_dirname(b:tags_dirname)
+  let ext = '.'.&enc.'.add'
+
+  " 0- If there was a spell file remove it
+  let old_spellfilename = lh#option#get('tags_options.spellfile')
+  if lh#option#is_set(old_spellfilename)
+    exe 'setlocal spellfile-='.lh#path#fix(spelldirname.old_spellfilename)
+  endif
+
+  " 1- Register the new spell file
+  let spellfilename = a:0 > 0 ? a:1 : 'code-symbols-spell'.ext
+  " 1.1- to lh-tags
+  LetIfUndef b:tags_options {}
+  let b:tags_options.spellfile = spellfilename
+  " 1.1- to vim
+  if empty(&spellfile)
+    " Be sure there is a file to hold words to ignore manually registered by
+    " the end user
+    exe 'setlocal spellfile+='.lh#path#fix(spelldirname.'ignore'.ext)
+  endif
+  exe 'setlocal spellfile+='.lh#path#fix(spelldirname.spellfilename)
+endfunction
+
+" Update the spellfile {{{3
+function! s:UpdateSpellfile(ctags_pathname) abort
+  let spellfilename = lh#option#get('tags_options.spellfile')
+  if lh#option#is_unset(spellfilename)
+    return
+  endif
+  let spellfile = fnamemodify(a:ctags_pathname, ':h') . '/'.spellfilename
+  call s:Verbose('Updating spellfile `%1`', spellfile)
+  let lSymbols = lh#tags#getnames(a:ctags_pathname)
+  call writefile(lSymbols, spellfile)
+  " echo  'mkspell! '.spellfile
+  if exists('*execute')
+    let [dummy, t] = lh#time#bench(function('execute'), 'mkspell! '.spellfile)
+    call s:Verbose('spellfile built in %2s from `%1`', spellfile, t)
+  else
+    exe  'mkspell! '.spellfile
+  endif
+  echomsg spellfile .' updated.'
+endfunction
+
+" ======================================================================
 " ## Tag browsing {{{1
 " ======================================================================
 " # Tag push/pop {{{2
@@ -1145,7 +1171,34 @@ function! lh#tags#command(...) abort
   :call s:Find('e', 'sp', id)
 endfunction
 
+" Function: lh#tags#getnames(tagfile) {{{3
+function! s:getNames_Emulation(tagfile)
+  let lines = readfile(a:tagfile)
+  let names = filter(lines, 'v:val !~ "^!"')
+  return names
+endfunction
 
+function! lh#tags#getnames(tagfile) abort
+  if 1
+    let [names, t_fetch] = lh#time#bench(function('s:getNames_Emulation'), a:tagfile)
+  else
+    " This is very slow as of Vim 7.4-2330
+    try
+      let cleanup = lh#on#exit()
+            \.restore('&tags')
+      let &l:tags = a:tagfile
+      let [names, t_fetch] = lh#time#bench(function('lh#list#get'), taglist('.*'), 'name')
+    finally
+      call cleanup.finalize()
+    endtry
+  endif
+  call s:Verbose('%1 tags obtained in %2s', len(names), t_fetch)
+  let [names, t_keep_names] = lh#time#bench(function('map'), names, "matchstr(v:val, '\\v^\\S+')")
+  call s:Verbose('%1 tag names filtered in %2s', len(names), t_keep_names)
+  let [names, t_sort_names] = lh#time#bench(function('lh#list#unique_sort2'), names)
+  call s:Verbose('%1 tag names uniquelly sorted in %2s', len(names), t_sort_names)
+  return names
+endfunction
 "------------------------------------------------------------------------
 " }}}1
 let &cpo=s:cpo_save
