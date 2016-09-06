@@ -1174,8 +1174,9 @@ endfunction
 " Function: lh#tags#getnames(tagfile) {{{3
 function! s:getNames_Emulation(tagfile)
   let lines = readfile(a:tagfile)
-  let names = filter(lines, 'v:val !~ "^!"')
-  return names
+  " match() solution is faster than filter()
+  let first_tag = match(lines, '!empty(v:val) && v:val[0]!="!"')
+  return lines[ : first_tag ]
 endfunction
 
 function! lh#tags#getnames(tagfile) abort
@@ -1193,9 +1194,11 @@ function! lh#tags#getnames(tagfile) abort
     endtry
   endif
   call s:Verbose('%1 tags obtained in %2s', len(names), t_fetch)
-  let [names, t_keep_names] = lh#time#bench(function('map'), names, "matchstr(v:val, '\\v^\\S+')")
+  " let [names, t_keep_names] = lh#time#bench(function('map'), names, "matchstr(v:val, '\\v^\\S+')")
+  " stridx solution is twice as fast as matchstr one
+  let [names, t_keep_names] = lh#time#bench(function('map'), names, 'v:val[0 : stridx(v:val, "\t")-1]')
   call s:Verbose('%1 tag names filtered in %2s', len(names), t_keep_names)
-  let [names, t_sort_names] = lh#time#bench(function('lh#list#unique_sort2'), names)
+  let [names, t_sort_names] = lh#time#bench(function('lh#list#unique_sort'), names)
   call s:Verbose('%1 tag names uniquelly sorted in %2s', len(names), t_sort_names)
   return names
 endfunction
