@@ -476,6 +476,14 @@ function! s:RunInBackground() abort " {{{3
   return g:tags_options.run_in_bg
 endfunction
 
+function! s:AreIgnoredWordAutomaticallyGenerated() abort " {{{3
+  " Possible values are:
+  " "0": no
+  " "1": yes
+  " "all": only on <Plug>CTagsUpdateAll
+  return g:tags_options.auto_spellfile_update
+endfunction
+
 " ######################################################################
 " ## Tags generation {{{1
 " ======================================================================
@@ -597,8 +605,14 @@ function! s:TagGenerated(ctags_pathname, msg, ...) abort
       return
     endif
   endif
-  call s:UpdateSpellfile(a:ctags_pathname)
   echomsg a:ctags_pathname . ' updated'.a:msg.'.'
+  let auto_spell = s:AreIgnoredWordAutomaticallyGenerated()
+  if auto_spell == 1 || (auto_spell == 'all' && empty(a:msg))
+    " TODO: Fix the crappy convention
+    " - empty(msg) <=> GenerateAll
+    " - !empty <=> UpdateCurrentFile
+    call lh#tags#update_spellfile(a:ctags_pathname)
+  endif
 endfunction
 
 " (public) Run a tag generating function {{{3
@@ -707,14 +721,31 @@ function! lh#tags#ignore_spelling(...) abort
 endfunction
 
 " Update the spellfile {{{3
-function! s:UpdateSpellfile(ctags_pathname) abort
+function! lh#tags#update_spellfile(...) abort
+  if a:0 == 0
+    let ctags_dirname  = s:CtagsDirname()
+    if strlen(ctags_dirname)==1
+      if a:force
+        " todo: a:force || not_already_notified_for_this_buffer
+        throw "tags-error: empty dirname"
+      else
+        return 0
+      endif
+    endif
+    let ctags_filename = s:CtagsFilename()
+    let ctags_pathname = ctags_dirname.ctags_filename
+  else
+    let ctags_pathname = a:1
+    let ctags_dirname = fnamemodify(ctags_pathname, ':h').'/'
+  endif
+
   let spellfilename = lh#option#get('tags_options.spellfile')
   if lh#option#is_unset(spellfilename)
     return
   endif
-  let spellfile = fnamemodify(a:ctags_pathname, ':h') . '/'.spellfilename
+  let spellfile = ctags_dirname . spellfilename
   call s:Verbose('Updating spellfile `%1`', spellfile)
-  let lSymbols = lh#tags#getnames(a:ctags_pathname)
+  let lSymbols = lh#tags#getnames(ctags_pathname)
   call writefile(lSymbols, spellfile)
   " echo  'mkspell! '.spellfile
   if exists('*execute')

@@ -4,10 +4,10 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      2.0.0
-let s:k_version = '2.0.0'
+" Version:      2.0.1
+let s:k_version = '2.0.1'
 " Created:      04th Jan 2007
-" Last Update:  01st Sep 2016
+" Last Update:  06th Sep 2016
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -17,6 +17,8 @@ let s:k_version = '2.0.0'
 "
 "------------------------------------------------------------------------
 " History:
+"       v2.0.1:
+"       (*) Spellfiles can be updated on demand
 "       v2.0.0:
 "       (*) LHT_no_auto defaults to 1 now, and is renamed to
 "       tags_options.no_auto
@@ -165,24 +167,35 @@ if !hasmapto('<Plug>CTagsUpdateAll', 'n')
   let s:map_UpdateAll['binding'] = '<c-x>ta'
 endif
 
+nnoremap <silent> <Plug>CTagsUpdateSpell   :call lh#tags#update_spellfile()<cr>
+let s:map_UpdateSpell = {'modes': 'n'}
+if !hasmapto('<Plug>CTagsUpdateSpell', 'n')
+  nmap <silent> <c-x>ts  <Plug>CTagsUpdateSpell
+  let s:map_UpdateSpell['binding'] = '<c-x>ts'
+endif
+
 " Menu {{{2
 if has('gui_running') && has ('menu')
   amenu          50.97     &Project.-----<sep>-----       Nop
 endif
 call lh#menu#make('anore', '50.97.100',
-      \ '&Project.&Tags.&Update all',
+      \ '&Project.&Tags.Update &all',
       \ s:map_UpdateAll,
       \ ':call lh#tags#update_all()<cr>')
 " TODO inhibit this menu when no_auto is true
 call lh#menu#make('anore', '50.97.101',
-      \ '&Project.&Tags.&Update current',
+      \ '&Project.&Tags.Update &current',
       \ s:map_UpdateCurrent,
       \ ':call lh#tags#update_current()<cr>')
+call lh#menu#make('anore', '50.97.102',
+      \ '&Project.&Tags.Update &Spell Ignore List',
+      \ s:map_UpdateSpell,
+      \ ':call lh#tags#update_spellfile()<cr>')
 
+amenu          50.97.200 &Project.&Tags.-----<sep>----- Nop
 if lh#has#jobs()
   call lh#let#if_undef('g:tags_options.run_in_bg', 1)
   if has('gui_running') && has ('menu')
-    amenu          50.97.200 &Project.&Tags.-----<sep>----- Nop
   endif
   call lh#menu#def_toggle_item(
         \ { 'variable': 'tags_options.run_in_bg'
@@ -192,6 +205,13 @@ if lh#has#jobs()
         \ })
 endif
 
+call lh#let#if_undef('g:tags_options.auto_spellfile_update', 1)
+  call lh#menu#def_toggle_item(
+        \ { 'variable': 'tags_options.auto_spellfile_update'
+        \ , 'values': [0, 1, 'all']
+        \ , 'menu': { 'priority': '50.98.202', 'name': "&Project.&Tags.&Update Spell Ignore List"}
+        \ , 'texts': ['never', 'always', 'never on file saved']
+        \ })
 
 " ======================================================================
 " Auto command for automatically tagging a file when saved {{{2

@@ -31,6 +31,8 @@ This plugin has two features:
  * Is project friendly: i.e. multiple projects can be opened simultaneously in
    a vim session, and we can run `ctags` on each of them with different
    specialized options to produced dedicaded tag files.
+ * Tag files built can be used to (automatically) fill 'spellfile' option with
+   words to be ignored by vim spell checker.
 
 ### Tags selection
  * Presents all tags that match the selected text (`META-W-META-DOWN`), or the
@@ -132,6 +134,14 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
    If no file was specified in `'spellfile'`, one is automatically added to
    contain words the end-user would want to manually register with `zg` and
    all.
+ * `g:tags_options.auto_spellfile_update` specifies whether spellfiles are
+   automatically generated from updated tag files:
+   - `0`    : never, use `CTRL-X_ts` instead.
+   - `1`    : always
+   - `"all"`: only when tags are regenerated forthe whole project, never when
+            a file is saved.  
+   Indeed, updating spellfile may be very long on some projects, and we may
+   not wish to see this task automated.
  * `(bg):tags_to_spellfile` has been deprecated. See `lh#tags#ignore_spelling()` instead.
  * `(bg):tags_options.run_in_bg` ; set to 1 by default, if |+job|s are supported.
    Tells to execute `<Plug>CTagsUpdateCurrent` and `<Plug>CTagsUpdateAll` in
@@ -170,7 +180,9 @@ call lh#tags#update_tagfiles() " uses b:project_sources_dir/BTW_project_config
 call lh#tags#set_lang_map('cpp', '+.txx')
 " Instruct to ignore spelling of code constructs
 call lh#tags#ignore_spelling()
-    ```
+" But automatically when a file has been saved (this is too slow on OTB!)
+LetIfUndef g:tags_options.auto_spellfile_update 'all'
+```
 
 ## Mappings and commands
 
@@ -178,6 +190,10 @@ call lh#tags#ignore_spelling()
    this mappings defaults to `<Plug>CtagsUpdateCurrent`
  * All the tags for the current project can be explicitly updated with
    `CTRL-X_ta` -- this mappings defaults to `<Plug>CtagsUpdateAll`
+ * The list of words to ignore with the spellchecker can be updated on demand
+   with `CTRL-X_ts` -- bound by default to `<Plug>CTagsUpdateSpell`
+   This requires `lh#tags#ignore_spelling()` to have been explicitly called.
+   Otherwise nothing will be done.
  * Tags matching the current word (or selection) will be presented on
    `META-W-META-DOWN` -- these two mappings default to `<Plug>CtagsSplitOpen`
 
@@ -194,12 +210,21 @@ call lh#tags#ignore_spelling()
  * Get rid of `lh#tags#update_tagfiles()` is possible.
  * Be able to specify a directory to store all spellfiles automatically.
    `{prjroot}/spell/`, `{prjroot}/.spell/`?
+ * `g:tags_options.auto_spellfile_update` should be overridable for each
+   project.
+ * See to update spellfile in the background thanks to Python threads.
  * Document API:
    * `lh#tags#getnames()`
    * `lh#tags#command()`
    * `lh#tags#cmd_line()`
 
 ## Design Choices
+
+ * 100% VimL
+ * API usable from other plugins
+ * Avoid dependencies other than [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib)
+ * Support project specific settings (options may differ from one project to
+   the other)
 
 ## Installation
   * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v3.14.0
