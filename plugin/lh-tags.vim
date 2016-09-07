@@ -4,19 +4,21 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      2.0.1
-let s:k_version = '2.0.1'
+" Version:      2.0.2
+let s:k_version = '2.0.2'
 " Created:      04th Jan 2007
-" Last Update:  06th Sep 2016
+" Last Update:  07th Sep 2016
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
 "       It helps:
-"       - generate tag files
+"       - generate tag files (+ spellfile + highlights)
 "       - navigate (or more precisely: find the right tags)
 "
 "------------------------------------------------------------------------
 " History:
+"       v2.0.2:
+"       (*) Tags can be automatically highlighted
 "       v2.0.1:
 "       (*) Spellfiles can be updated on demand
 "       v2.0.0:
@@ -174,6 +176,13 @@ if !hasmapto('<Plug>CTagsUpdateSpell', 'n')
   let s:map_UpdateSpell['binding'] = '<c-x>ts'
 endif
 
+nnoremap <silent> <Plug>CTagsUpdateHighlight   :call lh#tags#update_highlight()<cr>
+let s:map_UpdateHighlight = {'modes': 'n'}
+if !hasmapto('<Plug>CTagsUpdateHighlight', 'n')
+  nmap <silent> <c-x>th  <Plug>CTagsUpdateHighlight
+  let s:map_UpdateHighlight['binding'] = '<c-x>th'
+endif
+
 " Menu {{{2
 if has('gui_running') && has ('menu')
   amenu          50.97     &Project.-----<sep>-----       Nop
@@ -191,6 +200,10 @@ call lh#menu#make('anore', '50.97.102',
       \ '&Project.&Tags.Update &Spell Ignore List',
       \ s:map_UpdateSpell,
       \ ':call lh#tags#update_spellfile()<cr>')
+call lh#menu#make('anore', '50.97.103',
+      \ '&Project.&Tags.Update Tags &Highlighted',
+      \ s:map_UpdateHighlight,
+      \ ':call lh#tags#update_highlight()<cr>')
 
 amenu          50.97.200 &Project.&Tags.-----<sep>----- Nop
 if lh#has#jobs()
@@ -206,12 +219,20 @@ if lh#has#jobs()
 endif
 
 call lh#let#if_undef('g:tags_options.auto_spellfile_update', 1)
-  call lh#menu#def_toggle_item(
-        \ { 'variable': 'tags_options.auto_spellfile_update'
-        \ , 'values': [0, 1, 'all']
-        \ , 'menu': { 'priority': '50.98.202', 'name': "&Project.&Tags.&Update Spell Ignore List"}
-        \ , 'texts': ['never', 'always', 'never on file saved']
-        \ })
+call lh#menu#def_toggle_item(
+      \ { 'variable': 'tags_options.auto_spellfile_update'
+      \ , 'values': [0, 1, 'all']
+      \ , 'menu': { 'priority': '50.98.202', 'name': "&Project.&Tags.&Update Spell Ignore List"}
+      \ , 'texts': ['never', 'always', 'never on file saved']
+      \ })
+
+call lh#let#if_undef('g:tags_options.auto_highlight', 0)
+call lh#menu#def_toggle_item(
+      \ { 'variable': 'tags_options.auto_highlight'
+      \ , 'values': [0, 1]
+      \ , 'menu': { 'priority': '50.98.203', 'name': "&Project.&Tags.Auto &Highlight Tags"}
+      \ , 'texts': ['no', 'yes']
+      \ })
 
 " ======================================================================
 " Auto command for automatically tagging a file when saved {{{2

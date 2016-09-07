@@ -1,4 +1,4 @@
-# lh-tags v2.0.1: a ctags wrapper for Vim
+# lh-tags v2.0.2: a ctags wrapper for Vim
 
 ## Introduction
 
@@ -212,7 +212,19 @@ LetIfUndef g:tags_options.auto_spellfile_update 'all'
    `{prjroot}/spell/`, `{prjroot}/.spell/`?
  * `g:tags_options.auto_spellfile_update` should be overridable for each
    project.
- * See to update spellfile in the background thanks to Python threads.
+ * See to update spellfile in the background thanks to Python.
+ * Auto-highlight tags
+   * Cache tag list generated for spell file (as long it's not generated in
+   background in another vim instance)
+   * `g:tags_options.auto_highlight` should be overridable for each project.
+   * doc
+   * auto-execute
+   * Different highlighting for different Identifier kind (type, function,
+   variable, ...)
+   * Incrementally add/remove highlighted keywords when tags are incrementally
+   updated.
+     * And do the same for ignored words
+ * Auto-update on other events like `CursorHold*`
  * Document API:
    * `lh#tags#getnames()`
    * `lh#tags#command()`

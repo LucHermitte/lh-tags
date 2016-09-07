@@ -4,10 +4,10 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      2.0.1
-let s:k_version = '2.0.1'
+" Version:      2.0.2
+let s:k_version = '2.0.2'
 " Created:      02nd Oct 2008
-" Last Update:  05th Sep 2016
+" Last Update:  07th Sep 2016
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -19,6 +19,8 @@ let s:k_version = '2.0.1'
 "
 "------------------------------------------------------------------------
 " History:
+"       v2.0.2:
+"       (*) Tags can be automatically highlighted
 "       v2.0.1:
 "       (*) Simplify and speeds-up spellfile feature
 "       v2.0.0:
@@ -485,6 +487,12 @@ function! s:AreIgnoredWordAutomaticallyGenerated() abort " {{{3
 endfunction
 
 " ######################################################################
+function! s:ShallWeAutomaticallyHighlightTags() abort " {{{3
+  " TODO: should be a local option
+  return g:tags_options.auto_highlight
+endfunction
+
+" ######################################################################
 " ## Tags generation {{{1
 " ======================================================================
 " # Tags generating functions {{{2
@@ -613,6 +621,9 @@ function! s:TagGenerated(ctags_pathname, msg, ...) abort
     " - !empty <=> UpdateCurrentFile
     call lh#tags#update_spellfile(a:ctags_pathname)
   endif
+  if s:ShallWeAutomaticallyHighlightTags()
+    call lh#tags#update_tagfiles(a:ctags_pathname)
+  endif
 endfunction
 
 " (public) Run a tag generating function {{{3
@@ -688,7 +699,45 @@ function! lh#tags#update_current() abort
 endfunction
 
 " ######################################################################
-" # spellfile generating functions {{{2
+" # Highligthing tags functions {{{2
+function! s:ExtractPaths() " {{{3
+  if a:0 == 0
+    let ctags_dirname  = s:CtagsDirname()
+    if strlen(ctags_dirname)==1
+      if a:force
+        " todo: a:force || not_already_notified_for_this_buffer
+        throw "tags-error: empty dirname"
+      else
+        return 0
+      endif
+    endif
+    let ctags_filename = s:CtagsFilename()
+    let ctags_pathname = ctags_dirname.ctags_filename
+  else
+    let ctags_pathname = a:1
+    let ctags_dirname = fnamemodify(ctags_pathname, ':h').'/'
+  endif
+  return [ctags_pathname, ctags_dirname]
+endfunction
+
+" Function: lh#tags#update_highlight(...) {{{3
+function! lh#tags#update_highlight(...) abort
+  let [ctags_pathname, ctags_dirname] = s:ExtractPaths()
+
+  " TODO: shall we use every tags, or only the current ones?
+  let [lSymbols, t] = lh#time#bench('lh#tags#getnames', ctags_pathname)
+  call s:Verbose('%1 symbols obtained in %2s', len(lSymbols), t)
+
+  call filter(lSymbols, 'v:val =~ "\\v^\\k+$"')
+  highlight TagsGroup ctermbg=green guibg=green
+  syn clear TagsGroup
+  let [ma,t] = lh#time#bench(function('map'), copy(lSymbols), 'execute("syn keyword TagsGroup ".v:val)')
+  call s:Verbose('%1 symbols registered in %2s', len(lSymbols), t)
+
+  call s:Verbose('Highlight updated')
+endfunction
+
+" # Spellfile generating functions {{{2
 " If the option generate spellfile contain a string, use that string to
 " generate a spellfile that contains all the symbols from the tag file.
 " This script is not (yet?) in charge of updating automatically the 'spellfile'
@@ -722,31 +771,16 @@ endfunction
 
 " Update the spellfile {{{3
 function! lh#tags#update_spellfile(...) abort
-  if a:0 == 0
-    let ctags_dirname  = s:CtagsDirname()
-    if strlen(ctags_dirname)==1
-      if a:force
-        " todo: a:force || not_already_notified_for_this_buffer
-        throw "tags-error: empty dirname"
-      else
-        return 0
-      endif
-    endif
-    let ctags_filename = s:CtagsFilename()
-    let ctags_pathname = ctags_dirname.ctags_filename
-  else
-    let ctags_pathname = a:1
-    let ctags_dirname = fnamemodify(ctags_pathname, ':h').'/'
-  endif
-
   let spellfilename = lh#option#get('tags_options.spellfile')
   if lh#option#is_unset(spellfilename)
     return
   endif
+
+  let [ctags_pathname, ctags_dirname] = s:ExtractPaths()
   let spellfile = ctags_dirname . spellfilename
   call s:Verbose('Updating spellfile `%1`', spellfile)
   let [lSymbols, t] = lh#time#bench('lh#tags#getnames', ctags_pathname)
-  call s:Verbose('%1 obtained in %2s', len(lSymbols), t)
+  call s:Verbose('%1 symbols obtained in %2s', len(lSymbols), t)
   call writefile(lSymbols, spellfile)
   if exists('*execute')
     let [dummy, t] = lh#time#bench(function('execute'), 'mkspell! '.spellfile)
