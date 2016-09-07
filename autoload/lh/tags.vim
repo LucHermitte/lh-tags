@@ -745,9 +745,9 @@ function! lh#tags#update_spellfile(...) abort
   endif
   let spellfile = ctags_dirname . spellfilename
   call s:Verbose('Updating spellfile `%1`', spellfile)
-  let lSymbols = lh#tags#getnames(ctags_pathname)
+  let [lSymbols, t] = lh#time#bench('lh#tags#getnames', ctags_pathname)
+  call s:Verbose('%1 obtained in %2s', len(lSymbols), t)
   call writefile(lSymbols, spellfile)
-  " echo  'mkspell! '.spellfile
   if exists('*execute')
     let [dummy, t] = lh#time#bench(function('execute'), 'mkspell! '.spellfile)
     call s:Verbose('spellfile built in %2s from `%1`', spellfile, t)
@@ -1206,8 +1206,12 @@ endfunction
 function! s:getNames_Emulation(tagfile)
   let lines = readfile(a:tagfile)
   " match() solution is faster than filter()
-  let first_tag = match(lines, '!empty(v:val) && v:val[0]!="!"')
-  return lines[ : first_tag ]
+  let first_tag = match(lines, '^[^!]')
+  " let [names, t_keep_names] = lh#time#bench(function('map'), lines[ first_tag : ], "matchstr(v:val, '\\v^\\S+')")
+  " stridx solution is twice as fast as matchstr one
+  let [names, t_keep_names] = lh#time#bench(function('map'), lines[ first_tag : ], 'v:val[0 : stridx(v:val, "\t")-1]')
+  call s:Verbose('%1 tag names filtered in %2s', len(names), t_keep_names)
+  return names
 endfunction
 
 function! lh#tags#getnames(tagfile) abort
@@ -1219,16 +1223,16 @@ function! lh#tags#getnames(tagfile) abort
       let cleanup = lh#on#exit()
             \.restore('&tags')
       let &l:tags = a:tagfile
-      let [names, t_fetch] = lh#time#bench(function('lh#list#get'), taglist('.*'), 'name')
+      let [tags, t_f1]  = lh#time#bench(function('taglist'), '.*')
+      call s:Verbose('taglist took: %1', t_f1)
+      let [names, t_f2] = lh#time#bench(function('lh#list#get'), tags, 'name')
+      call s:Verbose('filtering names took %1', t_f2)
+      let t_fetch = t_f1 + t_f2
     finally
       call cleanup.finalize()
     endtry
   endif
-  call s:Verbose('%1 tags obtained in %2s', len(names), t_fetch)
-  " let [names, t_keep_names] = lh#time#bench(function('map'), names, "matchstr(v:val, '\\v^\\S+')")
-  " stridx solution is twice as fast as matchstr one
-  let [names, t_keep_names] = lh#time#bench(function('map'), names, 'v:val[0 : stridx(v:val, "\t")-1]')
-  call s:Verbose('%1 tag names filtered in %2s', len(names), t_keep_names)
+  call s:Verbose('%1 names obtained in %2s', len(names), t_fetch)
   let [names, t_sort_names] = lh#time#bench(function('lh#list#unique_sort'), names)
   call s:Verbose('%1 tag names uniquelly sorted in %2s', len(names), t_sort_names)
   return names
