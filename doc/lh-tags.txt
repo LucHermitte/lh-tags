@@ -214,7 +214,28 @@ TO DO                                   *lhtags-todo* {{{1
    `{prjroot}/spell/`, `{prjroot}/.spell/`?
  * |g:tags_options.auto_spellfile_update| should be overridable for each
  project.
- * See to update spellfile in the background thanks to Python threads.
+ * See to update spellfile in the background thanks to Python.
+ * Auto-highlight tags >
+     :let names = lh#tags#getnames(tagsfile)
+     " C++ expr
+     :let ids = filter(copy(names), 'v:val =~ "\\v([: ]|operator)"')
+     " But the following is still slow
+     :let [ma,t] = lh#time#bench(function('map'), copy(ids), 'matchadd("MyGroup", "\\V\\<".v:val)."\\>"')
+     " As well as
+     "   :let r = '\V\<\('.join(ids, '\|').'\)\>'
+     "   :let m = matchadd('MyGroup', r)
+     " And navigating the code is slow as hell as well.
+     " Beside quite everything could get highlighted. What isn't an identifier from
+     " somewhere ?
+     :call map(ma, 'matchdelete(v:val)) " to clear up the mess
+
+     " However the following is fast and doesn't impact performances
+     :let ids = filter(copy(names), 'v:val =~ "\\v^\\k+$"')
+     :let [ma,t] = lh#time#bench(function('map'), copy(ids), 'execute("syn keyword MyGroup ".v:val)')
+
+<   This is slow on my code bases with up 30k unique tag remaining after
+   clearing `::` and C++ `operators.`
+ * Auto-update on other events like |CursorHold|
  * Document API:
    * *lh#tags#getnames()*
    * *lh#tags#command()*
