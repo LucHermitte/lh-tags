@@ -326,14 +326,14 @@ endfunction
 " Fields options {{{3
 " They'll get overriden everytime this file is loaded
 LetIfUndef g:tags_options {}
-let g:tags_options.c.flags    = '--c++-kinds=+pf --fields=+imaS --extra=+q'
-" let g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'
-" let g:tags_options.java.flags = '--c++-kinds=+acefgimp --fields=+imaSft --extra=+q --language-force=Java'
-let g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extra=+q'
-let g:tags_options.java.flags = '--c++-kinds=+acefgimp --fields=+imaSft --extra=+q'
-let g:tags_options.vim.flags  = '--fields=+mS --extra=+q'
+LetIfUndef g:tags_options.c.flags    = '--c++-kinds=+pf --fields=+imaS --extra=+q'
+" LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'
+" LetIfUndef g:tags_options.java.flags = '--c++-kinds=+acefgimp --fields=+imaSft --extra=+q --language-force=Java'
+LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extra=+q'
+LetIfUndef g:tags_options.java.flags = '--c++-kinds=+acefgimp --fields=+imaSft --extra=+q'
+LetIfUndef g:tags_options.vim.flags  = '--fields=+mS --extra=+q'
 if lh#tags#ctags_is_installed() && lh#tags#ctags_flavour() == 'utags'
-  let g:tags_options.cpp.flags = substitute(g:tags_options.cpp.flags, '--fields=\S\+', '&x{c++.properties}', '')
+  LetIfUndef g:tags_options.cpp.flags = substitute(g:tags_options.cpp.flags, '--fields=\S\+', '&x{c++.properties}', '')
 endif
 
 function! s:CtagsOptions() abort " {{{3
