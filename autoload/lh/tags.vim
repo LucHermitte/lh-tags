@@ -4,10 +4,10 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      2.0.1
-let s:k_version = '2.0.1'
+" Version:      2.0.2
+let s:k_version = '2.0.2'
 " Created:      02nd Oct 2008
-" Last Update:  05th Sep 2016
+" Last Update:  09th Sep 2016
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -19,6 +19,8 @@ let s:k_version = '2.0.1'
 "
 "------------------------------------------------------------------------
 " History:
+"       v2.0.2:
+"       (*) Remove `v:shell_error` test after `job_start`
 "       v2.0.1:
 "       (*) Simplify and speeds-up spellfile feature
 "       v2.0.0:
