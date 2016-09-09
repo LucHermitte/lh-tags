@@ -175,9 +175,9 @@ function! s:AsynchSystem(cmd_line, txt, FinishedCB, ...) abort
     call s:Verbose(a:cmd_line)
     let res = system(a:cmd_line)
     call a:FinishedCB()
-  endif
-  if v:shell_error
-    throw "Cannot execute system call (".a:cmd_line."): ".res
+    if v:shell_error " after a job_start, it cannot be used
+      throw "Cannot execute system call (".a:cmd_line."): ".res
+    endif
   endif
   return res
 endfunction
