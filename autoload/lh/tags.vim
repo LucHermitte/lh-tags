@@ -7,7 +7,7 @@
 " Version:      2.0.2
 let s:k_version = '2.0.2'
 " Created:      02nd Oct 2008
-" Last Update:  07th Sep 2016
+" Last Update:  09th Sep 2016
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -20,6 +20,7 @@ let s:k_version = '2.0.2'
 "------------------------------------------------------------------------
 " History:
 "       v2.0.2:
+"       (*) Remove `v:shell_error` test after `job_start`
 "       (*) Tags can be automatically highlighted
 "       v2.0.1:
 "       (*) Simplify and speeds-up spellfile feature
@@ -483,13 +484,12 @@ function! s:AreIgnoredWordAutomaticallyGenerated() abort " {{{3
   " "0": no
   " "1": yes
   " "all": only on <Plug>CTagsUpdateAll
-  return g:tags_options.auto_spellfile_update
+  return lh#option#get('tags_options.auto_spellfile_update', 0)
 endfunction
 
 " ######################################################################
 function! s:ShallWeAutomaticallyHighlightTags() abort " {{{3
-  " TODO: should be a local option
-  return g:tags_options.auto_highlight
+  return lh#option#get('tags_options.auto_highlight', 0)
 endfunction
 
 " ######################################################################
@@ -599,7 +599,6 @@ endfunction
 " (private) Conclude tag generation {{{3
 function! s:TagGenerated(ctags_pathname, msg, ...) abort
   if a:0 > 0
-    let g:d = a:000
     let async_output = a:1
     let channel = a:2
     let job = a:3
@@ -622,7 +621,7 @@ function! s:TagGenerated(ctags_pathname, msg, ...) abort
     call lh#tags#update_spellfile(a:ctags_pathname)
   endif
   if s:ShallWeAutomaticallyHighlightTags()
-    call lh#tags#update_tagfiles(a:ctags_pathname)
+    call lh#tags#update_highlight(a:ctags_pathname)
   endif
 endfunction
 
@@ -700,7 +699,10 @@ endfunction
 
 " ######################################################################
 " # Highligthing tags functions {{{2
-function! s:ExtractPaths() " {{{3
+" Default hilight {{{3
+highlight default link TagsGroup Special
+
+function! s:ExtractPaths(...) " {{{3
   if a:0 == 0
     let ctags_dirname  = s:CtagsDirname()
     if strlen(ctags_dirname)==1
@@ -722,16 +724,15 @@ endfunction
 
 " Function: lh#tags#update_highlight(...) {{{3
 function! lh#tags#update_highlight(...) abort
-  let [ctags_pathname, ctags_dirname] = s:ExtractPaths()
+  let [ctags_pathname, ctags_dirname] = call('s:ExtractPaths', a:000)
 
   " TODO: shall we use every tags, or only the current ones?
   let [lSymbols, t] = lh#time#bench('lh#tags#getnames', ctags_pathname)
   call s:Verbose('%1 symbols obtained in %2s', len(lSymbols), t)
 
   call filter(lSymbols, 'v:val =~ "\\v^\\k+$"')
-  highlight TagsGroup ctermbg=green guibg=green
   syn clear TagsGroup
-  let [ma,t] = lh#time#bench(function('map'), copy(lSymbols), 'execute("syn keyword TagsGroup ".v:val)')
+  let [ma,t] = lh#time#bench(function('map'), copy(lSymbols), 'execute("syn keyword TagsGroup contained ".v:val)')
   call s:Verbose('%1 symbols registered in %2s', len(lSymbols), t)
 
   call s:Verbose('Highlight updated')
@@ -776,9 +777,10 @@ function! lh#tags#update_spellfile(...) abort
     return
   endif
 
-  let [ctags_pathname, ctags_dirname] = s:ExtractPaths()
+  let [ctags_pathname, ctags_dirname] = call('s:ExtractPaths', a:000)
   let spellfile = ctags_dirname . spellfilename
   call s:Verbose('Updating spellfile `%1`', spellfile)
+  " This is slow as well
   let [lSymbols, t] = lh#time#bench('lh#tags#getnames', ctags_pathname)
   call s:Verbose('%1 symbols obtained in %2s', len(lSymbols), t)
   call writefile(lSymbols, spellfile)
@@ -786,6 +788,7 @@ function! lh#tags#update_spellfile(...) abort
     let [dummy, t] = lh#time#bench(function('execute'), 'mkspell! '.spellfile)
     call s:Verbose('spellfile built in %2s from `%1`', spellfile, t)
   else
+    " This call is very slow
     exe  'mkspell! '.spellfile
   endif
   echomsg spellfile .' updated.'

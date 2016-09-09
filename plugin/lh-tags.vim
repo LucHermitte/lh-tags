@@ -232,6 +232,7 @@ call lh#menu#def_toggle_item(
       \ , 'values': [0, 1]
       \ , 'menu': { 'priority': '50.98.203', 'name': "&Project.&Tags.Auto &Highlight Tags"}
       \ , 'texts': ['no', 'yes']
+      \ , 'actions': [':syn clear TagsGroup', function('lh#tags#update_highlight')]
       \ })
 
 " ======================================================================

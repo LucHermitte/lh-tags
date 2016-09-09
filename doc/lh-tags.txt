@@ -50,6 +50,7 @@ TAGS GENERATION                         *lhtags-generation* {{{2
    specialized options to produced dedicaded tag files.
  * Tag files built can be used to (automatically) fill 'spellfile' option with
    words to be ignored by vim spell checker.
+ * Generated tags can also automatically be highlighted (see |(bpg):tags_options.auto_highlight|)
 
 TAGS SELECTION                          *lhtags-selection* {{{2
  * Presents all tags that match the selected text (`META-W-META-DOWN`), or the
@@ -69,7 +70,7 @@ In order to use lh-tags, I highly recommend to use a plugin like
 [local_vimrc](http://github.com/LucHermitte/local_vimrc).
 
 In the buffer local section, you'll have to:
- * adjust |(bg):tags_options.{ft}.flags| if the default values don't suit you
+ * adjust |(bpg):tags_options.{ft}.flags| if the default values don't suit you
  -- I used to add exclusion lists in my projects.
  * to be sure where the root directory of the source files is:
    * either set |b:tags_dirname|, or |b:project_sources_dir|, or
@@ -92,7 +93,7 @@ OPTIONS                                 *lhtags-options* {{{1
    If you leave it unset, it will be set on first tags generation to (in
    order):
    - |b:project_sources_dir|, which is used by some of |mu-template| templates ;
-   - or `(bg):BTW_project_config._.paths.sources`, which is used by
+   - or `(bpg):BTW_project_config._.paths.sources`, which is used by
      |BuildToolsWrapper| to define project settings
    - or where `.git/` is found in parent directories ;
    - or where `.svn/` is found in parent directories ;
@@ -111,38 +112,38 @@ OPTIONS                                 *lhtags-options* {{{1
    the point is this tool function helps to set the option to the best
    possible value according to the current `ctags` flavour (etags or utags). >
      :call lh#tags#set_lang_map('cpp', '+.txx')
-< * *(bg):tags_options.flags* defaults to an empty string; It contains extra
+< * *(bpg):tags_options.flags* defaults to an empty string; It contains extra
    flags you could pass to `ctags` execution. You'll have to adjust
    these options to your needs.
-   Warning: This was renamed from *(bg):tags_options* in version 2.0.0.
- * *(bg):tags_options.{ft}.flags* defaults to:
+   Warning: This was renamed from *(bpg):tags_options* in version 2.0.0.
+ * *(bpg):tags_options.{ft}.flags* defaults to:
     * c:    `'--c++-kinds=+p --fields=+imaS --extra=+q'`
     * cpp:  `'--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'`
             `'x{c++.properties}` will also be added when using Universal ctags
     * java: `'--c++-kinds=+acefgimp --fields=+imaSft --extra=+q --language-force=Java'`
     * vim:  `'--fields=+mS --extra=+q'`
-   Warning: This was renamed from *(bg):tags_options_{ft}* in version 2.0.0.
- * *(bg):tags_filename* defaults to `'tags'`; in case you want your `tags` file
+   Warning: This was renamed from *(bpg):tags_options_{ft}* in version 2.0.0.
+ * *(bpg):tags_filename* defaults to `'tags'`; in case you want your `tags` file
    to have another name.
- * *(bg):tags_executable* defaults to `ctags`; you should not need to change
+ * *(bpg):tags_executable* defaults to `ctags`; you should not need to change
    it.
- * *(bg):tags_must_go_recursive* defaults to 1; set it to 0 if you really want
+ * *(bpg):tags_must_go_recursive* defaults to 1; set it to 0 if you really want
    to not explore subdirectories.
- * *(bg):tags_select* defaults to `'expand('<cword>')'`; this policy says how
+ * *(bpg):tags_select* defaults to `'expand('<cword>')'`; this policy says how
    the current word under the cursor is selected by normal mode mapping
    |<M-W><M-Down>|
- * *(bg):tags_options.no_auto* defaults to 1; set it to 0 if you want to enable the
+ * *(bpg):tags_options.no_auto* defaults to 1; set it to 0 if you want to enable the
    automatic incremental update.
    Warning: this has changed in version 2.0.0; it used to be named
-   *(bg):LHT_no_auto* , and to have the opposite default value.
+   *(bpg):LHT_no_auto* , and to have the opposite default value.
  * *lh#tags#ignore_spelling()* option permits to add all the current tags to
    Vim spellchecker ignore list. If no parameter is passed to the function, it
    will assume the dictionary file to be named `code-symbols-spell.{enc}.add`.
    If no file was specified in 'spellfile', one is automatically added to
    contain words the end-user would want to manually register with |zg| and
    all.
- * *(bg):tags_to_spellfile* has been deprecated. See |lh#tags#ignore_spelling()| instead.
- * *g:tags_options.auto_spellfile_update* specifies whether spellfiles are
+ * *(bpg):tags_to_spellfile* has been deprecated. See |lh#tags#ignore_spelling()| instead.
+ * *(bpg):tags_options.auto_spellfile_update* specifies whether spellfiles are
    automatically generated from updated tag files:
    - `0`    : never, use *CTRL-X_ts* instead.
    - `1`    : always
@@ -150,6 +151,10 @@ OPTIONS                                 *lhtags-options* {{{1
             a file is saved.
    Indeed, updating spellfile may be very long on some projects, and we may
    not wish to see this task automated.
+ * *(bpg):tags_options.auto_highlight* specifies whether generated tags are
+   automatically highlighted ; set to 0 by default.
+   Please use :`Toggle ProjectTagsAutoHighlightTags` to update this value:
+   this will automatically enable or disable the highlighting of tags.
  * *g:tags_options.run_in_bg* ; set to 1 by default, if |+job|s are supported.
    Tells to execute |<Plug>CTagsUpdateCurrent| and |<Plug>CTagsUpdateAll| in
    background (through |+job| feature).
@@ -218,11 +223,10 @@ TO DO                                   *lhtags-todo* {{{1
  * Auto-highlight tags
    * Cache tag list generated for spell file (as long it's not generated in
    background in another vim instance)
-   * |g:tags_options.auto_highlight| should be overridable for each project.
    * doc
-   * auto-execute
    * Different highlighting for different Identifier kind (type, function,
    variable, ...)
+   * Specify syn hl.
    * Incrementally add/remove highlighted keywords when tags are incrementally
    updated.
      * And do the same for ignored words
