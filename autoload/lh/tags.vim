@@ -4,10 +4,10 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      2.0.2
-let s:k_version = '2.0.2'
+" Version:      2.0.3
+let s:k_version = '2.0.3'
 " Created:      02nd Oct 2008
-" Last Update:  09th Sep 2016
+" Last Update:  28th Sep 2016
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -19,6 +19,8 @@ let s:k_version = '2.0.2'
 "
 "------------------------------------------------------------------------
 " History:
+"       v2.0.3:
+"       (*) Move to use lh-vim-lib v4 Project feature
 "       v2.0.2:
 "       (*) Remove `v:shell_error` test after `job_start`
 "       (*) Tags can be automatically highlighted
@@ -98,6 +100,7 @@ let s:k_version = '2.0.2'
 let s:cpo_save=&cpo
 set cpo&vim
 "------------------------------------------------------------------------
+runtime plugin/let.vim
 
 " ######################################################################
 " ## Misc Functions     {{{1
@@ -288,7 +291,7 @@ let s:force_lang = {
 
 function! s:BuildForceLangOption() abort " {{{4
   for [ft, lang] in items(s:force_lang)
-    call lh#let#if_undef('g:tags_options.'.ft.'.force', string(lang))
+    call lh#let#if_undef('g:tags_options.'.ft.'.force', lang)
   endfor
 endfunction
 call s:BuildForceLangOption()
@@ -308,7 +311,7 @@ let s:func_kinds =
 function! s:BuildFuncKinds()
   for [pat, fts] in items(s:func_kinds)
     for ft in fts
-      call lh#let#if_undef('g:tags_options.'.ft.'.func_kind', string(pat))
+      call lh#let#if_undef('g:tags_options.'.ft.'.func_kind', pat)
     endfor
   endfor
 endfunction
@@ -339,11 +342,11 @@ endif
 
 function! s:CtagsOptions() abort " {{{3
   " TODO: Need to pick various options (kind, langmap, fields, extra...) in
-  " various places (b:, g:) and assemble back something
+  " various places (b:, p:, g:) and assemble back something
   let ctags_options = ' --tag-relative=yes'
   let ctags_options .= ' '.lh#option#get('tags_options.'.&ft.'.flags', '')
-  let ctags_options .= ' '.lh#option#get('tags_options.flags', '', 'wbg')
-  let ctags_options .= ' '.lh#option#get('tags_options.langmap', '', 'wbg')
+  let ctags_options .= ' '.lh#option#get('tags_options.flags', '', 'wbpg')
+  let ctags_options .= ' '.lh#option#get('tags_options.langmap', '', 'wbpg')
   let fts = lh#option#get('tags_options.indexed_ft')
   if lh#option#is_set(fts)
     let langs = map(copy(fts), 'get(s:force_lang, v:val, "")')
@@ -362,7 +365,7 @@ endfunction
 
 " Function: lh#tags#add_indexed_ft([ft list]) {{{3
 function! lh#tags#add_indexed_ft(...) abort
-  return call('lh#let#_push_options', ['b:tags_options.indexed_ft'] + a:000)
+  return call('lh#let#_push_options', ['p:tags_options.indexed_ft'] + a:000)
 endfunction
 
 " Function: lh#tags#set_lang_map(lang, exts) {{{3
@@ -372,12 +375,12 @@ function! lh#tags#set_lang_map(ft, exts) abort
     throw "No language associated to " .a:ft." filetype for ctags!"
   endif
   " Be sure the option exists
-  call lh#let#if_undef('b:tags_options.'.a:ft.'.langmap', string(''))
+  call lh#let#if_undef('p:tags_options.'.a:ft.'.langmap', '')
   " Override it
   if lh#tags#ctags_flavour() == 'utags'
-    let b:tags_options[a:ft].langmap = '--map-'.lang.'='.a:exts
+    call lh#let#to('p:tags_options.'.a:ft.'.langmap', '--map-'.lang.'='.a:exts)
   else
-    let b:tags_options[a:ft].langmap = '--langmap='.lang.':'.a:exts
+    call lh#let#to('p:tags_options.'.a:ft.'.langmap', '--langmap='.lang.':'.a:exts)
   endif
 endfunction
 
@@ -404,8 +407,9 @@ endfunction
 
 function! s:FetchCtagsDirname() abort " {{{3
   " call assert_true(!exists('b:tags_dirname'))
-  if exists('b:project_sources_dir')
-    return b:project_sources_dir
+  let project_sources_dir = lh#option#get('project_sources_dir')
+  if lh#option#is_set(project_sources_dir)
+    return project_sources_dir
   endif
   let config = lh#option#get('BTW_project_config')
   if lh#option#is_set(config) && has_key(config, '_')
@@ -436,11 +440,14 @@ function! s:CtagsDirname(...) abort " {{{3
   " - Where .git/ is found is parent dirs
   " - Where .svn/ is found in parent dirs
   " - confirm box for %:p:h, and remember previous paths
-  if ! exists('b:tags_dirname')
-    let b:tags_dirname = s:FetchCtagsDirname()
+  let tags_dirname = lh#option#get('tags_dirname')
+  if lh#option#is_unset(tags_dirname)
+    unlet tags_dirname
+    let tags_dirname = s:FetchCtagsDirname()
+    call lh#let#to('p:tags_dirname', tags_dirname)
   endif
 
-  let res = lh#path#to_dirname(b:tags_dirname)
+  let res = lh#path#to_dirname(tags_dirname)
   " TODO: find another way to autodetect tags paths
   if a:0 == 0 || a:1 == '1'
     call lh#tags#update_tagfiles()
@@ -451,11 +458,12 @@ endfunction
 " Function: lh#tags#update_tagfiles() {{{3
 function! lh#tags#update_tagfiles() abort
   call s:CtagsDirname(0)
-  exe 'setlocal tags+='.lh#path#fix(lh#path#to_dirname(b:tags_dirname).s:CtagsFilename())
+  let tags_dirname = lh#option#get('tags_dirname')
+  exe 'setlocal tags+='.lh#path#fix(lh#path#to_dirname(tags_dirname).s:CtagsFilename())
 endfunction
 
 function! s:CtagsFilename() abort " {{{3
-  let ctags_filename = lh#option#get('tags_filename', 'tags', 'bg')
+  let ctags_filename = lh#option#get('tags_filename', 'tags', 'bpg')
   return ctags_filename
 endfunction
 
@@ -465,7 +473,7 @@ function! lh#tags#cmd_line(ctags_pathname) abort " {{{3
 endfunction
 
 function! s:TagsSelectPolicy() abort " {{{3
-  let select_policy = lh#option#get('tags_select', "expand('<cword>')", 'bg')
+  let select_policy = lh#option#get('tags_select', "expand('<cword>')", 'bpg')
   return select_policy
 endfunction
 
@@ -747,7 +755,8 @@ endfunction
 " Function: lh#tags#ignore_spelling([spellfilename]) {{{3
 " Tells lh-tags to use a spell file
 function! lh#tags#ignore_spelling(...) abort
-  let spelldirname  = lh#path#to_dirname(b:tags_dirname)
+  let tags_dirname = lh#option#get('tags_dirname')
+  let spelldirname  = lh#path#to_dirname(tags_dirname)
   let ext = '.'.&enc.'.add'
 
   " 0- If there was a spell file remove it
@@ -759,8 +768,8 @@ function! lh#tags#ignore_spelling(...) abort
   " 1- Register the new spell file
   let spellfilename = a:0 > 0 ? a:1 : 'code-symbols-spell'.ext
   " 1.1- to lh-tags
-  LetIfUndef b:tags_options {}
-  let b:tags_options.spellfile = spellfilename
+  LetIfUndef p:tags_options {}
+  call lh#let#to('p:tags_options.spellfile', spellfilename)
   " 1.1- to vim
   if empty(&spellfile)
     " Be sure there is a file to hold words to ignore manually registered by
@@ -912,7 +921,7 @@ function! s:TagEntry(taginfo, nameLen, fullsignature) abort
         \ .s:LeftJustify(a:taginfo.pri, 3+s:len_fields.pri).' '
         \ .s:LeftJustify(a:taginfo.kind, 4+s:len_fields.kind).' '
         \ .s:LeftJustify(s:Fullname(a:taginfo, a:fullsignature), a:nameLen)
-        \ .' '.a:taginfo.filename
+        \ .' '.lh#path#to_relative(a:taginfo.filename)
   return res
 endfunction
 
