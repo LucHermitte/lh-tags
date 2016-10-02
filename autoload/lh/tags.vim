@@ -7,7 +7,7 @@
 " Version:      2.0.3
 let s:k_version = '2.0.3'
 " Created:      02nd Oct 2008
-" Last Update:  28th Sep 2016
+" Last Update:  03rd Oct 2016
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -484,7 +484,7 @@ function! s:RecursiveFlagOrAll() abort " {{{3
 endfunction
 
 function! s:RunInBackground() abort " {{{3
-  return g:tags_options.run_in_bg
+  return lh#has#jobs() && g:tags_options.run_in_bg
 endfunction
 
 function! s:AreIgnoredWordAutomaticallyGenerated() abort " {{{3
