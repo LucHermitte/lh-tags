@@ -139,7 +139,7 @@ endfunction
 " # s:System {{{2
 function! s:System(cmd_line) abort
   call s:Verbose(a:cmd_line)
-  let res = system(a:cmd_line)
+  let res = lh#os#system(a:cmd_line)
   if v:shell_error
     throw "Cannot execute system call (".a:cmd_line."): ".res
   endif
@@ -177,7 +177,7 @@ function! s:AsynchSystem(cmd_line, txt, FinishedCB, ...) abort
       call Cb()
     endif
     call s:Verbose(a:cmd_line)
-    let res = system(a:cmd_line)
+    let res = lh#os#system(a:cmd_line)
     call a:FinishedCB()
     if v:shell_error " after a job_start, it cannot be used
       throw "Cannot execute system call (".a:cmd_line."): ".res
