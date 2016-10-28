@@ -7,7 +7,7 @@
 " Version:      2.0.3
 let s:k_version = '2.0.3'
 " Created:      02nd Oct 2008
-" Last Update:  03rd Oct 2016
+" Last Update:  28th Oct 2016
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -739,7 +739,8 @@ function! lh#tags#update_highlight(...) abort
   call s:Verbose('%1 symbols obtained in %2s', len(lSymbols), t)
 
   call filter(lSymbols, 'v:val =~ "\\v^\\k+$"')
-  syn clear TagsGroup
+  " TODO: register whether there are TagsGroup in order to avoid silent!
+  silent! syn clear TagsGroup
   let [ma,t] = lh#time#bench(function('map'), copy(lSymbols), 'execute("syn keyword TagsGroup contained ".v:val)')
   call s:Verbose('%1 symbols registered in %2s', len(lSymbols), t)
 
