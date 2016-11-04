@@ -7,7 +7,7 @@
 " Version:      2.0.3
 let s:k_version = '2.0.3'
 " Created:      02nd Oct 2008
-" Last Update:  28th Oct 2016
+" Last Update:  03rd Nov 2016
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -459,7 +459,12 @@ endfunction
 function! lh#tags#update_tagfiles() abort
   call s:CtagsDirname(0)
   let tags_dirname = lh#option#get('tags_dirname')
-  exe 'setlocal tags+='.lh#path#fix(lh#path#to_dirname(tags_dirname).s:CtagsFilename())
+  let fixed_path = lh#path#fix(lh#path#to_dirname(tags_dirname).s:CtagsFilename())
+  if lh#project#is_in_a_project()
+    call lh#let#to('p:&tags', '+='.fixed_path)
+  else
+    exe 'setlocal tags+='.fixed_path
+  endif
 endfunction
 
 function! s:CtagsFilename() abort " {{{3
