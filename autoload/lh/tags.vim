@@ -7,7 +7,7 @@
 " Version:      2.0.3
 let s:k_version = '2.0.3'
 " Created:      02nd Oct 2008
-" Last Update:  03rd Nov 2016
+" Last Update:  09th Dec 2016
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -21,6 +21,7 @@ let s:k_version = '2.0.3'
 " History:
 "       v2.0.3:
 "       (*) Move to use lh-vim-lib v4 Project feature
+"       (*) Normalize scratch buffer name
 "       v2.0.2:
 "       (*) Remove `v:shell_error` test after `job_start`
 "       (*) Tags can be automatically highlighted
@@ -1028,7 +1029,7 @@ function! s:ChooseTagEntry(tagrawinfos, tagpattern) abort
 
     " 3- Display
     let dialog = lh#buffer#dialog#new(
-          \ "tags-selector(".a:tagpattern.")",
+          \ "tags://selector(".a:tagpattern.")",
           \ "lh-tags ".g:loaded_lh_tags.": Select a tag to jump to",
           \ '', 0,
           \ 'LHTags_select', tags)
