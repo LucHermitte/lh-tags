@@ -103,7 +103,7 @@ OPTIONS                                 *lhtags-options* {{{1
    Manages the filetypes whose files will be indexed. Other files are ignored.
    This sets the local option *b:tags_options.indexed_ft* -- prefer this
    function when using |local_vimrc| to configure project.
-   It's also possible to set the global option *b:tags_options.indexed_ft*
+   It's also possible to set the global option *g:tags_options.indexed_ft*
    that'll be used instead. It's meant to be used when no project are defined.  >
      :call lh#tags#add_indexed_ft('c', 'cpp')
 < * *lh#tags#set_lang_map()*
@@ -145,7 +145,7 @@ OPTIONS                                 *lhtags-options* {{{1
  * *(bpg):tags_to_spellfile* has been deprecated. See |lh#tags#ignore_spelling()| instead.
  * *(bpg):tags_options.auto_spellfile_update* specifies whether spellfiles are
    automatically generated from updated tag files:
-   - `0`    : never, use *CTRL-X_ts* instead.
+   - `0`    : never, use |CTRL-X_ts| instead.
    - `1`    : always
    - `"all"`: only when tags are regenerated forthe whole project, never when
             a file is saved.
