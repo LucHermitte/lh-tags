@@ -7,7 +7,7 @@
 " Version:      2.0.3
 let s:k_version = '2.0.3'
 " Created:      02nd Oct 2008
-" Last Update:  09th Dec 2016
+" Last Update:  04th Jan 2017
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -22,6 +22,7 @@ let s:k_version = '2.0.3'
 "       v2.0.3:
 "       (*) Move to use lh-vim-lib v4 Project feature
 "       (*) Normalize scratch buffer name
+"       (*) Move cmdline completion function to autoload plugin
 "       v2.0.2:
 "       (*) Remove `v:shell_error` test after `job_start`
 "       (*) Tags can be automatically highlighted
@@ -1253,6 +1254,56 @@ endfunction
 function! lh#tags#command(...) abort
   let id = join(a:000, '.*')
   :call s:Find('e', 'sp', id)
+endfunction
+
+" Command completion  {{{3
+let s:commands = '^LHT\%[ags]'
+function! lh#tags#_command_complete(ArgLead, CmdLine, CursorPos) abort
+  let cmd = matchstr(a:CmdLine, s:commands)
+  let cmdpat = '^'.cmd
+
+  let tmp = substitute(a:CmdLine, '\s*\S\+', 'Z', 'g')
+  let pos = strlen(tmp)
+  let lCmdLine = strlen(a:CmdLine)
+  let fromLast = strlen(a:ArgLead) + a:CursorPos - lCmdLine
+  " The argument to expand, but cut where the cursor is
+  let ArgLead = strpart(a:ArgLead, 0, fromLast )
+  let ArgsLead = strpart(a:CmdLine, 0, a:CursorPos )
+  call s:Verbose( "a:AL = ". a:ArgLead."\nAl  = ".ArgLead
+        \ . "\nAsL = ".ArgsLead
+        \ . "\nx=" . fromLast
+        \ . "\ncut = ".strpart(a:CmdLine, a:CursorPos)
+        \ . "\nCL = ". a:CmdLine."\nCP = ".a:CursorPos
+        \ . "\ntmp = ".tmp."\npos = ".pos
+        )
+
+  " Build the pattern for taglist() -> all arguments are joined with '.*'
+  " let pattern = ArgsLead
+  let pattern = a:CmdLine
+  " ignore the command
+  let pattern = substitute(pattern, '^\S\+\s\+', '', '')
+  let pattern = substitute(pattern, '\s\+', '.*', 'g')
+  let tags = taglist(pattern)
+  if 0
+    call confirm ("pattern".pattern."\n->".string(tags), '&Ok', 1)
+  endif
+  if empty(tags)
+    echomsg "No matching tags found"
+    return ''
+  endif
+
+  " Keep only tag names
+  let lRes = []
+  call lh#list#Transform(tags, lRes, 'v:val.name')
+
+  " No need (yet) to descend into the hierarchy
+  call map(lRes, 'matchstr(v:val, '.string(ArgLead).'.".\\{-}\\>")')
+  let lRes = lh#list#unique_sort(lRes)
+  let res = join(lRes, "\n")
+  if 0
+    call confirm (string(res), '&Ok', 1)
+  endif
+  return res
 endfunction
 
 " Function: lh#tags#getnames(tagfile) {{{3

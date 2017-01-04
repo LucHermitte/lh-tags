@@ -4,10 +4,10 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      2.0.2
-let s:k_version = '2.0.2'
+" Version:      2.0.3
+let s:k_version = '2.0.3'
 " Created:      04th Jan 2007
-" Last Update:  07th Sep 2016
+" Last Update:  04th Jan 2017
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -17,6 +17,8 @@ let s:k_version = '2.0.2'
 "
 "------------------------------------------------------------------------
 " History:
+"       v2.0.3:
+"       (*) Move cmdline completion function to autoload plugin
 "       v2.0.2:
 "       (*) Tags can be automatically highlighted
 "       v2.0.1:
@@ -78,7 +80,7 @@ endif
 " Tag command {{{1
 " ======================================================================
 
-command! -nargs=* -complete=custom,LHTComplete
+command! -nargs=* -complete=custom,lh#tags#_command_complete
       \         LHTags call lh#tags#command(<f-args>)
 
 " todo:
@@ -86,63 +88,11 @@ command! -nargs=* -complete=custom,LHTComplete
 " * filter on +/- a\%[ttribute]
 " * filter on +/#/- v\%[isibility] (pub/pro/pri)
 
-" Command completion  {{{1
-let s:commands = '^LHT\%[ags]'
-function! LHTComplete(ArgLead, CmdLine, CursorPos) abort
-  let cmd = matchstr(a:CmdLine, s:commands)
-  let cmdpat = '^'.cmd
-
-  let tmp = substitute(a:CmdLine, '\s*\S\+', 'Z', 'g')
-  let pos = strlen(tmp)
-  let lCmdLine = strlen(a:CmdLine)
-  let fromLast = strlen(a:ArgLead) + a:CursorPos - lCmdLine
-  " The argument to expand, but cut where the cursor is
-  let ArgLead = strpart(a:ArgLead, 0, fromLast )
-  let ArgsLead = strpart(a:CmdLine, 0, a:CursorPos )
-  if 0
-    call confirm( "a:AL = ". a:ArgLead."\nAl  = ".ArgLead
-          \ . "\nAsL = ".ArgsLead
-          \ . "\nx=" . fromLast
-          \ . "\ncut = ".strpart(a:CmdLine, a:CursorPos)
-          \ . "\nCL = ". a:CmdLine."\nCP = ".a:CursorPos
-          \ . "\ntmp = ".tmp."\npos = ".pos
-          \, '&Ok', 1)
-  endif
-
-  " Build the pattern for taglist() -> all arguments are joined with '.*'
-  " let pattern = ArgsLead
-  let pattern = a:CmdLine
-  " ignore the command
-  let pattern = substitute(pattern, '^\S\+\s\+', '', '')
-  let pattern = substitute(pattern, '\s\+', '.*', 'g')
-  let tags = taglist(pattern)
-  if 0
-    call confirm ("pattern".pattern."\n->".string(tags), '&Ok', 1)
-  endif
-  if empty(tags)
-    echomsg "No matching tags found"
-    return ''
-  endif
-
-  " Keep only tag names
-  let lRes = []
-  call lh#list#Transform(tags, lRes, 'v:val.name')
-
-  " No need (yet) to descend into the hierarchy
-  call map(lRes, 'matchstr(v:val, '.string(ArgLead).'.".\\{-}\\>")')
-  let lRes = lh#list#unique_sort(lRes)
-  let res = join(lRes, "\n")
-  if 0
-    call confirm (string(res), '&Ok', 1)
-  endif
-  return res
-endfunction
-
 " ######################################################################
 " Tag generation {{{1
 " ======================================================================
 " Needs ctags executable {{{2
-let s:tags_executable = lh#option#get('tags_executable', 'ctags', 'bg')
+let s:tags_executable = lh#option#get('tags_executable', 'ctags')
 let s:script = expand('<sfile>:p')
 
 if !executable(s:tags_executable)
