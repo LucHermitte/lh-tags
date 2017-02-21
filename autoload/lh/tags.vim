@@ -7,7 +7,7 @@
 " Version:      2.0.3
 let s:k_version = '2.0.3'
 " Created:      02nd Oct 2008
-" Last Update:  04th Jan 2017
+" Last Update:  24th Jan 2017
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -160,7 +160,7 @@ endfunction
 
 function! s:AsynchSystem(cmd_line, txt, FinishedCB, ...) abort
   if s:RunInBackground()
-    call s:Verbose('Register: '.a:cmd_line)
+    call s:Verbose('Register: %1',a:cmd_line)
     let async_output = s:async_output_factory()
     let job =
           \ { 'txt': a:txt
@@ -1269,13 +1269,13 @@ function! lh#tags#_command_complete(ArgLead, CmdLine, CursorPos) abort
   " The argument to expand, but cut where the cursor is
   let ArgLead = strpart(a:ArgLead, 0, fromLast )
   let ArgsLead = strpart(a:CmdLine, 0, a:CursorPos )
-  call s:Verbose( "a:AL = ". a:ArgLead."\nAl  = ".ArgLead
-        \ . "\nAsL = ".ArgsLead
-        \ . "\nx=" . fromLast
-        \ . "\ncut = ".strpart(a:CmdLine, a:CursorPos)
-        \ . "\nCL = ". a:CmdLine."\nCP = ".a:CursorPos
-        \ . "\ntmp = ".tmp."\npos = ".pos
-        )
+  " call s:Verbose( "a:AL = ". a:ArgLead."\nAl  = ".ArgLead
+        " \ . "\nAsL = ".ArgsLead
+        " \ . "\nx=" . fromLast
+        " \ . "\ncut = ".strpart(a:CmdLine, a:CursorPos)
+        " \ . "\nCL = ". a:CmdLine."\nCP = ".a:CursorPos
+        " \ . "\ntmp = ".tmp."\npos = ".pos
+        " )
 
   " Build the pattern for taglist() -> all arguments are joined with '.*'
   " let pattern = ArgsLead
