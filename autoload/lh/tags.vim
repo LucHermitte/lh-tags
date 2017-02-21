@@ -7,7 +7,7 @@
 " Version:      2.0.3
 let s:k_version = '2.0.3'
 " Created:      02nd Oct 2008
-" Last Update:  24th Jan 2017
+" Last Update:  21st Feb 2017
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -408,6 +408,11 @@ function! s:GetPlausibleRoot() abort " {{{3
 endfunction
 
 function! s:FetchCtagsDirname() abort " {{{3
+  let sources_dir = lh#option#get('paths.sources')
+  if lh#option#is_set(sources_dir)
+    return sources_dir
+  endif
+
   " call assert_true(!exists('b:tags_dirname'))
   let project_sources_dir = lh#option#get('project_sources_dir')
   if lh#option#is_set(project_sources_dir)
@@ -436,9 +441,10 @@ endfunction
 
 function! s:CtagsDirname(...) abort " {{{3
   " Will be searched in descending priority in:
-  " - b:tags_dirname
-  " - BTW_project_config._.paths.sources (BTW)
+  " - (bpg):tags_dirname
+  " - (bpg):paths.sources
   " - b:project_source_dir (mu-template)
+  " - BTW_project_config._.paths.sources (BTW)
   " - Where .git/ is found is parent dirs
   " - Where .svn/ is found in parent dirs
   " - confirm box for %:p:h, and remember previous paths
@@ -451,7 +457,7 @@ function! s:CtagsDirname(...) abort " {{{3
 
   let res = lh#path#to_dirname(tags_dirname)
   " TODO: find another way to autodetect tags paths
-  if a:0 == 0 || a:1 == '1'
+  if get(a:, 1, 1)
     call lh#tags#update_tagfiles()
   endif
   return res

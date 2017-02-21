@@ -1,5 +1,5 @@
-*lh-tags.txt*           lh-tags (v2.0.2)
-                        For Vim version 7+.    Last change: 07th Sep 2016
+*lh-tags.txt*           lh-tags (v2.0.3)
+                        For Vim version 7+.    Last change: 21st Feb 2017
 
                         By Luc Hermitte
                         luc {dot} hermitte {at} gmail {dot} com
@@ -92,8 +92,9 @@ OPTIONS                                 *lhtags-options* {{{1
    you'll have to set this option to the root of your project.
    If you leave it unset, it will be set on first tags generation to (in
    order):
-   - |b:project_sources_dir|, which is used by some of |mu-template| templates ;
-   - or `(bpg):BTW_project_config._.paths.sources`, which is used by
+   - |(bpg):paths.sources|, introduced by lh-vim-lib |lhvl#project| extension
+   - |b:project_sources_dir|, which was used by some of |mu-template| templates ;
+   - or `(bpg):BTW_project_config._.paths.sources`, which was used by
      |BuildToolsWrapper| to define project settings
    - or where `.git/` is found in parent directories ;
    - or where `.svn/` is found in parent directories ;
@@ -236,7 +237,8 @@ TO DO                                   *lhtags-todo* {{{1
    * *lh#tags#command()*
    * *lh#tags#cmd_line()*
 
+                                                         }}}1
 ------------------------------------------------------------------------------
- © Luc Hermitte, 2008-2016, <http://github.com/LucHermitte/lh-tags>, CC by SA 3.0 {{{1
+ © Luc Hermitte, 2008-2017, <http://github.com/LucHermitte/lh-tags>, CC by SA 3.0 {{{1
  VIM: let b:VS_language = 'american'
  vim:ts=8:sw=4:tw=80:fo=tcq2:ft=help:fdm=marker:
