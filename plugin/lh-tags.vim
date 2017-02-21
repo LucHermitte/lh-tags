@@ -7,7 +7,7 @@
 " Version:      2.0.3
 let s:k_version = '2.0.3'
 " Created:      04th Jan 2007
-" Last Update:  04th Jan 2017
+" Last Update:  21st Feb 2017
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -135,52 +135,52 @@ endif
 
 " Menu {{{2
 if has('gui_running') && has ('menu')
-  amenu          50.97     &Project.-----<sep>-----       Nop
+  call lh#project#menu#make('a', '97', '-----<sep>-----', '', 'Nop')
 endif
-call lh#menu#make('anore', '50.97.100',
-      \ '&Project.&Tags.Update &all',
+call lh#project#menu#make('anore', '97.100',
+      \ '&Tags.Update &all',
       \ s:map_UpdateAll,
       \ ':call lh#tags#update_all()<cr>')
 " TODO inhibit this menu when no_auto is true
-call lh#menu#make('anore', '50.97.101',
-      \ '&Project.&Tags.Update &current',
+call lh#project#menu#make('anore', '97.101',
+      \ '&Tags.Update &current',
       \ s:map_UpdateCurrent,
       \ ':call lh#tags#update_current()<cr>')
-call lh#menu#make('anore', '50.97.102',
-      \ '&Project.&Tags.Update &Spell Ignore List',
+call lh#project#menu#make('anore', '97.102',
+      \ '&Tags.Update &Spell Ignore List',
       \ s:map_UpdateSpell,
       \ ':call lh#tags#update_spellfile()<cr>')
-call lh#menu#make('anore', '50.97.103',
-      \ '&Project.&Tags.Update Tags &Highlighted',
+call lh#project#menu#make('anore', '97.103',
+      \ '&Tags.Update Tags &Highlighted',
       \ s:map_UpdateHighlight,
       \ ':call lh#tags#update_highlight()<cr>')
 
-amenu          50.97.200 &Project.&Tags.-----<sep>----- Nop
+call lh#project#menu#make('a', '97.200', '&Tags.-----<sep>-----', '', 'Nop')
 if lh#has#jobs()
   call lh#let#if_undef('g:tags_options.run_in_bg', 1)
   if has('gui_running') && has ('menu')
   endif
-  call lh#menu#def_toggle_item(
+  call lh#project#menu#def_toggle_item(
         \ { 'variable': 'tags_options.run_in_bg'
         \ , 'values': [0, 1]
-        \ , 'menu': { 'priority': '50.98.201', 'name': "&Project.&Tags.&Generate"}
+        \ , 'menu': { 'priority': '98.201', 'name': "&Tags.&Generate"}
         \ , 'texts': ['blocked', 'in background']
         \ })
 endif
 
 call lh#let#if_undef('g:tags_options.auto_spellfile_update', 1)
-call lh#menu#def_toggle_item(
+call lh#project#menu#def_toggle_item(
       \ { 'variable': 'tags_options.auto_spellfile_update'
       \ , 'values': [0, 1, 'all']
-      \ , 'menu': { 'priority': '50.98.202', 'name': "&Project.&Tags.&Update Spell Ignore List"}
+      \ , 'menu': { 'priority': '98.202', 'name': "&Tags.&Update Spell Ignore List"}
       \ , 'texts': ['never', 'always', 'never on file saved']
       \ })
 
 call lh#let#if_undef('g:tags_options.auto_highlight', 0)
-call lh#menu#def_toggle_item(
+call lh#project#menu#def_toggle_item(
       \ { 'variable': 'tags_options.auto_highlight'
       \ , 'values': [0, 1]
-      \ , 'menu': { 'priority': '50.98.203', 'name': "&Project.&Tags.Auto &Highlight Tags"}
+      \ , 'menu': { 'priority': '98.203', 'name': "&Tags.Auto &Highlight Tags"}
       \ , 'texts': ['no', 'yes']
       \ , 'actions': [':silent! syn clear TagsGroup', function('lh#tags#update_highlight')]
       \ })
