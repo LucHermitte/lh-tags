@@ -7,7 +7,7 @@
 " Version:      2.0.3
 let s:k_version = '2.0.3'
 " Created:      02nd Oct 2008
-" Last Update:  21st Feb 2017
+" Last Update:  13th Mar 2017
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -1039,7 +1039,7 @@ function! s:ChooseTagEntry(tagrawinfos, tagpattern) abort
           \ "tags://selector(".a:tagpattern.")",
           \ "lh-tags ".g:loaded_lh_tags.": Select a tag to jump to",
           \ '', 0,
-          \ 'LHTags_select', tags)
+          \ 'lh#tags#_select', tags)
     let dialog.maxNameLen    = maxNameLen
     let dialog.fullsignature = fullsignature
     let dialog.filters       = {}
@@ -1171,13 +1171,19 @@ endfunction
 function! s:DisplaySignature() abort
 endfunction
 
-" LHTags_select() {{{3
-function! LHTags_select(results, ...) abort
+" lh#tags#_select() {{{3
+function! lh#tags#_select(results, ...) abort
+  call s:Verbose('tags selected: %1', a:results.selection)
   if len(a:results.selection) > 1
     " this is an assert
     throw "lh-tags: We are not supposed to select several tags"
   endif
-  let selection = a:results.selection[0]
+  " There is a header => we need to apply an offset!
+  let selection = a:results.selection[0]-1
+  if selection < 1
+    call lh#common#warning_msg('Invalid selection')
+    return
+  endif
   if a:0 == 0
     let tags_data = b:tags_data
   else
