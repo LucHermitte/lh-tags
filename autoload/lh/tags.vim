@@ -400,7 +400,7 @@ function! s:GetPlausibleRoot() abort " {{{3
       return ctags_dirname
     endif
   endif
-  let ctags_dirname = INPUT("ctags needs to know the current project root directory.\n-> ", expand('%:p:h'))
+  let ctags_dirname = lh#ui#input("ctags needs to know the current project root directory.\n-> ", expand('%:p:h'))
   if !empty(ctags_dirname)
     call lh#path#munge(s:project_roots, ctags_dirname)
   endif
@@ -1079,18 +1079,18 @@ function! s:FilterUI() abort abort
   let fields = keys(b:alltagsinfo[1])
   let fields = filter(fields, 'v:val !~ "\\<\\(cmd\\|nr\\)\\>"')
   " 2- ask which field
-  let field = WHICH('COMBO', "Filter on:", join(map(copy(fields), '"&".v:val'), "\n"))
+  let field = lh#ui#which('lh#ui#combo', "Filter on:", join(map(copy(fields), '"&".v:val'), "\n"))
   " todo: manage exit
   " 3- ask the filter expression
   let filters = b:dialog.filters
   if field == 'kind'
     let kinds = lh#list#possible_values(b:alltagsinfo[1:], 'kind')
     call map(kinds, 'v:val[0]')
-    let which = split(CHECK('Which kinds to display? ', join(map(copy(kinds), '"&".v:val'), "\n")), '\zs\ze')
+    let which = split(lh#ui#check('Which kinds to display? ', join(map(copy(kinds), '"&".v:val'), "\n")), '\zs\ze')
     let filter = match(which, '0')==-1 ? '' : '['.join(lh#list#mask(kinds, which), '').']'
   else
     let filter = get(filters, field, '')
-    let filter = INPUT('Which filter for '.field.'? ', filter)
+    let filter = lh#ui#input('Which filter for '.field.'? ', filter)
   endif
   " Update tile to print the current filter, and do filter!
   let b:tagsinfo[0][field] = substitute(b:tagsinfo[0][field], '<.*', '', '')
