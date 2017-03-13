@@ -309,6 +309,7 @@ let s:func_kinds =
       \ , 's' : ['perl']
       \ , '[bsm]' : ['perl6']
       \ , '[fF]' : ['rust']
+      \ , '[f]' : ['vim']
       \ }
 function! s:BuildFuncKinds()
   for [pat, fts] in items(s:func_kinds)
