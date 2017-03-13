@@ -834,6 +834,7 @@ let s:lines = []
 let s:k_tag_name__ = '__jump_tag__'
 let s:k_nb_digits  = 5 " works with ~1 million jumps. Should be enough
 function! lh#tags#jump(tagentry) abort
+  call s:Verbose('Jumping to tag %1', a:tagentry)
   let last = len(s:lines)+1
   " Assert s:tagentry.filename == expand('%:p')
   let filename = expand('%:p')
@@ -947,7 +948,7 @@ function! s:PrepareTagEntry0(tagrawinfo, nr) abort
         \ 'pri'             : '@@@',
         \ 'kind'            : kind,
         \ 'filename'        : a:tagrawinfo.filename,
-        \ 'signature'       : s:GetKey(a:tagrawinfo, ['signature']),
+        \ 'signature'       : get(a:tagrawinfo, 'signature', ''),
         \ 'name'            : lh#tags#tag_name(a:tagrawinfo)
         \ }
   return taginfo
@@ -960,7 +961,7 @@ function! s:PrepareTagEntry(tagrawinfo) abort
         \ 'pri'             : '@@@',
         \ 'kind'            : kind,
         \ 'filename'        : a:tagrawinfo.filename,
-        \ 'signature'       : s:GetKey(a:tagrawinfo, ['signature']),
+        \ 'signature'       : get(a:tagrawinfo, 'signature', ''),
         \ 'name'            : lh#tags#tag_name(a:tagrawinfo)
         \ }
   return taginfo
@@ -976,10 +977,7 @@ let s:tag_header = {
 
 " s:BuildTagsMenu() {{{3
 function! s:BuildTagsMenu(tagsinfo, maxNameLen, fullsignature) abort
-  let tags= []
-  for taginfo in (a:tagsinfo)
-    call add(tags, s:TagEntry(taginfo,a:maxNameLen, a:fullsignature))
-  endfor
+  let tags = map(copy(a:tagsinfo), 's:TagEntry(v:val, a:maxNameLen, a:fullsignature)')
   return tags
 endfunction
 
