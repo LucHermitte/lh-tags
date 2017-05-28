@@ -187,15 +187,15 @@ LetIfUndef g:tags_options.auto_spellfile_update 'all'
 ## Mappings and commands
 
  * The tags for the current file can be explicitly updated with `CTRL-X_tc` --
-   this mappings defaults to `<Plug>CtagsUpdateCurrent`
+   this mappings defaults to `<Plug>CTagsUpdateCurrent`
  * All the tags for the current project can be explicitly updated with
-   `CTRL-X_ta` -- this mappings defaults to `<Plug>CtagsUpdateAll`
+   `CTRL-X_ta` -- this mappings defaults to `<Plug>CTagsUpdateAll`
  * The list of words to ignore with the spellchecker can be updated on demand
    with `CTRL-X_ts` -- bound by default to `<Plug>CTagsUpdateSpell`
    This requires `lh#tags#ignore_spelling()` to have been explicitly called.
    Otherwise nothing will be done.
  * Tags matching the current word (or selection) will be presented on
-   `META-W-META-DOWN` -- these two mappings default to `<Plug>CtagsSplitOpen`
+   `META-W-META-DOWN` -- these two mappings default to `<Plug>CTagsSplitOpen`
 
  * We can also present the tags that match a pattern with `:LHTags` command
    (this command supports auto-completion on tag names)
