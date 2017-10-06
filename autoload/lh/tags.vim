@@ -4,10 +4,10 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      2.0.3
-let s:k_version = '2.0.3'
+" Version:      2.0.4
+let s:k_version = '2.0.4'
 " Created:      02nd Oct 2008
-" Last Update:  13th Mar 2017
+" Last Update:  06th Oct 2017
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -19,6 +19,8 @@ let s:k_version = '2.0.3'
 "
 "------------------------------------------------------------------------
 " History:
+"       v2.0.4:
+"       (*) Change --extra option to --extras for uctags
 "       v2.0.3:
 "       (*) Move to use lh-vim-lib v4 Project feature
 "       (*) Normalize scratch buffer name
@@ -333,14 +335,20 @@ endfunction
 " Fields options {{{3
 " They'll get overriden everytime this file is loaded
 LetIfUndef g:tags_options {}
-LetIfUndef g:tags_options.c.flags    = '--c++-kinds=+pf --fields=+imaS --extra=+q'
-" LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'
-" LetIfUndef g:tags_options.java.flags = '--c++-kinds=+acefgimp --fields=+imaSft --extra=+q --language-force=Java'
-LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extra=+q'
-LetIfUndef g:tags_options.java.flags = '--c++-kinds=+acefgimp --fields=+imaSft --extra=+q'
-LetIfUndef g:tags_options.vim.flags  = '--fields=+mS --extra=+q'
-if lh#tags#ctags_is_installed() && lh#tags#ctags_flavour() == 'utags'
-  LetIfUndef g:tags_options.cpp.flags = substitute(g:tags_options.cpp.flags, '--fields=\S\+', '&x{c++.properties}', '')
+if lh#tags#ctags_is_installed()
+  let s:flavour = lh#tags#ctags_flavour()
+  if s:flavour == 'utags'
+    LetTo g:tags_options.__extra = '--extras'
+    LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf &x{c++.properties} --extras=+q'
+  else
+    LetTo g:tags_options.__extra = '--extra'
+    LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extras=+q'
+  endif
+  LetIfUndef g:tags_options.c.flags    = '--c++-kinds=+pf --fields=+imaS '.(g:tags_options.__extra).'=+q'
+  " LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft '.(g:tags_options.__extra).'=+q --language-force=C++'
+  " LetIfUndef g:tags_options.java.flags = '--c++-kinds=+acefgimp --fields=+imaSft '.(g:tags_options.__extra).'=+q --language-force=Java'
+  LetIfUndef g:tags_options.java.flags = '--c++-kinds=+acefgimp --fields=+imaSft '.(g:tags_options.__extra).'=+q'
+  LetIfUndef g:tags_options.vim.flags  = '--fields=+mS '.(g:tags_options.__extra).'=+q'
 endif
 
 function! s:CtagsOptions() abort " {{{3
