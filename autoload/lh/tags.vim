@@ -7,7 +7,7 @@
 " Version:      2.0.4
 let s:k_version = '2.0.4'
 " Created:      02nd Oct 2008
-" Last Update:  06th Oct 2017
+" Last Update:  12th Oct 2017
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -342,7 +342,7 @@ if lh#tags#ctags_is_installed()
     LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf &x{c++.properties} --extras=+q'
   else
     LetTo g:tags_options.__extra = '--extra'
-    LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extras=+q'
+    LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extra=+q'
   endif
   LetIfUndef g:tags_options.c.flags    = '--c++-kinds=+pf --fields=+imaS '.(g:tags_options.__extra).'=+q'
   " LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft '.(g:tags_options.__extra).'=+q --language-force=C++'
