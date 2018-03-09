@@ -4,10 +4,10 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      2.0.4
-let s:k_version = '2.0.4'
+" Version:      2.0.5
+let s:k_version = '2.0.5'
 " Created:      02nd Oct 2008
-" Last Update:  14th Oct 2017
+" Last Update:  09th Mar 2018
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -19,6 +19,8 @@ let s:k_version = '2.0.4'
 "
 "------------------------------------------------------------------------
 " History:
+"       v2.0.5:
+"       (*) Change C++ property field for recent version of uctags
 "       v2.0.4:
 "       (*) Change --extra option to --extras for recent uctags
 "       v2.0.3:
@@ -345,8 +347,11 @@ if lh#tags#ctags_is_installed()
   let s:flavour = lh#tags#ctags_flavour()
   if s:flavour == 'utags'
     LetTo g:tags_options.__extra = '--extras'
-    LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf &x{c++.properties} --extras=+q'
-  else " etags, utags-old
+    LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --fields-c++=+{properties} --extras=+q'
+  elseif s:flavour == 'utags-old'
+    LetTo g:tags_options.__extra = '--extra'
+    LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft &x{c++.properties} --extras=+q'
+  else " etags
     LetTo g:tags_options.__extra = '--extra'
     LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extra=+q'
   endif
