@@ -1,4 +1,5 @@
-# lh-tags v2.0.2: a ctags wrapper for Vim
+# lh-tags : a ctags wrapper for Vim
+[![Last release](https://img.shields.io/github/tag/LucHermitte/lh-tags.svg)](https://github.com/LucHermitte/lh-tags/releases) [![Project Stats](https://www.openhub.net/p/21020/widgets/project_thin_badge.gif)](https://www.openhub.net/p/21020)
 
 ## Introduction
 
@@ -23,7 +24,7 @@ This plugin has two features:
    When this happens, [airline](https://github.com/vim-airline/vim-airline)
    will display information about the background jobs.
  * Can be done on a third-party project freshly cloned/checked out without a
-   need to define any configuration file for 
+   need to define any configuration file for
    [local_vimrc](http://github.com/LucHermitte/local_vimrc).
  * Doesn't have external dependencies other than `ctags` and `cd`.
    BTW, I highly recommend [universal ctags](http://github.com/universal-ctags/ctags)
@@ -260,4 +261,3 @@ Bundle 'LucHermitte/lh-vim-lib'
 Bundle 'LucHermitte/lh-tags'
 ```
 
-[![Project Stats](https://www.openhub.net/p/21020/widgets/project_thin_badge.gif)](https://www.openhub.net/p/21020)
