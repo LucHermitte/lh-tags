@@ -4,10 +4,10 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      2.0.5
-let s:k_version = '2.0.5'
+" Version:      2.0.6
+let s:k_version = '2.0.6'
 " Created:      02nd Oct 2008
-" Last Update:  09th Mar 2018
+" Last Update:  10th Jul 2018
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -19,6 +19,8 @@ let s:k_version = '2.0.5'
 "
 "------------------------------------------------------------------------
 " History:
+"       v2.0.6:
+"       (*) Fix `-kind` field to the right language
 "       v2.0.5:
 "       (*) Change C++ property field for recent version of uctags
 "       v2.0.4:
@@ -355,10 +357,10 @@ if lh#tags#ctags_is_installed()
     LetTo g:tags_options.__extra = '--extra'
     LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extra=+q'
   endif
-  LetIfUndef g:tags_options.c.flags    = '--c++-kinds=+pf --fields=+imaS '.(g:tags_options.__extra).'=+q'
+  LetIfUndef g:tags_options.c.flags    = '--c-kinds=+pf --fields=+imaS '.(g:tags_options.__extra).'=+q'
   " LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft '.(g:tags_options.__extra).'=+q --language-force=C++'
   " LetIfUndef g:tags_options.java.flags = '--c++-kinds=+acefgimp --fields=+imaSft '.(g:tags_options.__extra).'=+q --language-force=Java'
-  LetIfUndef g:tags_options.java.flags = '--c++-kinds=+acefgimp --fields=+imaSft '.(g:tags_options.__extra).'=+q'
+  LetIfUndef g:tags_options.java.flags = '--java-kinds=+acefgimp --fields=+imaSft '.(g:tags_options.__extra).'=+q'
   LetIfUndef g:tags_options.vim.flags  = '--fields=+mS '.(g:tags_options.__extra).'=+q'
 endif
 
