@@ -4,8 +4,8 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      2.0.6
-let s:k_version = '2.0.6'
+" Version:      3.0.0
+let s:k_version = '3.0.0'
 " Created:      02nd Oct 2008
 " Last Update:  26th Jul 2018
 "------------------------------------------------------------------------
@@ -19,6 +19,8 @@ let s:k_version = '2.0.6'
 "
 "------------------------------------------------------------------------
 " History:
+"       v3.0.0:
+"       (*) Major OO refactoring of the plugin
 "       v2.0.6:
 "       (*) Fix `-kind` field to the right language
 "       v2.0.5:
@@ -207,9 +209,6 @@ function! lh#tags#ctags_flavour() abort
 endfunction
 
 " # The options {{{2
-let s:has_jobs     = lh#has#jobs()
-let s:has_partials = lh#has#partials()
-"
 " Forcing ft -> ctags languages {{{3
 " list {{{4
 let s:force_lang = {
@@ -487,10 +486,6 @@ function! s:RecursiveFlagOrAll() abort " {{{3
   return res
 endfunction
 
-function! s:RunInBackground() abort " {{{3
-  return lh#has#jobs() && g:tags_options.run_in_bg
-endfunction
-
 function! s:AreIgnoredWordAutomaticallyGenerated() abort " {{{3
   " Possible values are:
   " "0": no
@@ -655,24 +650,13 @@ function! lh#tags#run(tag_function, force) abort
     endif
 
     let Fn = s:function(a:tag_function)
-    if 0 && s:has_partials
-      call Fn(ctags_pathname, s:function('TagGenerated', [ctags_pathname]))
-    else
-      " w/o partials, we can't have jobs either
-      let l:Finished_cb = lh#partial#make( s:function('TagGenerated'), [ctags_pathname])
-      let msg = Fn(ctags_pathname, l:Finished_cb)
-      " call s:TagGenerated(ctags_pathname, msg)
-    endif
+    let l:Finished_cb = lh#partial#make( s:function('TagGenerated'), [ctags_pathname])
+    let msg = Fn(ctags_pathname, l:Finished_cb)
   catch /tags-error:/
     call lh#common#error_msg(v:exception)
     return 0
   endtry
   return 1
-endfunction
-
-function! s:Irun(tag_function, res) abort
-  call lh#tags#run(a:tag_function)
-  return a:res
 endfunction
 
 " ======================================================================
