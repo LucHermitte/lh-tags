@@ -4,10 +4,10 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      2.0.6
-let s:version = '2.0.6'
+" Version:      3.0.0
+let s:version = '3.0.0'
 " Created:      20th Mar 2012
-" Last Update:  10th Jul 2018
+" Last Update:  26th Jul 2018
 " }}}1
 "=============================================================================
 
@@ -24,6 +24,7 @@ finally
 endtry
 finish
 autoload/lh/tags.vim
+autoload/lh/tags/system.vim
 ftplugin/cpp/cpp_lh-tags-hooks.vim
 lh-tags-addon-info.txt
 plugin/lh-tags.vim

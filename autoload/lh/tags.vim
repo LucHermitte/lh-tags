@@ -7,7 +7,7 @@
 " Version:      2.0.6
 let s:k_version = '2.0.6'
 " Created:      02nd Oct 2008
-" Last Update:  10th Jul 2018
+" Last Update:  26th Jul 2018
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -144,52 +144,21 @@ function! lh#tags#debug(expr) abort
   return eval(a:expr)
 endfunction
 
+" # SID      {{{2
+" s:function(func_name) {{{3
+function! s:function(func)
+  if !exists("s:SNR")
+    let s:SNR=matchstr(expand('<sfile>'), '<SNR>\d\+_\zefunction$')
+  endif
+  return function(s:SNR . a:func)
+endfunction
+
 " # s:System {{{2
 function! s:System(cmd_line) abort
   call s:Verbose(a:cmd_line)
   let res = lh#os#system(a:cmd_line)
   if v:shell_error
     throw "Cannot execute system call (".a:cmd_line."): ".res
-  endif
-  return res
-endfunction
-
-" # s:AsyncSystem {{{2
-function! s:async_output_factory()
-  let res = {'output': []}
-  function! s:callback(channel, msg) dict abort
-    let self.output += [ a:msg ]
-  endfunction
-  let res.callback = function('s:callback')
-  return res
-endfunction
-
-function! s:AsynchSystem(cmd_line, txt, FinishedCB, ...) abort
-  if s:RunInBackground()
-    call s:Verbose('Register: %1',a:cmd_line)
-    let async_output = s:async_output_factory()
-    let job =
-          \ { 'txt': a:txt
-          \ , 'cmd': a:cmd_line
-          \ , 'close_cb': function(a:FinishedCB, [async_output])
-          \ , 'callback': function(async_output.callback)
-          \}
-    if a:0 > 0
-      let job.before_start_cb = a:1
-    endif
-    call lh#async#queue(job)
-    let res = 0
-  else
-    if a:0 > 0
-      let Cb = a:1
-      call Cb()
-    endif
-    call s:Verbose(a:cmd_line)
-    let res = lh#os#system(a:cmd_line)
-    call a:FinishedCB()
-    if v:shell_error " after a job_start, it cannot be used
-      throw "Cannot execute system call (".a:cmd_line."): ".res
-    endif
   endif
   return res
 endfunction
@@ -586,28 +555,18 @@ endfunction
 function! s:UpdateTags_for_All(ctags_pathname, ...) abort
   let ctags_dirname = s:CtagsDirname()
 
-  runtime autoload/lh/os.vim
-  if exists('*lh#os#sys_cd')
-    let cmd_line  = lh#os#sys_cd(ctags_dirname)
-  else
-    let cmd_line  = 'cd '.ctags_dirname
-  endif
+  let cmd_line  = lh#os#sys_cd(ctags_dirname)
 
   let cmd_line .= ' && '.lh#tags#cmd_line(s:CtagsFilename()).s:RecursiveFlagOrAll()
+  " TODO: add function to request project name
   let msg = 'ctags '.
         \ lh#option#get('BTW_project_config._.name', fnamemodify(ctags_dirname, ':p:h:t'))
-  if s:has_partials
-    let FinishedCB = a:1
-    call s:AsynchSystem(
-          \ cmd_line,
-          \ msg,
-          \ function(FinishedCB, ['']),
-          \ function('delete', [a:ctags_pathname]))
-  else
-    call delete(a:ctags_pathname)
-    call s:System(cmd_line)
-    return msg
-  endif
+  return lh#tags#system#get_runner('async').run(
+        \  cmd_line
+        \, msg
+        \, lh#partial#make(a:1, [' (triggered by complete update request)'])
+        \, lh#partial#make('delete', [a:ctags_pathname])
+        \ )
 endfunction
 
 " ======================================================================
@@ -624,23 +583,18 @@ function! s:UpdateTags_for_SavedFile(ctags_pathname, ...) abort
 
   let cmd_line = 'cd '.ctags_dirname
   let cmd_line .= ' && ' . lh#tags#cmd_line(a:ctags_pathname).' --append '.source_name
-  if s:has_partials
-    let FinishedCB = a:1
-    call s:AsynchSystem(
+  return lh#tags#system#get_runner('async').run(
           \ cmd_line,
           \ 'ctags '.expand('%:t'),
-          \ function(FinishedCB, [ ' (triggered by '.source_name.' modification)']),
-          \ function('s:PurgeFileReferences', [a:ctags_pathname, source_name]))
-  else
-    call s:PurgeFileReferences(a:ctags_pathname, source_name)
-    call s:System(cmd_line)
-    return ' (triggered by '.source_name.' modification)'
-  endif
+          \ lh#partial#make(a:1, [ ' (triggered by '.source_name.' modification)']),
+          \ lh#partial#make(s:function('PurgeFileReferences'), [a:ctags_pathname, source_name])
+        \ )
 endfunction
 
 " ======================================================================
 " (private) Conclude tag generation {{{3
 function! s:TagGenerated(ctags_pathname, msg, ...) abort
+  redrawstatus
   if a:0 > 0
     let async_output = a:1
     let channel = a:2
@@ -654,7 +608,15 @@ function! s:TagGenerated(ctags_pathname, msg, ...) abort
       endwhile
       return
     endif
+  else
+    " Force a redraw right before output if we have less than 2 lines to display
+    " messages, so that the common case of updating ctags during a write doesn't
+    " cause a pause that requires the user to press enter.
+    if &cmdheight < 2
+      redraw
+    endif
   endif
+
   echomsg a:ctags_pathname . ' updated'.a:msg.'.'
   let auto_spell = s:AreIgnoredWordAutomaticallyGenerated()
   if auto_spell == 1 || (auto_spell == 'all' && empty(a:msg))
@@ -692,25 +654,19 @@ function! lh#tags#run(tag_function, force) abort
       throw "tags-error: ".ctags_pathname." cannot be modified"
     endif
 
-    let Fn = function("s:".a:tag_function)
-    if s:has_partials
-      call Fn(ctags_pathname, function('s:TagGenerated', [(ctags_pathname)]))
+    let Fn = s:function(a:tag_function)
+    if 0 && s:has_partials
+      call Fn(ctags_pathname, s:function('TagGenerated', [ctags_pathname]))
     else
       " w/o partials, we can't have jobs either
-      let msg = Fn(ctags_pathname)
-      call s:TagGenerated(ctags_pathname, msg)
+      let l:Finished_cb = lh#partial#make( s:function('TagGenerated'), [ctags_pathname])
+      let msg = Fn(ctags_pathname, l:Finished_cb)
+      " call s:TagGenerated(ctags_pathname, msg)
     endif
   catch /tags-error:/
     call lh#common#error_msg(v:exception)
     return 0
   endtry
-
-  " Force a redraw right before output if we have less than 2 lines to display
-  " messages, so that the common case of updating ctags during a write doesn't
-  " cause a pause that requires the user to press enter.
-  if &cmdheight < 2
-    redraw
-  endif
   return 1
 endfunction
 
@@ -733,11 +689,6 @@ function! lh#tags#update_current() abort
   else
     let done = lh#tags#run('UpdateTags_for_SavedFile', 1)
   endif
-  " if done
-    " call lh#common#error_msg("updated")
-  " else
-    " call lh#common#error_msg("not updated")
-  " endif
 endfunction
 
 " ######################################################################

@@ -240,24 +240,31 @@ LetIfUndef g:tags_options.auto_spellfile_update 'all'
    the other)
 
 ## Installation
-  * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v3.14.0
+  * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v4.6.0
   * With [vim-addon-manager](https://github.com/MarcWeber/vim-addon-manager), install lh-tags (this is the preferred method because of the dependencies)
-```vim
-ActivateAddons lh-tags
-```
+
+    ```vim
+    ActivateAddons lh-tags
+    ```
+
   * or with [vim-flavor](http://github.com/kana/vim-flavor) which also supports
     dependencies
-```
-flavor 'LucHermitte/lh-tags'
-```
+
+    ```
+    flavor 'LucHermitte/lh-tags'
+    ```
+
   * or you can clone the git repositories
-```
-git clone git@github.com:LucHermitte/lh-vim-lib.git
-git clone git@github.com:LucHermitte/lh-tags.git
-```
+
+    ```bash
+    git clone git@github.com:LucHermitte/lh-vim-lib.git
+    git clone git@github.com:LucHermitte/lh-tags.git
+    ```
+
   * or with Vundle/NeoBundle:
-```vim
-Bundle 'LucHermitte/lh-vim-lib'
-Bundle 'LucHermitte/lh-tags'
-```
+
+    ```vim
+    Bundle 'LucHermitte/lh-vim-lib'
+    Bundle 'LucHermitte/lh-tags'
+    ```
 
