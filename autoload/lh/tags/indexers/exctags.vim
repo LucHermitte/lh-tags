@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      27th Jul 2018
-" Last Update:  27th Jul 2018
+" Last Update:  29th Jul 2018
 "------------------------------------------------------------------------
 " Description:
 "       Specifications for exhuberant-ctags object
@@ -75,13 +75,97 @@ endfunction
 
 " Function: s:analyse_flavour(exepath) abort {{{3
 function! s:analyse_flavour(exepath) abort
-  let raw_extras = lh#os#system(a:exepath.' --list-extras')
-  let raw_fields = lh#os#system(a:exepath.' --list-fields')
-  let raw_kinds  = lh#os#system(a:exepath.' --list-kinds')
-  let res = {}
-  let res.extras = s:parse_matrix(raw_extras)
-  let res.fields = s:parse_matrix(raw_fields)
-  return res
+  let flavour = lh#object#make_top_type({'exepath': a:exepath})
+  let raw_options = lh#os#system(a:exepath.' --help')
+  if match(raw_options, '--list-extras ') >= 0
+    call lh#object#inject_methods(flavour, s:k_script_name, '_analyse_extras')
+  else
+    call lh#object#inject(flavour, '_analyse_extras', '_use_default_extras', s:k_script_name)
+  endif
+  if match(raw_options, '--list-fields ') >= 0
+    call lh#object#inject_methods(flavour, s:k_script_name, '_analyse_fields')
+  else
+    call lh#object#inject(flavour, '_analyse_fields', '_use_default_fields', s:k_script_name)
+  endif
+  call lh#object#inject_methods(flavour, s:k_script_name, '_analyse_kinds')
+
+  call flavour._analyse_extras()
+  call flavour._analyse_fields()
+  call flavour._analyse_kinds()
+  return flavour
+endfunction
+
+" Function: s:_analyse_extras() dict abort {{{3
+function! s:_analyse_extras() dict abort
+  let raw_extras = lh#os#system(self.exepath.' --list-extras')
+  let self._extras = s:parse_matrix(raw_extras)
+  return self
+endfunction
+
+function! s:_use_default_extras() dict abort
+  " TODO: merge names with universal ctags choices
+  let raw_extras = "#LETTER NAME LANGUAGE ENABLED DESCRIPTION"
+        \ ."\nf  basefilename NONE    NO  Include  an  entry  for  the base file name of every source file,  which addresses the first line of the file"
+        \ ."\na  class        C++     NO  Include  an  extra  class-qualified  tag entry for each tag which is a member of a class"
+        \ ."\na  class        Eiffel  NO  Include  an  extra  class-qualified  tag entry for each tag which is a member of a class"
+        \ ."\na  class        Java    NO  Include  an  extra  class-qualified  tag entry for each tag which is a member of a class"
+  let self._extras = s:parse_matrix(raw_extras)
+  return self
+endfunction
+
+" Function: s:_analyse_fields() dict abort {{{3
+function! s:_analyse_fields() dict abort
+  let raw_fields = lh#os#system(self.exepath.' --list-fields')
+  let self._fields = s:parse_matrix(raw_fields)
+  return self
+endfunction
+
+function! s:_use_default_fields() dict abort
+  " TODO: merge names with universal ctags choices
+  let raw_fields = "#LETTER NAME LANGUAGE ENABLED DESCRIPTION"
+        \ ."\n a   access         NONE  NO  Access (or export) of class members"
+        \ ."\n f   filescope      NONE  YES File-restricted scoping"
+        \ ."\n i   inheritance    NONE  NO  Inheritance information"
+        \ ."\n k   kindname       NONE  YES Kind of tag as a single letter"
+        \ ."\n K   kindfullname   NONE  NO  Kind of tag as full name"
+        \ ."\n l   language       NONE  NO  Language of source file containing tag"
+        \ ."\n m   implementation NONE  NO  Implementation information"
+        \ ."\n n   linenumer      NONE  NO  Line number of tag definition"
+        \ ."\n s   scope          NONE  NO  Scope of tag definition"
+        \ ."\n S   signature      NONE  NO  Signature of routine (e.g. prototype or parameter list)"
+        \ ."\n z   kind           NONE  NO  Include the 'kind:' key in kind field"
+        \ ."\n t   typeref        NONE  YES Type  and name of a variable or typedef as 'typeref:' field"
+
+  let self._fields = s:parse_matrix(raw_fields)
+  return self
+endfunction
+
+" Function: s:_analyse_kinds() dict abort {{{3
+function! s:line2dict(line) abort
+  let tokens = split(a:line)
+  return {tokens[0] : join(tokens[1:], ' ')}
+endfunction
+function! s:_analyse_kinds() dict abort
+  let raw_kinds = lh#os#system(self.exepath.' --list-kinds')
+  " Format:
+  "   Lang
+  "        letter description
+  let lines = split(raw_kinds, "\n")
+  let self._kinds = {}
+  let languages = []
+
+  " Analyse all lines in one pass with a kind of state machine. The
+  " state is the current language with is stored at the and of the
+  " 'languages' list.
+  " If the line starts at the first character, we have a language, we
+  " update the state machine and extend the self._kinds dictionary with
+  " the new language
+  " Otherwise, we have a "kind" entry which we add in self._kinds[crt
+  " lang]
+  call map(lines, 'v:val[0] != " " '
+        \ . '? extend(self._kinds, {add(languages, v:val)[-1] : {}})'
+        \ . ': extend(self._kinds[languages[-1]], s:line2dict(v:val))')
+  return self
 endfunction
 
 " Function: s:feature_id(data, l_id, n_id) abort {{{3
@@ -109,12 +193,10 @@ function! s:parse_matrix(raw) abort
   " passes
   call map(copy(features), 'extend(res, {s:feature_id(v:val, letter_idx, name_idx) : {}})')
 
-
   call map(copy(features), 'extend(res[s:feature_id(v:val, letter_idx, name_idx)], {v:val[lang_idx] : {"letter": v:val[letter_idx], "description": v:val[descr_idx], "enabled": v:val[enabled_idx]}})')
 
   return res
 endfunction
-
 
 " # exctags object {{{2
 " Function: lh#tags#indexers#exctags#make() {{{3
