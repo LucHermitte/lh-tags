@@ -56,6 +56,68 @@ let s:k_script_name      = s:getSID()
 
 "------------------------------------------------------------------------
 " ## Exported functions {{{1
+" # Language Map {{{2
+" Associate ft to ctags supported languages
+let s:all_lang_map = {
+      \ 'ada' : 'Ada',
+      \ 'ant' : 'Ant',
+      \ 'asm' : 'Asm',
+      \ 'automake' : 'Automake',
+      \ 'awk' : 'Awk',
+      \ 'c' : 'C',
+      \ 'cs' : 'C#',
+      \ 'cpp' : 'C++',
+      \ 'clojure' : 'Clojure',
+      \ 'cobol' : 'Cobol',
+      \ 'css' : 'CSS',
+      \ 'tags' : 'ctags',
+      \ 'd' : 'D',
+      \ 'dosbatch' : 'DosBatch',
+      \ 'dts' : 'DTS',
+      \ 'eiffel' : 'Eiffel',
+      \ 'erlang' : 'Erlang',
+      \ 'falcon' : 'Falcon',
+      \ 'lex' : 'Flex',
+      \ 'fortran' : 'Fortran',
+      \ 'go' : 'Go',
+      \ 'html' : 'HTML',
+      \ 'java' : 'Java',
+      \ 'jproperties' : 'JavaProperties',
+      \ 'javascript' : 'JavaScript',
+      \ 'json' : 'JSON',
+      \ 'lisp' : 'Lisp',
+      \ 'lua' : 'Lua',
+      \ 'make' : 'Make',
+      \ 'matlab' : 'MatLab',
+      \ 'objc' : 'ObjectiveC',
+      \ 'ocaml' : 'OCaml',
+      \ 'pascal' : 'Pascal',
+      \ 'perl' : 'Perl',
+      \ 'perl6' : 'Perl6',
+      \ 'php' : 'PHP',
+      \ 'python' : 'Python',
+      \ 'r' : 'R',
+      \ 'rrst' : 'reStructuredText',
+      \ 'rexx' : 'REXX',
+      \ 'ruby' : 'Ruby',
+      \ 'rust' : 'Rust',
+      \ 'scheme' : 'Scheme',
+      \ 'sh' : 'Sh',
+      \ 'slang' : 'SLang',
+      \ 'sml' : 'SML',
+      \ 'sql' : 'SQL',
+      \ 'svg' : 'SVG',
+      \ 'systemverilog' : 'SystemVerilog',
+      \ 'tcl' : 'Tcl',
+      \ 'tex' : 'Tex',
+      \ 'vera' : 'Vera',
+      \ 'verilog' : 'Verilog',
+      \ 'vhdl' : 'VHDL',
+      \ 'vim' : 'Vim',
+      \ 'xslt' : 'XSLT',
+      \ 'yacc' : 'YACC',
+      \ }
+
 " # ctags capabilities analysis {{{2
 " We ask ctags --help & cie what extras, fields, kinds, are supported by
 " the current version
@@ -64,8 +126,8 @@ let s:k_script_name      = s:getSID()
 
 let s:ctags_flavours = {}
 
-" Function: s:analyse_flavour(exe) abort {{{3
-function! s:analyse_flavour(exe) abort
+" Function: s:get_flavour(exe) abort {{{3
+function! s:get_flavour(exe) abort
   let exe = exepath(a:exe)
   if has_key(s:ctags_flavours, exe)
     let s:ctags_flavours[exe] = s:analyse_flavour(exe)
@@ -87,11 +149,13 @@ function! s:analyse_flavour(exepath) abort
   else
     call lh#object#inject(flavour, '_analyse_fields', '_use_default_fields', s:k_script_name)
   endif
-  call lh#object#inject_methods(flavour, s:k_script_name, '_analyse_kinds')
+  call lh#object#inject_methods(flavour, s:k_script_name,
+        \ '_analyse_kinds', '_analyse_languages')
 
   call flavour._analyse_extras()
   call flavour._analyse_fields()
   call flavour._analyse_kinds()
+  call flavour._analyse_languages()
   return flavour
 endfunction
 
@@ -168,6 +232,13 @@ function! s:_analyse_kinds() dict abort
   return self
 endfunction
 
+" Function: s:_analyse_languages() dict abort {{{3
+function! s:_analyse_languages() dict abort
+  let raw_languages = lh#os#system(self.exepath.' --list-languages')
+  let languages = lh#list#unique_sort(split(raw_languages, "\n"))
+  let self._ft_lang_map = filter(copy(s:all_lang_map), 'index(languages, v:val) >= 0')
+endfunction
+
 " Function: s:feature_id(data, l_id, n_id) abort {{{3
 function! s:feature_id(data, l_id, n_id) abort
   " Sometimes, there are entries with no NAME, only LETTER
@@ -204,7 +275,7 @@ function! lh#tags#indexers#exctags#make() abort
   let res = lh#tags#indexers#interface#make()
   call lh#object#inject_methods(res, s:k_script_name,
         \ 'update_tags_option', 'db_filename',
-        \ 'executable',
+        \ 'executable', 'flavour',
         \ 'cmd_line')
 
   " TODO: not to be done in the case of `get_file_tags`
@@ -228,8 +299,15 @@ function! s:db_filename() dict abort " {{{3
 endfunction
 
 function! s:executable() dict abort " {{{3
+  " FIXME: check the tags executable may be different in two different
+  " buffers while the exctags object could be the same => this makes no
+  " sense and this may be source of odd behaviours
   let tags_executable = lh#option#get('tags_executable', 'ctags', 'bpg')
   return tags_executable
+endfunction
+
+function! s:flavour() dict abort " {{{3
+  return s:get_flavour(self.executable())
 endfunction
 
 function! s:cmd_line(...) dict abort " {{{3
