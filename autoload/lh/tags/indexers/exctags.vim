@@ -129,7 +129,7 @@ let s:ctags_flavours = {}
 " Function: s:get_flavour(exe) abort {{{3
 function! s:get_flavour(exe) abort
   let exe = exepath(a:exe)
-  if has_key(s:ctags_flavours, exe)
+  if ! has_key(s:ctags_flavours, exe)
     let s:ctags_flavours[exe] = s:analyse_flavour(exe)
   endif
   return s:ctags_flavours[exe]
@@ -138,7 +138,20 @@ endfunction
 " Function: s:analyse_flavour(exepath) abort {{{3
 function! s:analyse_flavour(exepath) abort
   let flavour = lh#object#make_top_type({'exepath': a:exepath})
-  let raw_options = lh#os#system(a:exepath.' --help')
+  let raw_options = lh#os#system(lh#path#fix(a:exepath).' --help')
+
+  " Recent versions of uctags use another flags to fill 'extra' option
+  let flavour._extras_flag = match(raw_options, '--extras ') >= 0
+        \ ? '--extras'
+        \ : '--extra'
+
+  " uctags is deprecating <LANG>-kind in favour of kind-<LANG>
+  " => use this form if possible
+  let flavour._kind_opt_format = match(raw_options, '--kinds-<LANG>') >= 0
+        \ ? '--kinds-%s'
+        \ : '--%s-kinds'
+
+  " Detect parameters for --extra(s) and --fields options
   if match(raw_options, '--list-extras ') >= 0
     call lh#object#inject_methods(flavour, s:k_script_name, '_analyse_extras')
   else
@@ -161,7 +174,7 @@ endfunction
 
 " Function: s:_analyse_extras() dict abort {{{3
 function! s:_analyse_extras() dict abort
-  let raw_extras = lh#os#system(self.exepath.' --list-extras')
+  let raw_extras = lh#os#system(lh#path#fix(self.exepath).' --list-extras')
   let self._extras = s:parse_matrix(raw_extras)
   return self
 endfunction
@@ -170,16 +183,16 @@ function! s:_use_default_extras() dict abort
   " TODO: merge names with universal ctags choices
   let raw_extras = "#LETTER NAME LANGUAGE ENABLED DESCRIPTION"
         \ ."\nf  basefilename NONE    NO  Include  an  entry  for  the base file name of every source file,  which addresses the first line of the file"
-        \ ."\na  class        C++     NO  Include  an  extra  class-qualified  tag entry for each tag which is a member of a class"
-        \ ."\na  class        Eiffel  NO  Include  an  extra  class-qualified  tag entry for each tag which is a member of a class"
-        \ ."\na  class        Java    NO  Include  an  extra  class-qualified  tag entry for each tag which is a member of a class"
+        \ ."\nq  class        C++     NO  Include  an  extra  class-qualified  tag entry for each tag which is a member of a class"
+        \ ."\nq  class        Eiffel  NO  Include  an  extra  class-qualified  tag entry for each tag which is a member of a class"
+        \ ."\nq  class        Java    NO  Include  an  extra  class-qualified  tag entry for each tag which is a member of a class"
   let self._extras = s:parse_matrix(raw_extras)
   return self
 endfunction
 
 " Function: s:_analyse_fields() dict abort {{{3
 function! s:_analyse_fields() dict abort
-  let raw_fields = lh#os#system(self.exepath.' --list-fields')
+  let raw_fields = lh#os#system(lh#path#fix(self.exepath).' --list-fields')
   let self._fields = s:parse_matrix(raw_fields)
   return self
 endfunction
@@ -209,14 +222,19 @@ function! s:line2dict(line) abort
   let tokens = split(a:line)
   return {tokens[0] : join(tokens[1:], ' ')}
 endfunction
+function! s:extract_kinds(kinds, pattern) abort
+  let kinds = map(deepcopy(a:kinds), "filter(v:val, 'v'.':val =~? a:pattern')")
+  call filter(kinds, '!empty(v:val)')
+  call map(kinds, 'keys(v:val)[0]')
+  return kinds
+endfunction
 function! s:_analyse_kinds() dict abort
-  let raw_kinds = lh#os#system(self.exepath.' --list-kinds')
+  let raw_kinds = lh#os#system(lh#path#fix(self.exepath).' --list-kinds')
   " Format:
   "   Lang
-  "        letter description
+  "        letter    then the description
   let lines = split(raw_kinds, "\n")
   let self._kinds = {}
-  let languages = []
 
   " Analyse all lines in one pass with a kind of state machine. The
   " state is the current language with is stored at the and of the
@@ -226,15 +244,26 @@ function! s:_analyse_kinds() dict abort
   " the new language
   " Otherwise, we have a "kind" entry which we add in self._kinds[crt
   " lang]
+  let languages = []
   call map(lines, 'v:val[0] != " " '
         \ . '? extend(self._kinds, {add(languages, v:val)[-1] : {}})'
         \ . ': extend(self._kinds[languages[-1]], s:line2dict(v:val))')
+
+
+  " By default, tags for almost all kinds are generated except for
+  " - function declarations
+  " - local variables
+  " Unfortunatelly, depending on the language, the exact option may
+  " change => pre-analyse it.
+  let self._kinds_local = s:extract_kinds(self._kinds, 'local')
+  let self._kinds_proto = s:extract_kinds(self._kinds, '\vprototype|interface content|subroutine declaration')
+
   return self
 endfunction
 
 " Function: s:_analyse_languages() dict abort {{{3
 function! s:_analyse_languages() dict abort
-  let raw_languages = lh#os#system(self.exepath.' --list-languages')
+  let raw_languages = lh#os#system(lh#path#fix(self.exepath).' --list-languages')
   let languages = lh#list#unique_sort(split(raw_languages, "\n"))
   let self._ft_lang_map = filter(copy(s:all_lang_map), 'index(languages, v:val) >= 0')
 endfunction
@@ -313,22 +342,60 @@ endfunction
 function! s:cmd_line(...) dict abort " {{{3
   let args = get(a:, 1, {})
   let cmd_line = [self.executable()]
+  let flavour = self.flavour()
+
+  let options = []
+  let options += ['--tag-relative=yes']
+
+  " Forced languages
+  let fts = lh#option#get('tags_options.indexed_ft')
+  if lh#option#is_set(fts)
+    let langs = map(copy(fts), 'get(flavour._ft_lang_map, v:val, "")')
+    " TODO: warn about filetypes unknown to ctags
+    call filter(langs, '!empty(v:val)')
+    let options += ['--languages='.join(langs, ',')]
+  else
+    let langs = values(flavour._ft_lang_map)
+  endif
+
+  " Given the languages of the current project, generate the "kinds"
+  " option
+  let kinds = {}
+  call map(copy(langs), 'extend(kinds, {v:val : []})')
+  " first: add the prototypes
+  call lh#assert#true(lh#has#vkey())
+  call map(kinds, 'has_key(flavour._kinds_proto, v:key) ? add(v:val, flavour._kinds_proto[v:key]) : v:val')
+  " Then analyse some other requirements
+  if get(args, 'extract_local_variables', 0)
+    call map(kinds, 'has_key(flavour._kinds_local, v:key) ? add(v:val, flavour._kinds_local[v:key]) : v:val')
+  endif
+  " TODO: add generic way to support other kinds...
+  call filter(kinds, '!empty(v:val)')
+  call map(kinds, 'add(options, printf(flavour._kind_opt_format."=+%s", v:key, join(v:val, "")))')
+
+  " Regarding --extra, it becomes extras with a latter version of uctags
+  " -> always +q
+  let options += [flavour._extras_flag.'=+q']
+
+  " Regarding fields: most are global,
+  " C, C++:
+  "   - fields:+imaSft, c++=+{properties},
+  "     a: OO lang with public/protected/...
+  "     i: OO lang w/ inhritance
+  "     t: type + name of var/typedef
+  "   - extras:+q
+  "
+  " Java
+  "   - fields:+imaSft
+  " Vim
+  "   - fields:+mS
+
 
   " TODO: Need to pick various options (kind, langmap, fields, extra...) in
   " various places (b:, p:, g:) and assemble back something
-  let options = []
-  let options += ['--tag-relative=yes']
-  let options += [lh#option#get('tags_options.'.get(args, 'ft', &ft).'.flags', '')]
+  " let options += [lh#option#get('tags_options.'.get(args, 'ft', &ft).'.flags', '')]
   let options += [lh#option#get('tags_options.flags', '', 'wbpg')]
   let options += [lh#option#get('tags_options.langmap', '', 'wbpg')]
-
-  let fts = lh#option#get('tags_options.indexed_ft')
-  ""if lh#option#is_set(fts)
-  ""  let langs = map(copy(fts), 'get(s:force_lang, v:val, "")')
-  ""  " TODO: warn about filetypes unknown to ctags
-  ""  call filter(langs, '!empty(v:val)')
-  ""  let options += ['--languages='.join(langs, ',')]
-  ""endif
 
   " Leave the join to system/job call
   return cmd_line + options
