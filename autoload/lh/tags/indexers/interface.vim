@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      26th Jul 2018
-" Last Update:  27th Jul 2018
+" Last Update:  30th Jul 2018
 "------------------------------------------------------------------------
 " Description:
 "       Interface for indexer objects
@@ -77,15 +77,22 @@ let s:k_script_name      = s:getSID()
 function! lh#tags#indexers#interface#make() abort
   let res = lh#object#make_top_type({})
   call lh#object#inject_methods(res, s:k_script_name,
-        \ 'run', 'set_output_file', 'db_dirname')
+        \ 'run', 'set_output_file', 'db_file', 'db_dirname')
 
+  " TODO: harmonize set_output_file & db_file
   return res
 endfunction
 
 function! s:set_output_file(filename) dict abort " {{{2
+  if !filewritable(a:filename)
+    throw "tags-error: ".a:filename." cannot be modified"
+  endif
   let self._db_file = a:filename
 endfunction
 
+function! s:db_file() dict abort " {{{2
+  return self._db_file
+endfunction
 function! s:db_dirname() dict abort " {{{2
   return s:DB_Dirname()
 endfunction
