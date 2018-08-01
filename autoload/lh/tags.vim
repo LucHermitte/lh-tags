@@ -343,6 +343,11 @@ endfunction
 
 " Function: lh#tags#set_indexer(Func) {{{3
 function! lh#tags#set_indexer(Func) abort
+  " TODO: simplify the usage of the function to be able to call
+  " - call lh#tags#set_indexer('ctags')
+  " - call lh#tags#set_indexer('global')
+  " - call lh#tags#set_indexer('my#compatible#indexer#make')
+  " - call lh#tags#set_indexer(function('s:indexer_make'))
   let indexer = a:Func()
   call lh#let#to('p:tags_options.__indexer', indexer)
   return indexer
