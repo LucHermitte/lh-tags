@@ -7,7 +7,7 @@
 " Version:      3.0.0
 let s:k_version = '3.0.0'
 " Created:      02nd Oct 2008
-" Last Update:  30th Jul 2018
+" Last Update:  01st Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -336,7 +336,7 @@ function! s:indexer() abort " {{{3
   " TODO: support ft specific indexers
   let indexer = lh#option#get('tags_options.__indexer')
   if lh#option#is_unset(indexer)
-    let indexer = lh#tags#set_indexer(function('lh#tags#indexers#exctags#make'))
+    let indexer = lh#tags#set_indexer(function('lh#tags#indexers#ctags#make'))
   endif
   return indexer
 endfunction
@@ -379,14 +379,12 @@ endfunction
 
 let s:project_roots = get(s:, 'project_roots', [])
 " Function: lh#tags#update_tagfiles() {{{3
-" @deprecated for: exctags.update_tag_option()
 function! lh#tags#update_tagfiles() abort
-  call lh#notify#deprecated('lh#tags#update_tagfiles', 'lh#tags#indexers#exctags#make().update_tags_option')
   call s:indexer().update_tags_option()
 endfunction
 
 function! lh#tags#cmd_line(ctags_pathname) abort " {{{3
-  call lh#notify#deprecated('lh#tags#cmd_line', 'lh#tags#indexers#exctags#make().cmd_line')
+  call lh#notify#deprecated('lh#tags#cmd_line', 'lh#tags#indexers#ctags#make().cmd_line')
   let indexer = s:indexer()
   call indexer.set_output_file(a:ctags_pathname)
   let cmd_line = indexer.cmd_line()

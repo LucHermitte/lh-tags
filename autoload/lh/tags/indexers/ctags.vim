@@ -1,5 +1,5 @@
 "=============================================================================
-" File:         autoload/lh/tags/indexers/exctags.vim             {{{1
+" File:         autoload/lh/tags/indexers/ctags.vim             {{{1
 " Author:       Luc Hermitte <EMAIL:luc {dot} hermitte {at} gmail {dot} com>
 "		<URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      27th Jul 2018
-" Last Update:  30th Jul 2018
+" Last Update:  01st Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Specifications for exhuberant-ctags object
@@ -23,13 +23,13 @@ set cpo&vim
 "------------------------------------------------------------------------
 " ## Misc Functions     {{{1
 " # Version {{{2
-function! lh#tags#indexers#exctags#version()
+function! lh#tags#indexers#ctags#version()
   return s:k_version
 endfunction
 
 " # Debug   {{{2
 let s:verbose = get(s:, 'verbose', 0)
-function! lh#tags#indexers#exctags#verbose(...)
+function! lh#tags#indexers#ctags#verbose(...)
   if a:0 > 0 | let s:verbose = a:1 | endif
   return s:verbose
 endfunction
@@ -44,7 +44,7 @@ function! s:Verbose(expr, ...) abort
   endif
 endfunction
 
-function! lh#tags#indexers#exctags#debug(expr) abort
+function! lh#tags#indexers#ctags#debug(expr) abort
   return eval(a:expr)
 endfunction
 
@@ -336,7 +336,7 @@ function! s:parse_matrix(raw) abort
   return res
 endfunction
 
-" # exctags object {{{2
+" # ctags object {{{2
 " Constants {{{3
 let s:k_default_fields = {
       \ 'name'          : 1,
@@ -352,8 +352,8 @@ let s:k_default_fields = {
       \ 'signature'     : 1,
       \ 'line'          : 1
       \ }
-" Function: lh#tags#indexers#exctags#make() {{{3
-function! lh#tags#indexers#exctags#make() abort
+" Function: lh#tags#indexers#ctags#make() {{{3
+function! lh#tags#indexers#ctags#make() abort
   let res = lh#tags#indexers#interface#make()
   call lh#object#inject_methods(res, s:k_script_name,
         \ 'update_tags_option', 'db_filename',
@@ -382,7 +382,7 @@ endfunction
 
 function! s:executable() dict abort " {{{3
   " FIXME: check the tags executable may be different in two different
-  " buffers while the exctags object could be the same => this makes no
+  " buffers while the ctags object could be the same => this makes no
   " sense and this may be source of odd behaviours
   let tags_executable = lh#option#get('tags_executable', 'ctags', 'bpg')
   return tags_executable
