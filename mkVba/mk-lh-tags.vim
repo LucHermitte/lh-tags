@@ -7,7 +7,7 @@
 " Version:      3.0.0
 let s:version = '3.0.0'
 " Created:      20th Mar 2012
-" Last Update:  26th Jul 2018
+" Last Update:  01st Aug 2018
 " }}}1
 "=============================================================================
 
@@ -25,6 +25,8 @@ endtry
 finish
 autoload/lh/tags.vim
 autoload/lh/tags/system.vim
+autoload/lh/tags/indexers/ctags.vim
+autoload/lh/tags/indexers/interface.vim
 ftplugin/cpp/cpp_lh-tags-hooks.vim
 lh-tags-addon-info.txt
 plugin/lh-tags.vim
