@@ -75,6 +75,7 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
    you'll have to set this option to the root of your project.
    If you leave it unset, it will be set on first tags generation to (in
    order):
+   FIXME!!!
 
    * `b:project_sources_dir`, which is used by some of
      [mu-template](http://github.com/LucHermitte/mu-template) templates ;
@@ -97,13 +98,20 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
    ```
 
  * `lh#tags#set_lang_map()`  
-   Manages the extensions associated to a filetype. You could directly set
-   `b:tags_options.{ft}.flags` to `--langmap=C++:+.txx` or `--map-C++=+.txx`,
-   the point is this tool function helps to set the option to the best
-   possible value according to the current `ctags` flavour (etags or utags).
+   Manages the extensions associated to a filetype.
+   The point of this helper function is to set the options to the best possible
+   value according to the current tag-indexer which could be exhuberant-ctags,
+   universal-ctag, or eventually any other indexer like _global_.
    ```vim
    :call lh#tags#set_lang_map('cpp', '+.txx')
    ```
+
+   Since version 3.0.0, it's best to avoid to directly set
+   `b:tags_options.{ft}.flags` to either `--langmap=C++:+.txx` or
+   `--map-C++=+.txx` as it's not _portable_.
+
+ * `lh#tags#set_indexer(indexer [,scope])`
+    TODO
 
  * `(bg):tags_options.flags` defaults to an empty string; It contains extra
    flags you could pass to `ctags` execution. You'll have to adjust
@@ -116,10 +124,11 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
     * vim:  `'--fields=+mS --extra=+q'`
 
    Warning: This was renamed from `(bg):tags_options_{ft}` in version 2.0.0.
+   FIXME!!!
  * `(bg):tags_filename` defaults to `'tags'`; in case you want your `tags` file
    to have another name.
  * `(bg):tags_executable` defaults to `ctags`; you should not need to change
-   it.
+   it. This option is used by the _ctags indexer_.
  * `(bg):tags_must_go_recursive` defaults to 1; set it to 0 if you really want
    to not explore subdirectories.
  * `(bg):tags_select` defaults to `'expand('<cword>')'`; this policy says how
@@ -267,4 +276,3 @@ LetIfUndef g:tags_options.auto_spellfile_update 'all'
     Bundle 'LucHermitte/lh-vim-lib'
     Bundle 'LucHermitte/lh-tags'
     ```
-

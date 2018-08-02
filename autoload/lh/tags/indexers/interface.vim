@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      26th Jul 2018
-" Last Update:  30th Jul 2018
+" Last Update:  02nd Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Interface for indexer objects
@@ -77,7 +77,7 @@ let s:k_script_name      = s:getSID()
 function! lh#tags#indexers#interface#make() abort
   let res = lh#object#make_top_type({})
   call lh#object#inject_methods(res, s:k_script_name,
-        \ 'run', 'set_output_file', 'db_file', 'db_dirname')
+        \ 'run', 'set_output_file', 'db_file', 'db_dirname', '__lhvl_oo_type')
 
   " TODO: harmonize set_output_file & db_file
   return res
@@ -100,8 +100,21 @@ endfunction
 function! s:run(args) dict abort " {{{2
 endfunction
 
+function! s:__lhvl_oo_type() dict abort " {{{2
+  return s:k_oo_type
+endfunction
+
 "------------------------------------------------------------------------
 " ## Internal functions {{{1
+" # Misc {{{2
+let s:k_oo_type = 'ctags-indexer'
+" Function: lh#tags#indexers#interface#is_an_indexer(dict) {{{3
+function! lh#tags#indexers#interface#is_an_indexer(dict) abort
+  return type(a:dict) == type({})
+        \ && lh#object#is_an_object(a:dict)
+        \ && a:dict.__lhvl_oo_type() == s:k_oo_type
+endfunction
+
 " # db_dirname support functions {{{2
 " TODO: be able to distinguish where the sources are from where the tags
 " DB is stored.

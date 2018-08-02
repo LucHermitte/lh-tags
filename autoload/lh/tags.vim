@@ -7,7 +7,7 @@
 " Version:      3.0.0
 let s:k_version = '3.0.0'
 " Created:      02nd Oct 2008
-" Last Update:  01st Aug 2018
+" Last Update:  02nd Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -341,15 +341,19 @@ function! s:indexer() abort " {{{3
   return indexer
 endfunction
 
-" Function: lh#tags#set_indexer(Func) {{{3
-function! lh#tags#set_indexer(Func) abort
-  " TODO: simplify the usage of the function to be able to call
-  " - call lh#tags#set_indexer('ctags')
-  " - call lh#tags#set_indexer('global')
-  " - call lh#tags#set_indexer('my#compatible#indexer#make')
-  " - call lh#tags#set_indexer(function('s:indexer_make'))
-  let indexer = a:Func()
-  call lh#let#to('p:tags_options.__indexer', indexer)
+" Function: lh#tags#set_indexer(Func [,scope]) {{{3
+" If {Func} is a string, execute lh#tags#indexers#{Func}#make()
+" If it's a function, just call it, and assert it's of the right type
+function! lh#tags#set_indexer(Func, ...) abort
+  call lh#assert#type(a:Func).belongs_to('', function('has'))
+  if type(a:Func) == type('')
+    let indexer = function('tags#indexers#'.a:Func.'#make')
+  else
+    let indexer = a:Func()
+  endif
+  call lh#assert#value(indexer).verifies('lh#tags#indexers#interface#is_an_indexer')
+  let scope = get(a:, 1, 'p')
+  call lh#let#to(scope.':tags_options.__indexer', indexer)
   return indexer
 endfunction
 
@@ -399,12 +403,6 @@ endfunction
 function! s:TagsSelectPolicy() abort " {{{3
   let select_policy = lh#option#get('tags_select', "expand('<cword>')", 'bpg')
   return select_policy
-endfunction
-
-function! s:RecursiveFlagOrAll() abort " {{{3
-  let recurse = lh#option#get('tags_must_go_recursive', 1)
-  let res = recurse ? ' -R' : ' *'
-  return res
 endfunction
 
 function! s:AreIgnoredWordAutomaticallyGenerated() abort " {{{3
@@ -471,7 +469,7 @@ endfunction
 " ======================================================================
 " generate tags for all files {{{3
 function! s:UpdateTags_for_All(...) abort
-  " TODO: cache the indexer for a given project
+  " TODO: receive the indexer as a parameter
   let indexer = s:indexer()
   let db_file = indexer.db_file()
   let ctags_dirname  = indexer.db_dirname()
@@ -497,7 +495,7 @@ function! s:UpdateTags_for_SavedFile(...) abort
   if ! s:is_ft_indexed(&ft) " redundant check
     return
   endif
-  " TODO: cache the indexer for a given project
+  " TODO: receive the indexer as a parameter
   let indexer = s:indexer()
   let db_file = indexer.db_file()
 
