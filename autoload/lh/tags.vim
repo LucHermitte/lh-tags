@@ -13,10 +13,6 @@ let s:k_version = '3.0.0'
 "       Small plugin related to tags files.
 "       (Deported functions)
 "
-" TODO:
-"       Find a way to update update &tags correctly when tags are searched and
-"       not at another moment.
-"
 "------------------------------------------------------------------------
 " History:
 "       v3.0.0:
@@ -104,6 +100,9 @@ let s:k_version = '3.0.0'
 "       (*) Have behaviour similar to the one from the quickfix mode
 "       (possibility to close and reopen the search window; prev&next moves)
 "       (*) Show/hide declarations -- merge declaration and definitions
+"       (*) Find a way to update update &tags correctly when tags are searched
+"       and not at another moment.
+"
 " }}}1
 "=============================================================================
 
@@ -469,7 +468,6 @@ endfunction
 " ======================================================================
 " generate tags for all files {{{3
 function! s:UpdateTags_for_All(FinishedCb, args) abort
-  " TODO: receive the indexer as a parameter
   let indexer = s:indexer()
   let db_file = indexer.db_file()
   let ctags_dirname  = indexer.db_dirname()
@@ -496,7 +494,6 @@ function! s:UpdateTags_for_SavedFile(FinishedCb, args) abort
   if ! s:is_ft_indexed(&ft) " redundant check
     return
   endif
-  " TODO: receive the indexer as a parameter
   let indexer = s:indexer()
   let db_file = indexer.db_file()
 

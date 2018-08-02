@@ -13,8 +13,11 @@ let s:k_version = '300'
 "       Specifications for exhuberant-ctags object
 "
 "------------------------------------------------------------------------
-" History:      «history»
-" TODO:         «missing features»
+" History:
+"       V3.0 first version
+" TODO:
+"       (*) Add a way to test whether a feature is supported as kinds,
+"       fields...
 " }}}1
 "=============================================================================
 
@@ -293,8 +296,9 @@ function! s:_analyse_kinds() dict abort
   " - local variables
   " Unfortunatelly, depending on the language, the exact option may
   " change => pre-analyse it.
-  let self._kinds_local = s:extract_kinds(self._kinds, 'local')
-  let self._kinds_proto = s:extract_kinds(self._kinds, '\vprototype|interface content|subroutine declaration')
+  let self._kinds_local    = s:extract_kinds(self._kinds, 'local')
+  let self._kinds_proto    = s:extract_kinds(self._kinds, '\vprototype|interface content|subroutine declaration')
+  let self._kinds_variable = s:extract_kinds(self._kinds, '\v(local |forward )@<!variable')
 
   return self
 endfunction
@@ -381,9 +385,10 @@ function! s:db_filename() dict abort " {{{3
 endfunction
 
 function! s:executable() dict abort " {{{3
-  " FIXME: check the tags executable may be different in two different
-  " buffers while the ctags object could be the same => this makes no
-  " sense and this may be source of odd behaviours
+  " TODO: check the tags executable may be different in two different buffers
+  " while the ctags object could be the same => this makes no sense and this
+  " may be source of odd behaviours
+  " => global option, can be overriden in each indexer
   let tags_executable = lh#option#get('tags_executable', 'ctags', 'bpg')
   return tags_executable
 endfunction
@@ -418,6 +423,10 @@ function! s:kinds_2_options(flavour, langs, args, options) abort " {{{3
   if get(a:args, 'extract_local_variables', 0)
     call map(kinds, 'has_key(a:flavour._kinds_local, v:key) ? add(v:val, a:flavour._kinds_local[v:key]) : v:val')
   endif
+  if get(a:args, 'extract_variables', 1)
+    " TODO: no need to include the kind if it's not off by default
+    call map(kinds, 'has_key(a:flavour._kinds_variable, v:key) ? add(v:val, a:flavour._kinds_variable[v:key]) : v:val')
+  endif
   " TODO: add generic way to support other kinds...
   call filter(kinds, '!empty(v:val)')
   call map(kinds, 'add(a:options, printf(a:flavour._kind_opt_format."=+%s", v:key, join(v:val, "")))')
@@ -426,8 +435,7 @@ endfunction
 function! s:add_matching_fields(flavour, field_names, state) abort " {{{3
   let fields = []
   let field_specs = a:flavour._fields
-  " TODO: Add option to not request/inhibit fields when it matches their
-  " default ENABLED state.
+  " TODO: Add option to not request/inhibit fields when it matches their default ENABLED state.
   call map(a:field_names,
         \   '   has_key(field_specs, "N:".v:val) && (field_specs["N:".v:val].NONE.enabled != a:state) ? add(fields, field_specs["N:".v:val].NONE.letter)'
         \ . ' : has_key(field_specs, "L:".v:val) && (field_specs["L:".v:val].NONE.enabled != a:state) ? add(fields, field_specs["L:".v:val].NONE.letter)'

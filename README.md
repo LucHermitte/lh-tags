@@ -136,6 +136,7 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
      --list-field`. The plugin will try to find the best fit for each indexer
      supported.
    * `extract_local_variables`
+   * `extract_variables`
    * TODO: add generic support for other kinds
    * `recursive_or_all` used internally to work on all files of a directory 
    * `index_file` used internally to index a single file
