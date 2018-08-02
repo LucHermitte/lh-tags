@@ -468,29 +468,30 @@ endfunction
 
 " ======================================================================
 " generate tags for all files {{{3
-function! s:UpdateTags_for_All(...) abort
+function! s:UpdateTags_for_All(FinishedCb, args) abort
   " TODO: receive the indexer as a parameter
   let indexer = s:indexer()
   let db_file = indexer.db_file()
   let ctags_dirname  = indexer.db_dirname()
 
   " TODO: s/ctags_dirname/project_dirname
+  let args      = extend(a:args, {'recursive_or_all': 1}, 'force')
   let cmd_line  = lh#os#sys_cd(ctags_dirname)
-  let cmd_line .= ' && '.join(indexer.cmd_line({'recursive_or_all': 1}), ' ')
+  let cmd_line .= ' && '.join(indexer.cmd_line(args), ' ')
   " TODO: add function to request project name
   let msg = 'ctags '.
         \ lh#option#get('BTW_project_config._.name', fnamemodify(ctags_dirname, ':p:h:t'))
   return lh#tags#system#get_runner('async').run(
         \  cmd_line
         \, msg
-        \, lh#partial#make(a:1, [db_file, ' (triggered by complete update request)'])
+        \, lh#partial#make(a:FinishedCb, [db_file, ' (triggered by complete update request)'])
         \, lh#partial#make('delete', [db_file])
         \ )
 endfunction
 
 " ======================================================================
 " generate tags for the current saved file {{{3
-function! s:UpdateTags_for_SavedFile(...) abort
+function! s:UpdateTags_for_SavedFile(FinishedCb, args) abort
   " Work on the current file -> &ft, expand('%')
   if ! s:is_ft_indexed(&ft) " redundant check
     return
@@ -505,13 +506,14 @@ function! s:UpdateTags_for_SavedFile(...) abort
   let source_name    = substitute(source_name, '[/\\]$', '', '')
 
   " TODO: s/ctags_dirname/project_dirname
+  let args      = extend(a:args, {'index_file': source_name}, 'force')
   let cmd_line  = lh#os#sys_cd(ctags_dirname)
-  let cmd_line .= ' && ' . join(indexer.cmd_line({'index_file': source_name}), ' ')
+  let cmd_line .= ' && ' . join(indexer.cmd_line(args), ' ')
   let msg = 'ctags '.expand('%:t')
   return lh#tags#system#get_runner('async').run(
           \ cmd_line,
           \ msg,
-          \ lh#partial#make(a:1, [db_file, ' (triggered by '.source_name.' modification)']),
+          \ lh#partial#make(a:FinishedCb, [db_file, ' (triggered by '.source_name.' modification)']),
           \ lh#partial#make(s:function('PurgeFileReferences'), [db_file, source_name])
           \ )
   " TODO: PurgeFileReferences is very specific to the tag indexer
@@ -566,7 +568,7 @@ function! lh#tags#run(tag_function, force) abort
     endif
     call s:Verbose("Run ctags on %1 %2", a:tag_function, a:force ? "(forcing)": "")
     let indexer = s:indexer()
-    let g:indexer = indexer
+    " let g:indexer = indexer
     let ctags_dirname  = indexer.db_dirname()
     if strlen(ctags_dirname)==1
       if a:force
@@ -579,7 +581,10 @@ function! lh#tags#run(tag_function, force) abort
 
     let l:Fn          = s:function(a:tag_function)
     let l:Finished_cb = s:function('TagGenerated')
-    let msg = l:Fn(l:Finished_cb)
+    let args = lh#option#get('tags_options._', {})
+    " yeah, "ft" can be injected at project level... This is certainly nuts!
+    let args = extend(args, lh#option#get('tags_options.'.get(args, 'ft', &ft).'_', {}), 'force')
+    let msg = l:Fn(l:Finished_cb, args)
   catch /tags-error:/
     call lh#common#error_msg(v:exception)
     return 0

@@ -116,7 +116,11 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
  * `(bg):tags_options.flags` defaults to an empty string; It contains extra
    flags you could pass to `ctags` execution. You'll have to adjust
    these options to your needs.
- * `(bg):tags_options.{ft}.flags` defaults to:
+ * (V2.0+) `(bg):tags_options.{ft}.flags` defaults to nothing since Version 3.0.
+   It can be  used to set anything specific to a filetype, yet prefer the new
+   dedicated interface to specify ctags `--fields`, `--extra(s)` and `--kinds`
+   parameters.
+
     * c:    `'--c++-kinds=+p --fields=+imaS --extra=+q'`
     * cpp:  `'--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'`
             `'x{c++.properties}` will also be added when using Universal ctags
@@ -124,7 +128,22 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
     * vim:  `'--fields=+mS --extra=+q'`
 
    Warning: This was renamed from `(bg):tags_options_{ft}` in version 2.0.0.
-   FIXME!!!
+ * (V3.0+) `(bpg):tags_options._...` and `(bpg):tags_options._.{&ft}.... ` dictionaries
+   of options. This is the prefered way to specify ctags `--fields`,
+   `--extra(s)` and `--kinds` parameters. The supported suboptions are:
+
+   * all field names and shortcut names that can be obtained with `ctags
+     --list-field`. The plugin will try to find the best fit for each indexer
+     supported.
+   * `extract_local_variables`
+   * TODO: add generic support for other kinds
+   * `recursive_or_all` used internally to work on all files of a directory 
+   * `index_file` used internally to index a single file
+   * `ft` to force a filetype
+   
+   Note: these options can also be injected while calling
+   `cmd_line()` method on indexers. 
+
  * `(bg):tags_filename` defaults to `'tags'`; in case you want your `tags` file
    to have another name.
  * `(bg):tags_executable` defaults to `ctags`; you should not need to change

@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      27th Jul 2018
-" Last Update:  01st Aug 2018
+" Last Update:  02nd Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Specifications for exhuberant-ctags object
@@ -428,7 +428,10 @@ function! s:add_matching_fields(flavour, field_names, state) abort " {{{3
   let field_specs = a:flavour._fields
   " TODO: Add option to not request/inhibit fields when it matches their
   " default ENABLED state.
-  call map(a:field_names, 'has_key(field_specs, "N:".v:val) && (field_specs["N:".v:val].NONE.enabled != a:state) ? add(fields, field_specs["N:".v:val].NONE.letter) : v:val')
+  call map(a:field_names,
+        \   '   has_key(field_specs, "N:".v:val) && (field_specs["N:".v:val].NONE.enabled != a:state) ? add(fields, field_specs["N:".v:val].NONE.letter)'
+        \ . ' : has_key(field_specs, "L:".v:val) && (field_specs["L:".v:val].NONE.enabled != a:state) ? add(fields, field_specs["L:".v:val].NONE.letter)'
+        \ . ' : v:val')
   return fields
 endfunction
 
@@ -505,6 +508,7 @@ function! s:cmd_line(...) dict abort " {{{3
   let options += [flavour._extras_flag.'=+q']
 
   " # Fields
+  " TODO: support other fields like properties, templates...
   call s:fields_2_options(flavour, langs, args, options)
 
   " # --langmap/--map
@@ -532,7 +536,6 @@ function! s:cmd_line(...) dict abort " {{{3
   let options += ['-f', self._db_file]
   " File/dir to index...
   let options += last_options
-
 
   " Remove empty options
   call filter(options, '!empty(v:val)')
