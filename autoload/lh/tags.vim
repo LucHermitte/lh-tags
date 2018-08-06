@@ -7,7 +7,7 @@
 " Version:      3.0.0
 let s:k_version = '3.0.0'
 " Created:      02nd Oct 2008
-" Last Update:  02nd Aug 2018
+" Last Update:  06th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -346,7 +346,7 @@ endfunction
 function! lh#tags#set_indexer(Func, ...) abort
   call lh#assert#type(a:Func).belongs_to('', function('has'))
   if type(a:Func) == type('')
-    let indexer = function('tags#indexers#'.a:Func.'#make')
+    let indexer = call('lh#tags#indexers#'.a:Func.'#make', [])
   else
     let indexer = a:Func()
   endif
