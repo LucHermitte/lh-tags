@@ -7,10 +7,10 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      27th Jul 2018
-" Last Update:  02nd Aug 2018
+" Last Update:  06th Aug 2018
 "------------------------------------------------------------------------
 " Description:
-"       Specifications for exhuberant-ctags object
+"       Specifications for exhuberant-ctags and universal-ctags objects
 "
 "------------------------------------------------------------------------
 " History:
@@ -139,26 +139,34 @@ function! s:get_flavour(exe) abort
   return s:ctags_flavours[exe]
 endfunction
 
+" Function: s:check_pattern(raw_help, exepath, patterns, ...) abort {{{3
+function! s:check_pattern(raw_help, exepath, patterns, ...) abort
+  let values = get(a:, 1, a:patterns)
+  for i in range(len(a:patterns))
+    if match(a:raw_help, a:patterns[i]) >= 0
+      return values[i]
+    endif
+  endfor
+  throw "tags-error: ".a:exepath." isn't a valid ctags executable (no ".a:patterns[-1]." option)"
+endfunction
+
 " Function: s:analyse_flavour(exepath) abort {{{3
 function! s:analyse_flavour(exepath) abort
   let flavour = lh#object#make_top_type({'exepath': lh#path#fix(a:exepath)})
   let raw_options = lh#os#system(flavour.exepath . ' --help')
+  if v:shell_error != 0
+    throw "tags-error: ".a:exepath." isn't a valid ctags executable (no --help option)"
+  endif
 
   " Recent versions of uctags use another flags to fill 'extra' option
-  let flavour._extras_flag = match(raw_options, '--extras ') >= 0
-        \ ? '--extras'
-        \ : '--extra'
+  let flavour._extras_flag = s:check_pattern(raw_options, a:exepath, ['--extras', '--extra'])
 
   " uctags is deprecating <LANG>-kind in favour of kind-<LANG>
   " => use this form if possible
-  let flavour._kind_opt_format = match(raw_options, '--kinds-<LANG>') >= 0
-        \ ? '--kinds-%s'
-        \ : '--%s-kinds'
+  let flavour._kind_opt_format = s:check_pattern(raw_options, a:exepath, ['--kinds-<LANG>', '--<LANG>-kinds'], ['--kinds-%s', '--%s-kinds'])
 
   " uctags introduces --map-<LANG>
-  let flavour._langmap_opt_format = match(raw_options, '--map-<LANG>') >= 0
-        \ ? '--map-%s=%s'
-        \ : '--langmap=%s:%s'
+  let flavour._langmap_opt_format = s:check_pattern(raw_options, a:exepath, ['--map-<LANG>', '--langmap-<LANG>'], ['--map-%s=%s', '--langmap=%s:%s'])
 
   " Detect parameters for --extra(s) and --fields options
   if match(raw_options, '--list-extras') >= 0
@@ -361,8 +369,12 @@ function! lh#tags#indexers#ctags#make() abort
   let res = lh#tags#indexers#interface#make()
   call lh#object#inject_methods(res, s:k_script_name,
         \ 'update_tags_option', 'db_filename',
-        \ 'executable', 'flavour',
+        \ 'executable', 'set_executable', 'flavour',
         \ 'cmd_line')
+
+  " By default the executable is set w/ "bpg:tags_executable", but it can be
+  " overwritten for the current indexer instance.
+  let res._executable = lh#ref#bind('bpg:tags_executable')
 
   " TODO: not to be done in the case of `get_file_tags`
   call res.update_tags_option()
@@ -385,12 +397,17 @@ function! s:db_filename() dict abort " {{{3
 endfunction
 
 function! s:executable() dict abort " {{{3
-  " TODO: check the tags executable may be different in two different buffers
-  " while the ctags object could be the same => this makes no sense and this
-  " may be source of odd behaviours
-  " => global option, can be overriden in each indexer
-  let tags_executable = lh#option#get('tags_executable', 'ctags', 'bpg')
-  return tags_executable
+  let tags_executable = lh#ref#is_bound(self._executable) ? self._executable.resolve() : self._executable
+  return lh#option#is_set(tags_executable) ? tags_executable : 'ctags'
+endfunction
+
+function! s:set_executable(exec) dict abort " {{{3
+  if !executable(a:exec)
+    throw "tags-error: ".a:exec." isn't a valid executable"
+  endif
+  " Check the flavour is compatible with ctags usual interface
+  let fl = s:get_flavour(a:exec)
+  let res._executable = a:exec
 endfunction
 
 function! s:flavour() dict abort " {{{3
@@ -428,6 +445,7 @@ function! s:kinds_2_options(flavour, langs, args, options) abort " {{{3
     call map(kinds, 'has_key(a:flavour._kinds_variable, v:key) ? add(v:val, a:flavour._kinds_variable[v:key]) : v:val')
   endif
   " TODO: add generic way to support other kinds...
+  " -> match a pattern ?
   call filter(kinds, '!empty(v:val)')
   call map(kinds, 'add(a:options, printf(a:flavour._kind_opt_format."=+%s", v:key, join(v:val, "")))')
 endfunction
