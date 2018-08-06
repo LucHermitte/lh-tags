@@ -166,7 +166,7 @@ function! s:analyse_flavour(exepath) abort
   let flavour._kind_opt_format = s:check_pattern(raw_options, a:exepath, ['--kinds-<LANG>', '--<LANG>-kinds'], ['--kinds-%s', '--%s-kinds'])
 
   " uctags introduces --map-<LANG>
-  let flavour._langmap_opt_format = s:check_pattern(raw_options, a:exepath, ['--map-<LANG>', '--langmap-<LANG>'], ['--map-%s=%s', '--langmap=%s:%s'])
+  let flavour._langmap_opt_format = s:check_pattern(raw_options, a:exepath, ['--map-<LANG>', '--langmap='], ['--map-%s=%s', '--langmap=%s:%s'])
 
   " Detect parameters for --extra(s) and --fields options
   if match(raw_options, '--list-extras') >= 0
