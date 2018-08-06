@@ -421,9 +421,15 @@ function! s:fts_2_langs(flavour, args, options) abort " {{{3
   endif
   if lh#option#is_set(fts)
     let langs = map(copy(fts), 'get(a:flavour._ft_lang_map, v:val, "")')
-    " TODO: warn about filetypes unknown to ctags
+    let unknown_fts = filter(copy(fts), '!has_key(a:flavour._ft_lang_map, v:val)')
+    for ft in unknown_fts
+      let exepath = a:flavour.exepath
+      call lh#notify#once('lhtags_unknown_'.ft.'_'.exepath, "This flavour of ctags (".exepath.") doesn't know any language associated to ".ft." filetype")
+    endfor
     call filter(langs, '!empty(v:val)')
-    call add(a:options, '--languages='.join(langs, ','))
+    if !empty(langs)
+      call add(a:options, '--languages='.join(langs, ','))
+    endif
   else
     let langs = values(a:flavour._ft_lang_map)
   endif
@@ -514,9 +520,13 @@ function! s:cmd_line(...) dict abort " {{{3
   else
     let file2index = get(args, 'index_file', '')
     if !empty(file2index)
+      call lh#assert#true(bufnr(file2index) >= 0)
       let last_options = ['--append', file2index]
       let ft = getbufvar(file2index, '&ft')
-      let langs = [get(s:all_lang_map, ft, '')]
+      let args.fts = [ft]
+      " let langs = [get(flavour._ft_lang_map, ft, '')]
+      " TODO: Reject indexation of files with a language unsupported by
+      " ctags?
     endif
   endif
 
