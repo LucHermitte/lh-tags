@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      26th Jul 2018
-" Last Update:  02nd Aug 2018
+" Last Update:  06th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Interface for indexer objects
@@ -84,7 +84,7 @@ function! lh#tags#indexers#interface#make() abort
 endfunction
 
 function! s:set_output_file(filename) dict abort " {{{2
-  if !filewritable(a:filename)
+  if !lh#path#writable(a:filename)
     throw "tags-error: ".a:filename." cannot be modified"
   endif
   let self._db_file = a:filename
