@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      27th Jul 2018
-" Last Update:  06th Aug 2018
+" Last Update:  07th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Specifications for exhuberant-ctags and universal-ctags objects
@@ -456,14 +456,32 @@ function! s:kinds_2_options(flavour, langs, args, options) abort " {{{3
   call map(kinds, 'add(a:options, printf(a:flavour._kind_opt_format."=+%s", v:key, join(v:val, "")))')
 endfunction
 
-function! s:add_matching_fields(flavour, field_names, state) abort " {{{3
+function! s:get_enabled(field_spec) abort " {{{3
+  return get(a:field_spec, "NONE", {'enabled': 0})['enabled']
+endfunction
+
+function! s:get_field_id(field_spec) abort " {{{3
+  return get(a:field_spec, "NONE", {'letter': ''})['letter']
+endfunction
+
+function! s:add_matching_fields(flavour, field_names, state, rejected_field_names) abort " {{{3
+  " TODO: support other fields like properties, templates...
   let fields = []
   let field_specs = a:flavour._fields
-  " TODO: Add option to not request/inhibit fields when it matches their default ENABLED state.
-  call map(a:field_names,
-        \   '   has_key(field_specs, "N:".v:val) && (field_specs["N:".v:val].NONE.enabled != a:state) ? add(fields, field_specs["N:".v:val].NONE.letter)'
-        \ . ' : has_key(field_specs, "L:".v:val) && (field_specs["L:".v:val].NONE.enabled != a:state) ? add(fields, field_specs["L:".v:val].NONE.letter)'
-        \ . ' : v:val')
+  if get(g:tags_options, 'explicit_cmdline', 0)
+    " We loop on all the known fields
+    call map(copy(field_specs),
+          \   '   index(a:field_names, v:key[2:])>=0                                                 ? add(fields, s:get_field_id(v:val))'
+          \ . ' : (index(a:rejected_field_names, v:key[2:])< 0) && (s:get_enabled(v:val) == a:state) ? add(fields, s:get_field_id(v:val))'
+          \ . ' : v:val'
+          \ )
+  else
+    " We loop on the specific fields requested
+    call map(a:field_names,
+          \   '   has_key(field_specs, "N:".v:val) && (field_specs["N:".v:val].NONE.enabled != a:state) ? add(fields, field_specs["N:".v:val].NONE.letter)'
+          \ . ' : has_key(field_specs, "L:".v:val) && (field_specs["L:".v:val].NONE.enabled != a:state) ? add(fields, field_specs["L:".v:val].NONE.letter)'
+          \ . ' : v:val')
+  endif
   return fields
 endfunction
 
@@ -482,8 +500,11 @@ function! s:fields_2_options(flavour, langs, args, options) abort " {{{3
   let negative_options = filter(copy(a:args), 'type(v:val) == type(0) && v:val == 0')
 
   call s:Verbose("arguments: %1", a:args)
-  let pos_fields = s:add_matching_fields(a:flavour, keys(positive_options), 1)
-  let neg_fields = s:add_matching_fields(a:flavour, keys(negative_options), 0)
+  let pos_fields = s:add_matching_fields(a:flavour, keys(positive_options), 1, keys(negative_options))
+  let neg_fields = s:add_matching_fields(a:flavour, keys(negative_options), 0, keys(positive_options))
+  " let g:pos_fields = pos_fields
+  " let g:neg_fields = neg_fields
+  " let g:all_fields = a:flavour._fields
   let fields = []
   if !empty(pos_fields)
     let fields += ['+'] + pos_fields
@@ -544,7 +565,6 @@ function! s:cmd_line(...) dict abort " {{{3
   let options += [flavour._extras_flag.'=+q']
 
   " # Fields
-  " TODO: support other fields like properties, templates...
   call s:fields_2_options(flavour, langs, args, options)
 
   " # --langmap/--map

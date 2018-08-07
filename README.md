@@ -113,6 +113,12 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
  * `lh#tags#set_indexer(indexer [,scope])`
     TODO
 
+ * `g:tags_options.explicit_cmdline'` -- default: 0;
+    Tells to not rely on implicit options when indexing files. For instance,
+    many _fields_ are enabled or disabled by default with ctags; this options
+    will procude command line 100% explicit about which fields should produced,
+    or ignored.
+
  * `(bg):tags_options.flags` defaults to an empty string; It contains extra
    flags you could pass to `ctags` execution. You'll have to adjust
    these options to your needs.
