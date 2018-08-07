@@ -379,8 +379,10 @@ function! lh#tags#indexers#ctags#make(...) abort
     let res._executable = lh#ref#bind('bpg:tags_executable')
   endif
 
-  " TODO: not to be done in the case of `get_file_tags`
-  call res.update_tags_option()
+  if ! get(res, 'dont_update_tags_option', 0)
+    " Useful in the case of `get_file_tags` (used from lh-dev)
+    call res.update_tags_option()
+  endif
   return res
 endfunction
 
