@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      26th Jul 2018
-" Last Update:  06th Aug 2018
+" Last Update:  07th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Interface for indexer objects
@@ -73,9 +73,9 @@ let s:k_script_name      = s:getSID()
 "------------------------------------------------------------------------
 " ## Exported functions {{{1
 
-" Function: lh#tags#indexers#interface#make() {{{2
-function! lh#tags#indexers#interface#make() abort
-  let res = lh#object#make_top_type({})
+" Function: lh#tags#indexers#interface#make([args]) {{{2
+function! lh#tags#indexers#interface#make(...) abort
+  let res = lh#object#make_top_type(get(a:, 1, {}))
   call lh#object#inject_methods(res, s:k_script_name,
         \ 'run', 'set_output_file', 'db_file', 'db_dirname', '__lhvl_oo_type')
 

@@ -365,9 +365,9 @@ let s:k_default_fields = {
       \ 'line'          : 1
       \,'properties'    : 1
       \ }
-" Function: lh#tags#indexers#ctags#make() {{{3
-function! lh#tags#indexers#ctags#make() abort
-  let res = lh#tags#indexers#interface#make()
+" Function: lh#tags#indexers#ctags#make([args]){{{3
+function! lh#tags#indexers#ctags#make(...) abort
+  let res = call('lh#tags#indexers#interface#make', a:000)
   call lh#object#inject_methods(res, s:k_script_name,
         \ 'update_tags_option', 'db_filename',
         \ 'executable', 'set_executable', 'flavour',
@@ -375,7 +375,9 @@ function! lh#tags#indexers#ctags#make() abort
 
   " By default the executable is set w/ "bpg:tags_executable", but it can be
   " overwritten for the current indexer instance.
-  let res._executable = lh#ref#bind('bpg:tags_executable')
+  if !has_key(res, '_executable')
+    let res._executable = lh#ref#bind('bpg:tags_executable')
+  endif
 
   " TODO: not to be done in the case of `get_file_tags`
   call res.update_tags_option()
