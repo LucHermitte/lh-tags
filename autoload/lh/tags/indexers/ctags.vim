@@ -343,7 +343,7 @@ function! s:parse_matrix(raw) abort
   " passes
   call map(copy(features), 'extend(res, {s:feature_id(v:val, letter_idx, name_idx) : {}})')
 
-  call map(copy(features), 'extend(res[s:feature_id(v:val, letter_idx, name_idx)], {v:val[lang_idx] : {"letter": v:val[letter_idx], "description": v:val[descr_idx], "enabled": (v:val[enabled_idx]=~?"on\\|TRUE")}})')
+  call map(copy(features), 'extend(res[s:feature_id(v:val, letter_idx, name_idx)], {v:val[lang_idx] : {"letter": v:val[letter_idx], "name": v:val[name_idx], "description": v:val[descr_idx], "enabled": (v:val[enabled_idx]=~?"on\\|TRUE")}})')
 
   return res
 endfunction
@@ -363,6 +363,7 @@ let s:k_default_fields = {
       \ 'inherits'      : 1,
       \ 'signature'     : 1,
       \ 'line'          : 1
+      \,'properties'    : 1
       \ }
 " Function: lh#tags#indexers#ctags#make() {{{3
 function! lh#tags#indexers#ctags#make() abort
@@ -456,32 +457,50 @@ function! s:kinds_2_options(flavour, langs, args, options) abort " {{{3
   call map(kinds, 'add(a:options, printf(a:flavour._kind_opt_format."=+%s", v:key, join(v:val, "")))')
 endfunction
 
-function! s:get_enabled(field_spec) abort " {{{3
-  return get(a:field_spec, "NONE", {'enabled': 0})['enabled']
+function! s:get_enabled(field_spec, langs) abort " {{{3
+  let res = has_key(a:field_spec, "NONE") ? a:field_spec.NONE.enabled
+        \ : get(filter(map(copy(a:langs), 'has_key(a:field_spec, v:val) ? a:field_spec[v:val].enabled : ""'), '!empty(v:val)'), 0, 0)
+  " call s:Verbose("%3abled: %1, %2", a:field_spec, a:langs, res?"en":"dis")
+return res
+  " return get(a:field_spec, "NONE", {'enabled': 0})['enabled']
 endfunction
 
-function! s:get_field_id(field_spec) abort " {{{3
-  return get(a:field_spec, "NONE", {'letter': ''})['letter']
+function! s:non_empty_field(dict, ...) abort
+  let values = map(copy(a:000), 'get(a:dict, v:val, "")')
+  return filter(values, 'v:val != "-"')[0]
 endfunction
 
-function! s:add_matching_fields(flavour, field_names, state, rejected_field_names) abort " {{{3
-  " TODO: support other fields like properties, templates...
+function! s:get_field_id(field_spec, langs) abort " {{{3
+  if  has_key(a:field_spec, "NONE")
+    let res = a:field_spec.NONE.letter
+  else
+    let res = get(filter(map(copy(a:langs), 'has_key(a:field_spec, v:val) ? [a:langs[v:key], s:non_empty_field(a:field_spec[v:val], "letter", "name")] : ["",[]]'), '!empty(v:val[1])'), 0, [])
+  endif
+  call s:Verbose("ID: %1%2 : %3", res, a:langs, a:field_spec)
+  return res
+endfunction
+
+function! s:add_matching_fields(flavour, field_names, state, rejected_field_names, langs) abort " {{{3
+  " TODO: There seems to be a confusion when handling the C++ field
+  " {name} with the generic N field.
   let fields = []
   let field_specs = a:flavour._fields
+  call s:Verbose("Check matching %1 fields among %2", a:state ? "positive": "negative", keys(field_specs))
   if get(g:tags_options, 'explicit_cmdline', 0)
     " We loop on all the known fields
     call map(copy(field_specs),
-          \   '   index(a:field_names, v:key[2:])>=0                                                 ? add(fields, s:get_field_id(v:val))'
-          \ . ' : (index(a:rejected_field_names, v:key[2:])< 0) && (s:get_enabled(v:val) == a:state) ? add(fields, s:get_field_id(v:val))'
+          \   '   index(a:field_names, v:key[2:])>=0                                                          ? add(fields, s:get_field_id(v:val, a:langs))'
+          \ . ' : (index(a:rejected_field_names, v:key[2:])< 0) && (s:get_enabled(v:val, a:langs) == a:state) ? add(fields, s:get_field_id(v:val, a:langs))'
           \ . ' : v:val'
           \ )
   else
     " We loop on the specific fields requested
     call map(a:field_names,
-          \   '   has_key(field_specs, "N:".v:val) && (field_specs["N:".v:val].NONE.enabled != a:state) ? add(fields, field_specs["N:".v:val].NONE.letter)'
-          \ . ' : has_key(field_specs, "L:".v:val) && (field_specs["L:".v:val].NONE.enabled != a:state) ? add(fields, field_specs["L:".v:val].NONE.letter)'
+          \   '   has_key(field_specs, "N:".v:val) && (s:get_enabled(field_specs["N:".v:val], a:langs) != a:state) ? add(fields, s:get_field_id(field_specs["N:".v:val], a:langs))'
+          \ . ' : has_key(field_specs, "L:".v:val) && (s:get_enabled(field_specs["L:".v:val], a:langs) != a:state) ? add(fields, s:get_field_id(field_specs["L:".v:val], a:langs))'
           \ . ' : v:val')
   endif
+  call filter(fields, '!empty(v:val)')
   return fields
 endfunction
 
@@ -500,20 +519,27 @@ function! s:fields_2_options(flavour, langs, args, options) abort " {{{3
   let negative_options = filter(copy(a:args), 'type(v:val) == type(0) && v:val == 0')
 
   call s:Verbose("arguments: %1", a:args)
-  let pos_fields = s:add_matching_fields(a:flavour, keys(positive_options), 1, keys(negative_options))
-  let neg_fields = s:add_matching_fields(a:flavour, keys(negative_options), 0, keys(positive_options))
+  let pos_fields = s:add_matching_fields(a:flavour, keys(positive_options), 1, keys(negative_options), a:langs)
+  let neg_fields = s:add_matching_fields(a:flavour, keys(negative_options), 0, keys(positive_options), a:langs)
   " let g:pos_fields = pos_fields
   " let g:neg_fields = neg_fields
   " let g:all_fields = a:flavour._fields
   let fields = []
+  let lang_fields = []
   if !empty(pos_fields)
-    let fields += ['+'] + pos_fields
+    let spe_fields = filter(copy(pos_fields), 'type(v:val) == type([])')
+    " TODO: support old transformation syntax "&{<LANG>-<field-name>}"
+    let lang_fields += map(spe_fields, 'printf("--fields-%s=+{%s}", v:val[0], v:val[1])')
+    let fields += ['+'] + filter(pos_fields, 'type(v:val) == type("")')
   endif
   if !empty(neg_fields)
-    let fields += ['-'] + neg_fields
+    let spe_fields = filter(copy(neg_fields), 'type(v:val) == type([])')
+    let lang_fields += map(spe_fields, 'printf("--fields-%s=-{%s}", v:val[0], v:val[1])')
+    let fields += ['-'] + filter(neg_fields, 'type(v:val) == type("")')
   endif
   if !empty(fields)
     call add(a:options, '--fields='.join(fields, ''))
+    call extend(a:options, lang_fields)
   endif
 endfunction
 
