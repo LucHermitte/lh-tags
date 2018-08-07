@@ -438,7 +438,7 @@ function! s:fts_2_langs(flavour, args, options) abort " {{{3
 endfunction
 
 function! s:kinds_2_options(flavour, langs, args, options) abort " {{{3
-  let kinds = {}
+  let kinds = {} " {lang: [kind-list]}
   call map(copy(a:langs), 'extend(kinds, {v:val : []})')
   " first: add the prototypes
   call lh#assert#true(lh#has#vkey())
@@ -448,11 +448,18 @@ function! s:kinds_2_options(flavour, langs, args, options) abort " {{{3
     call map(kinds, 'has_key(a:flavour._kinds_local, v:key) ? add(v:val, a:flavour._kinds_local[v:key]) : v:val')
   endif
   if get(a:args, 'extract_variables', 1)
-    " TODO: no need to include the kind if it's not off by default
     call map(kinds, 'has_key(a:flavour._kinds_variable, v:key) ? add(v:val, a:flavour._kinds_variable[v:key]) : v:val')
   endif
   " TODO: add generic way to support other kinds...
   " -> match a pattern ?
+  " No need to include the kind if it's not off by default
+  if ! get(g:tags_options, 'explicit_cmdline', 0)
+    for [lang, lg_kinds] in items(kinds)
+      call filter(lg_kinds, 'a:flavour._kinds[lang][v:val] =~ "\\[off\\]"')
+    endfor
+  " TODO: else: explicitly list all unrejected implicit kinds?
+  endif
+  " Remove languages for which no specific "kinds" are to be extracted
   call filter(kinds, '!empty(v:val)')
   call map(kinds, 'add(a:options, printf(a:flavour._kind_opt_format."=+%s", v:key, join(v:val, "")))')
 endfunction
@@ -481,8 +488,7 @@ function! s:get_field_id(field_spec, langs) abort " {{{3
 endfunction
 
 function! s:add_matching_fields(flavour, field_names, state, rejected_field_names, langs) abort " {{{3
-  " TODO: There seems to be a confusion when handling the C++ field
-  " {name} with the generic N field.
+  " TODO: There seems to be a confusion when handling the C++ field {name} with the generic N field.
   let fields = []
   let field_specs = a:flavour._fields
   call s:Verbose("Check matching %1 fields among %2", a:state ? "positive": "negative", keys(field_specs))
@@ -572,8 +578,7 @@ function! s:cmd_line(...) dict abort " {{{3
       let ft = getbufvar(file2index, '&ft')
       let args.fts = [ft]
       " let langs = [get(flavour._ft_lang_map, ft, '')]
-      " TODO: Reject indexation of files with a language unsupported by
-      " ctags?
+      " TODO: Reject indexation of files with a language unsupported by ctags?
     endif
   endif
 
@@ -609,8 +614,7 @@ function! s:cmd_line(...) dict abort " {{{3
   endif
 
   " # Other options
-  " TODO: Need to pick various options (kind, langmap, fields, extra...) in
-  " various places (b:, p:, g:) and assemble back something
+  " TODO: Need to pick various options (kind, langmap, fields, extra...) in various places (b:, p:, g:) and assemble back something
   let options += [lh#option#get('tags_options.'.get(args, 'ft', &ft).'.flags', '')]
   let options += [lh#option#get('tags_options.flags', '', 'wbpg')]
 
