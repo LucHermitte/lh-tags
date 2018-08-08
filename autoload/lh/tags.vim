@@ -7,7 +7,7 @@
 " Version:      3.0.0
 let s:k_version = '3.0.0'
 " Created:      02nd Oct 2008
-" Last Update:  06th Aug 2018
+" Last Update:  08th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -332,8 +332,7 @@ LetIfUndef g:tags_options {}
 ""endif
 
 function! s:indexer() abort " {{{3
-  " TODO: support ft specific indexers
-  let indexer = lh#option#get('tags_options.__indexer')
+  let indexer = lh#option#get(['tags_options.'.&ft.'.__indexer', 'tags_options.__indexer'])
   if lh#option#is_unset(indexer)
     let indexer = lh#tags#set_indexer(function('lh#tags#indexers#ctags#make'))
   endif
