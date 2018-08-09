@@ -57,6 +57,7 @@ In the buffer local section, you'll have to:
  * adjust `(bg):tags_options.{ft}.flags` if the default values don't suit you
    -- I used to add exclusion lists in my projects.
  * to be sure where the root directory of the source files is:
+   FIXME
    * either set `b:tags_dirname`, or `b:project_sources_dir`, or
      `b:BTW_project_config._.paths.sources` to the project root directory --
      when my projects are compiled with CMake+whatever I use the variables
@@ -71,44 +72,97 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
 
 ## Options
 
- * `b:tags_dirname` defaults to an empty string for the current directory;
-   you'll have to set this option to the root of your project.
-   If you leave it unset, it will be set on first tags generation to (in
-   order):
-   FIXME!!!
+### Directory and pathnames related options
+lh-tags can distinguish the directory where a tag database is stored from the
+directory where the source files are. By default, both directories will be the
+same.
 
-   * `b:project_sources_dir`, which is used by some of
-     [mu-template](http://github.com/LucHermitte/mu-template) templates ;
-   - or `(bg):BTW_project_config._.paths.sources`, which is used by
-     [BuildToolsWrapper](http://github.com/LucHermitte/vim-build-tools-wrapper)
-     to define project settings
-   * or where `.git/` is found in parent directories ;
-   * or where `.svn/` is found in parent directories ;
-   * or asked to the end-user (previous values are recorded in case several
-     files from a same project are opened).
- * `lh#tags#add_indexed_ft()`  
-   Manages the filetypes whose files will be indexed. Other files are ignored.
-   This sets the local option `b:tags_options.indexed_ft` -- prefer this
-   function when using [local_vimrc](http://github.com/LucHermitte/local_vimrc)
-   to configure project.
-   It's also possible to set the global option `b:tags_options.indexed_ft`
-   that'll be used instead. It's meant to be used when no project are defined.
-   ```vim
-   :call lh#tags#add_indexed_ft('c', 'cpp')
-   ```
+#### Dirname to tag database: `(bpg):paths.tags.db_dir`
 
- * `lh#tags#set_lang_map()`  
-   Manages the extensions associated to a filetype.
-   The point of this helper function is to set the options to the best possible
-   value according to the current tag-indexer which could be exhuberant-ctags,
-   universal-ctag, or eventually any other indexer like _global_.
-   ```vim
-   :call lh#tags#set_lang_map('cpp', '+.txx')
-   ```
+How ever this dirname is deduced, its value will be cached in the
+[project variable](http://github.com/LucHermitte/lh-vim-lib/«XXX»/doc/Project.md)
+`p:paths.tags.db_dir`.
 
-   Since version 3.0.0, it's best to avoid to directly set
-   `b:tags_options.{ft}.flags` to either `--langmap=C++:+.txx` or
-   `--map-C++=+.txx` as it's not _portable_.
+The heuristic to deduce the where a tag database is located consists in
+searching the first option which is set among:
+
+1. `(bpg):paths.tags.db_dir` -- specific to lh-tags
+2. `(bpg):tags_dirname` -- old (deprecated) options previously used by lh-tags
+   V2; kept for retro-compatibility
+3. `(bpg):paths.sources` -- where sources files are supposed to be found
+   (according to lh-vim-lib _Project feature_).
+4. `b:project_source_dir` -- old option used by previous versions of [mu-template](https://github.com/LucHermitte/mu-template/); kept for retro-compatibility
+5. `(bpg):BTW_project_config._.paths.sources` -- internal information used by [Build Tools Wrapper](https://github.com/LucHermitte/vim-build-tools-wrapper); not meant to be set from lh-tags
+6. If none of the previous options is set, lh-tags will search a
+   parent directory which contains any sign of being under source control
+   (`.git/`, `.svn/`, `.hg/`...)
+7. Ultimately, lh-tags asks to the end-user where the tag database shall be
+   stored (previous values are recorded in case several files from a same
+   project are opened).
+
+   Note: At this time, we cannot say _"never ask for this directory"_ as it's
+   possible with lh-vim-lib Project feature.
+
+
+See also: `(pbg):tags_filename`
+
+#### Dirname to source code: `(bpg):paths.sources`
+
+If set, lh-tags, will use the Project variable from lh-vim-lib: `(bpg):paths.sources`.
+Otherwise, it'll consider the source code must be in the same place as the tag
+database, i.e. `(bpg):paths.tags.db_dir`
+
+#### How to use different directories
+
+In order to distinguish where the source code is from where the tag database is
+generated, you'll have to make sure that `(bpg):paths.sources` and
+`(bpg):paths.tags.db_dir` point to two completely different directories.
+
+As `(bpg):paths.tags.db_dir` uses `(bpg):paths.sources` as a default value,
+you'll to make sure to set `(bpg):paths.tags.db_dir` in your project, either
+from a local vimrc, or an EditorConfig file. See
+[lh-vim-lib Project documentation](http://github.com/LucHermitte/lh-vim-lib/«XXX»/doc/Project.md##314-set-a-project-option)
+
+
+#### Name of the tag database: `(pbg):tags_filename`
+The name default to `'tags'` with ctags indexers.
+
+The option permits to have another name -- this can be useful when all tag
+databases are stored with a policy such as `projects/.tags/{projectname}.ctags`.
+
+### Filetypes and languages related options
+
+#### Indexed filetype: `lh#tags#add_indexed_ft()`
+
+This option helps managing the filetypes whose files will be indexed. Other
+files are ignored.
+
+Internally, this updates the project option `p:tags_options.indexed_ft` --
+prefer this function when using
+[local_vimrc](http://github.com/LucHermitte/local_vimrc) to configure project.
+It's also possible to set the option `g:tags_options.indexed_ft` that'll
+be used instead. It's meant to be used when no project are defined.
+
+```vim
+:call lh#tags#add_indexed_ft('c', 'cpp')
+```
+
+#### Language map: `lh#tags#set_lang_map()`
+Manages the extensions associated to a filetype.
+
+The point of this helper function is to set the options to the best possible
+value according to the current tag-indexer which could be exhuberant-ctags,
+universal-ctags, or eventually any other indexer like _global_.
+
+```vim
+:call lh#tags#set_lang_map('cpp', '+.txx')
+```
+
+Since version 3.0.0, it's best to avoid to directly set
+`b:tags_options.{ft}.flags` to either `--langmap=C++:+.txx` or
+`--map-C++=+.txx` as it's not _portable_ between the various flavours of ctags.
+
+### Other options
 
  * `lh#tags#set_indexer(indexer [,scope])`
     TODO
@@ -144,15 +198,13 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
    * `extract_local_variables`
    * `extract_variables`
    * TODO: add generic support for other kinds
-   * `recursive_or_all` used internally to work on all files of a directory 
+   * `recursive_or_all` used internally to work on all files of a directory
    * `index_file` used internally to index a single file
    * `ft` to force a filetype
-   
-   Note: these options can also be injected while calling
-   `cmd_line()` method on indexers. 
 
- * `(bg):tags_filename` defaults to `'tags'`; in case you want your `tags` file
-   to have another name.
+   Note: these options can also be injected while calling
+   `cmd_line()` method on indexers.
+
  * `(bg):tags_executable` defaults to `ctags`; you should not need to change
    it. This option is used by the _ctags indexer_.
  * `(bg):tags_must_go_recursive` defaults to 1; set it to 0 if you really want
@@ -161,7 +213,7 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
    the current word under the cursor is selected by normal mode mapping
    `META-W-META-DOWN`.
  * `(bg):tags_options.no_auto` defaults to 1; set it to 0 if you want to enable the
-   automatic incremental update.  
+   automatic incremental update.
    Warning: this has changed in version 2.0.0; it used to be named
    `(bg):LHT_no_auto`, and it have the opposite default value.
  * `lh#tags#ignore_spelling()` option permits to add all the current tags to
@@ -174,17 +226,19 @@ can enjoy lh-tag automagic update of the database, and improved tag selection.
    automatically generated from updated tag files:
    - `0`    : never, use `CTRL-X_ts` instead.
    - `1`    : always
-   - `"all"`: only when tags are regenerated forthe whole project, never when
-            a file is saved.  
+   - `"all"`: only when tags are regenerated for the whole project, never when
+            a file is saved.
+
    Indeed, updating spellfile may be very long on some projects, and we may
    not wish to see this task automated.
  * `(bg):tags_to_spellfile` has been deprecated. See `lh#tags#ignore_spelling()` instead.
  * `(bg):tags_options.run_in_bg` ; set to 1 by default, if |+job|s are supported.
    Tells to execute `<Plug>CTagsUpdateCurrent` and `<Plug>CTagsUpdateAll` in
-   background (through |+job| feature).  
+   background (through |+job| feature).
+
    This option is best set in your `.vimrc`. If you want to change or toggle
    its value, you'd best use the menu `Project->Tags->Generate` when running
-   gvim, or the `:Toggle` command: 
+   gvim, or the `:Toggle` command:
 
    ```vim
    :Toggle ProjectTagsGenerate
@@ -268,8 +322,9 @@ LetIfUndef g:tags_options.auto_spellfile_update 'all'
 
 ## Design Choices
 
- * 100% VimL
- * API usable from other plugins
+ * 100% in Vim script language
+ * API usable from other plugins -- to extract function boundaries, local
+   variables...
  * Avoid dependencies other than [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib)
  * Support project specific settings (options may differ from one project to
    the other)
