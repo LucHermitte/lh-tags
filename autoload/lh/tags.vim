@@ -7,7 +7,7 @@
 " Version:      3.0.0
 let s:k_version = '3.0.0'
 " Created:      02nd Oct 2008
-" Last Update:  08th Aug 2018
+" Last Update:  10th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -436,9 +436,9 @@ endfunction
 " generate tags on-the-fly {{{3
 function! s:UpdateTags_for_ModifiedFile() abort
   let indexer        = s:indexer()
-  let ctags_dirname  = indexer.db_dirname()
+  let src_dirname    = indexer.src_dirname()
   let ctags_pathname = indexer.db_file()
-  let source_name    = lh#path#relative_to(expand('%:p'), ctags_dirname)
+  let source_name    = lh#path#relative_to(expand('%:p'), src_dirname)
   let temp_name      = tempname()
   let temp_tags      = tempname()
 
@@ -467,17 +467,16 @@ endfunction
 " ======================================================================
 " generate tags for all files {{{3
 function! s:UpdateTags_for_All(FinishedCb, args) abort
-  let indexer = s:indexer()
-  let db_file = indexer.db_file()
-  let ctags_dirname  = indexer.db_dirname()
+  let indexer      = s:indexer()
+  let db_file      = indexer.db_file()
+  let src_dirname  = indexer.src_dirname()
 
-  " TODO: s/ctags_dirname/project_dirname
   let args      = extend(a:args, {'recursive_or_all': 1}, 'force')
-  let cmd_line  = lh#os#sys_cd(ctags_dirname)
+  let cmd_line  = lh#os#sys_cd(src_dirname)
   let cmd_line .= ' && '.join(indexer.cmd_line(args), ' ')
   " TODO: add function to request project name
   let msg = 'ctags '.
-        \ lh#option#get('BTW_project_config._.name', fnamemodify(ctags_dirname, ':p:h:t'))
+        \ lh#option#get('BTW_project_config._.name', fnamemodify(src_dirname, ':p:h:t'))
   return lh#tags#system#get_runner('async').run(
         \  cmd_line
         \, msg
@@ -496,14 +495,13 @@ function! s:UpdateTags_for_SavedFile(FinishedCb, args) abort
   let indexer = s:indexer()
   let db_file = indexer.db_file()
 
-  let ctags_dirname  = indexer.db_dirname()
-  let source_name    = lh#path#relative_to(ctags_dirname, expand('%:p'))
+  let src_dirname    = indexer.src_dirname()
+  let source_name    = lh#path#relative_to(src_dirname, expand('%:p'))
   " lh#path#relative_to() expects to work on dirname => it'll return a dirname
   let source_name    = substitute(source_name, '[/\\]$', '', '')
 
-  " TODO: s/ctags_dirname/project_dirname
   let args      = extend(a:args, {'index_file': source_name}, 'force')
-  let cmd_line  = lh#os#sys_cd(ctags_dirname)
+  let cmd_line  = lh#os#sys_cd(src_dirname)
   let cmd_line .= ' && ' . join(indexer.cmd_line(args), ' ')
   let msg = 'ctags '.expand('%:t')
   return lh#tags#system#get_runner('async').run(
@@ -565,8 +563,8 @@ function! lh#tags#run(tag_function, force) abort
     call s:Verbose("Run ctags on %1 %2", a:tag_function, a:force ? "(forcing)": "")
     let indexer = s:indexer()
     " let g:indexer = indexer
-    let ctags_dirname  = indexer.db_dirname()
-    if strlen(ctags_dirname)==1
+    let src_dirname = indexer.src_dirname()
+    if strlen(src_dirname)==1
       if a:force
         " todo: a:force || not_already_notified_for_this_buffer
         throw "tags-error: empty dirname"
@@ -612,8 +610,8 @@ highlight default link TagsGroup Special
 function! s:ExtractPaths(...) " {{{3
   if a:0 == 0
     let indexer = s:indexer
-    let ctags_dirname  = indexer.db_dirname()
-    if strlen(ctags_dirname)==1
+    let src_dirname = indexer.src_dirname()
+    if strlen(src_dirname)==1
       if a:force
         " todo: a:force || not_already_notified_for_this_buffer
         throw "tags-error: empty dirname"
@@ -624,14 +622,14 @@ function! s:ExtractPaths(...) " {{{3
     let ctags_pathname = indexer.db_file()
   else
     let ctags_pathname = a:1
-    let ctags_dirname = fnamemodify(ctags_pathname, ':h').'/'
+    let src_dirname = fnamemodify(ctags_pathname, ':h').'/'
   endif
-  return [ctags_pathname, ctags_dirname]
+  return [ctags_pathname, src_dirname]
 endfunction
 
 " Function: lh#tags#update_highlight(...) {{{3
 function! lh#tags#update_highlight(...) abort
-  let [ctags_pathname, ctags_dirname] = call('s:ExtractPaths', a:000)
+  let [ctags_pathname, src_dirname] = call('s:ExtractPaths', a:000)
 
   " TODO: shall we use every tags, or only the current ones?
   let [lSymbols, t] = lh#time#bench('lh#tags#getnames', ctags_pathname)
@@ -686,8 +684,9 @@ function! lh#tags#update_spellfile(...) abort
     return
   endif
 
-  let [ctags_pathname, ctags_dirname] = call('s:ExtractPaths', a:000)
-  let spellfile = ctags_dirname . spellfilename
+  let [ctags_pathname, src_dirname] = call('s:ExtractPaths', a:000)
+  " TODO: Support different directory for spellfiles
+  let spellfile = src_dirname . spellfilename
   call s:Verbose('Updating spellfile `%1`', spellfile)
   " This is slow as well
   let [lSymbols, t] = lh#time#bench('lh#tags#getnames', ctags_pathname)

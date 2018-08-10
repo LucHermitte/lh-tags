@@ -68,67 +68,58 @@ In the buffer local section, you'll have to:
      directory of the source code.
 
 Then, you'll have to generate the `tags` database once (`<C-X>ta`), then you
-can enjoy lh-tag automagic update of the database, and improved tag selection.
+can enjoy lh-tags automagic update of the database, and improved tag selection.
 
 ## Options
+Regarding the conventions used in my plugins, and how to set options, see
+the following
+[documentation](https://github.com/LucHermitte/lh-vim-lib/blob/master/doc/Options.md).
 
 ### Directory and pathnames related options
 lh-tags can distinguish the directory where a tag database is stored from the
 directory where the source files are. By default, both directories will be the
 same.
 
-#### Dirname to tag database: `(bpg):paths.tags.db_dir`
+#### Dirname to source code: `(bpg):paths.tags.src_dir`
 
-How ever this dirname is deduced, its value will be cached in the
-[project variable](http://github.com/LucHermitte/lh-vim-lib/«XXX»/doc/Project.md)
-`p:paths.tags.db_dir`.
+How ever this directory name is deduced, its value will be cached in the
+[project variable](http://github.com/LucHermitte/lh-vim-lib/blob/master/doc/Project.md)
+`p:paths.tags.src_dir`.
 
-The heuristic to deduce the where a tag database is located consists in
+The heuristic to deduce where the source code to index is located consists in
 searching the first option which is set among:
 
-1. `(bpg):paths.tags.db_dir` -- specific to lh-tags
+1. `(bpg):paths.tags.src_dir` -- cached, specific to lh-tags, permits to
+   override `(bpg):paths.sources` if need be
 2. `(bpg):tags_dirname` -- old (deprecated) options previously used by lh-tags
    V2; kept for retro-compatibility
 3. `(bpg):paths.sources` -- where sources files are supposed to be found
-   (according to lh-vim-lib _Project feature_).
-4. `b:project_source_dir` -- old option used by previous versions of [mu-template](https://github.com/LucHermitte/mu-template/); kept for retro-compatibility
-5. `(bpg):BTW_project_config._.paths.sources` -- internal information used by [Build Tools Wrapper](https://github.com/LucHermitte/vim-build-tools-wrapper); not meant to be set from lh-tags
+   according to lh-vim-lib _Project feature_.
+4. `b:project_source_dir` -- old option used by previous versions of
+   [mu-template](https://github.com/LucHermitte/mu-template/); kept for
+   retro-compatibility
+5. `(bpg):BTW_project_config._.paths.sources` -- internal information used by
+   [Build Tools Wrapper](https://github.com/LucHermitte/vim-build-tools-wrapper);
+   not meant to be set from lh-tags
 6. If none of the previous options is set, lh-tags will search a
    parent directory which contains any sign of being under source control
    (`.git/`, `.svn/`, `.hg/`...)
-7. Ultimately, lh-tags asks to the end-user where the tag database shall be
+7. Ultimately, lh-tags asks to the end-user where the source files to index are
    stored (previous values are recorded in case several files from a same
    project are opened).
 
    Note: At this time, we cannot say _"never ask for this directory"_ as it's
-   possible with lh-vim-lib Project feature.
-
-
-See also: `(pbg):tags_filename`
-
-#### Dirname to source code: `(bpg):paths.sources`
-
-If set, lh-tags, will use the Project variable from lh-vim-lib: `(bpg):paths.sources`.
-Otherwise, it'll consider the source code must be in the same place as the tag
-database, i.e. `(bpg):paths.tags.db_dir`
-
-#### How to use different directories
-
-In order to distinguish where the source code is from where the tag database is
-generated, you'll have to make sure that `(bpg):paths.sources` and
-`(bpg):paths.tags.db_dir` point to two completely different directories.
-
-As `(bpg):paths.tags.db_dir` uses `(bpg):paths.sources` as a default value,
-you'll to make sure to set `(bpg):paths.tags.db_dir` in your project, either
-from a local vimrc, or an EditorConfig file. See
-[lh-vim-lib Project documentation](http://github.com/LucHermitte/lh-vim-lib/«XXX»/doc/Project.md##314-set-a-project-option)
-
+   possible with lh-vim-lib _Project feature_.
 
 #### Name of the tag database: `(pbg):tags_filename`
-The name default to `'tags'` with ctags indexers.
+The name defaults to `'tags'` with ctags indexers.
 
-The option permits to have another name -- this can be useful when all tag
+This option permits to have another name -- this can be useful when all tag
 databases are stored with a policy such as `projects/.tags/{projectname}.ctags`.
+
+If you want to change the directory where the tag database is stored, it must
+be done through this option. Relative pathnames are expressed relativelly to
+the sources directory `(bpg):paths.tags.src_dir`.
 
 ### Filetypes and languages related options
 
@@ -139,9 +130,12 @@ files are ignored.
 
 Internally, this updates the project option `p:tags_options.indexed_ft` --
 prefer this function when using
-[local_vimrc](http://github.com/LucHermitte/local_vimrc) to configure project.
+[local_vimrc](http://github.com/LucHermitte/local_vimrc) to configure a
+project.
+
 It's also possible to set the option `g:tags_options.indexed_ft` that'll
-be used instead. It's meant to be used when no project are defined.
+be used instead. The global option is meant to be used when no project are
+defined.
 
 ```vim
 :call lh#tags#add_indexed_ft('c', 'cpp')

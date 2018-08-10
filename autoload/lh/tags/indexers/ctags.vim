@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      27th Jul 2018
-" Last Update:  07th Aug 2018
+" Last Update:  10th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Specifications for exhuberant-ctags and universal-ctags objects
@@ -387,7 +387,7 @@ function! lh#tags#indexers#ctags#make(...) abort
 endfunction
 
 function! s:update_tags_option() dict abort " {{{3
-  call self.set_output_file(self.db_dirname() . self.db_filename())
+  call self.set_output_file(self.src_dirname() . self.db_filename())
   let fixed_path = lh#path#fix(self._db_file)
   if lh#project#is_in_a_project()
     call lh#let#to('p:&tags', '+='.fixed_path)

@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      26th Jul 2018
-" Last Update:  07th Aug 2018
+" Last Update:  10th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Interface for indexer objects
@@ -77,7 +77,7 @@ let s:k_script_name      = s:getSID()
 function! lh#tags#indexers#interface#make(...) abort
   let res = lh#object#make_top_type(get(a:, 1, {}))
   call lh#object#inject_methods(res, s:k_script_name,
-        \ 'run', 'set_output_file', 'db_file', 'db_dirname', '__lhvl_oo_type')
+        \ 'run', 'set_output_file', 'db_file', 'src_dirname', '__lhvl_oo_type')
 
   " TODO: harmonize set_output_file & db_file
   return res
@@ -93,8 +93,17 @@ endfunction
 function! s:db_file() dict abort " {{{2
   return self._db_file
 endfunction
-function! s:db_dirname() dict abort " {{{2
+function! s:src_dirname() dict abort " {{{2
   return s:DB_Dirname()
+endfunction
+
+function! s:source_dirname(...) dict abort " {{{2
+  " Option: if set to "1", force to return the exact path, even when by
+  " default this is the src_dirname.
+  let source_dir = lh#option#get('paths.sources', '')
+  " If not set, this means the default value is the directory where the
+  " tag file is produced => no need to specify it
+  return empty(source_dir) && get(a:, 1, 0) ? self.src_dirname() : source_dir
 endfunction
 
 function! s:run(args) dict abort " {{{2
@@ -115,9 +124,7 @@ function! lh#tags#indexers#interface#is_an_indexer(dict) abort
         \ && a:dict.__lhvl_oo_type() == s:k_oo_type
 endfunction
 
-" # db_dirname support functions {{{2
-" TODO: be able to distinguish where the sources are from where the tags
-" DB is stored.
+" # src_dirname support functions {{{2
 let s:project_roots = get(s:, 'project_roots', [])
 function! s:GetPlausibleRoot() abort " {{{3
   " Note: this is a simplified version of the one from lhvl#Project
@@ -163,7 +170,7 @@ endfunction
 
 function! s:DB_Dirname(...) abort " {{{3
   " Will be searched in descending priority in:
-  " - (bpg):paths.tags.db_dir
+  " - (bpg):paths.tags.src_dir
   " - (bpg):tags_dirname
   " - (bpg):paths.sources
   " - b:project_source_dir (mu-template)
@@ -171,14 +178,14 @@ function! s:DB_Dirname(...) abort " {{{3
   " - Where .git/ is found is parent dirs
   " - Where .svn/ is found in parent dirs
   " - confirm box for %:p:h, and remember previous paths
-  let db_dirname = lh#option#get('paths.tags.db_dir')
-  if lh#option#is_unset(db_dirname)
-    unlet db_dirname
-    let db_dirname = s:FetchDBDirname()
-    call lh#let#to('p:paths.tags.db_dir', db_dirname)
+  let src_dirname = lh#option#get('paths.tags.src_dir')
+  if lh#option#is_unset(src_dirname)
+    unlet src_dirname
+    let src_dirname = s:FetchDBDirname()
+    call lh#let#to('p:paths.tags.src_dir', src_dirname)
   endif
 
-  let res = lh#path#to_dirname(db_dirname)
+  let res = lh#path#to_dirname(src_dirname)
 
   return res
 endfunction
