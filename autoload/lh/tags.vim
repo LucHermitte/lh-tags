@@ -205,75 +205,6 @@ function! lh#tags#ctags_flavour() abort
 endfunction
 
 " # The options {{{2
-" Forcing ft -> ctags languages {{{3
-" list {{{4
-let s:force_lang = {
-      \ 'ada' : 'Ada',
-      \ 'ant' : 'Ant',
-      \ 'asm' : 'Asm',
-      \ 'automake' : 'Automake',
-      \ 'awk' : 'Awk',
-      \ 'c' : 'C',
-      \ 'cs' : 'C#',
-      \ 'cpp' : 'C++',
-      \ 'clojure' : 'Clojure',
-      \ 'cobol' : 'Cobol',
-      \ 'css' : 'CSS',
-      \ 'tags' : 'ctags',
-      \ 'd' : 'D',
-      \ 'dosbatch' : 'DosBatch',
-      \ 'dts' : 'DTS',
-      \ 'eiffel' : 'Eiffel',
-      \ 'erlang' : 'Erlang',
-      \ 'falcon' : 'Falcon',
-      \ 'lex' : 'Flex',
-      \ 'fortran' : 'Fortran',
-      \ 'go' : 'Go',
-      \ 'html' : 'HTML',
-      \ 'java' : 'Java',
-      \ 'jproperties' : 'JavaProperties',
-      \ 'javascript' : 'JavaScript',
-      \ 'json' : 'JSON',
-      \ 'lisp' : 'Lisp',
-      \ 'lua' : 'Lua',
-      \ 'make' : 'Make',
-      \ 'matlab' : 'MatLab',
-      \ 'objc' : 'ObjectiveC',
-      \ 'ocaml' : 'OCaml',
-      \ 'pascal' : 'Pascal',
-      \ 'perl' : 'Perl',
-      \ 'perl6' : 'Perl6',
-      \ 'php' : 'PHP',
-      \ 'python' : 'Python',
-      \ 'r' : 'R',
-      \ 'rrst' : 'reStructuredText',
-      \ 'rexx' : 'REXX',
-      \ 'ruby' : 'Ruby',
-      \ 'rust' : 'Rust',
-      \ 'scheme' : 'Scheme',
-      \ 'sh' : 'Sh',
-      \ 'slang' : 'SLang',
-      \ 'sml' : 'SML',
-      \ 'sql' : 'SQL',
-      \ 'svg' : 'SVG',
-      \ 'systemverilog' : 'SystemVerilog',
-      \ 'tcl' : 'Tcl',
-      \ 'tex' : 'Tex',
-      \ 'vera' : 'Vera',
-      \ 'verilog' : 'Verilog',
-      \ 'vhdl' : 'VHDL',
-      \ 'vim' : 'Vim',
-      \ 'xslt' : 'XSLT',
-      \ 'yacc' : 'YACC',
-      \ }
-
-function! s:BuildForceLangOption() abort " {{{4
-  for [ft, lang] in items(s:force_lang)
-    call lh#let#if_undef('g:tags_options.'.ft.'.force', lang)
-  endfor
-endfunction
-call s:BuildForceLangOption()
-
 " function kinds {{{3
 " The ctags kind for function implementation may be f in C, C++, but m in Java,
 " C#, ...
@@ -295,11 +226,6 @@ function! s:BuildFuncKinds()
   endfor
 endfunction
 call s:BuildFuncKinds()
-
-" Function: lh#tags#option_force_lang(ft) {{{3
-function! lh#tags#option_force_lang(ft) abort
-  return lh#option#get('tags_options.'.a:ft.'.force')
-endfunction
 
 " Function: lh#tags#func_kind(ft) {{{3
 function! lh#tags#func_kind(ft) abort
@@ -349,11 +275,11 @@ endfunction
 " Function: lh#tags#set_lang_map(lang, exts) {{{3
 let s:k_unset = lh#option#unset()
 function! lh#tags#set_lang_map(ft, exts) abort
-  let lang = get(get(g:tags_options, a:ft, {}), 'force', s:k_unset)
-  if lh#option#is_unset(lang)
-    throw "No language associated to " .a:ft." filetype for ctags!"
+  let indexer = s:indexer()
+  if !has_key(indexer, 'set_lang_map')
+    throw "tags-error: The current indexer has no ft -> lang map"
   endif
-  call lh#let#to('p:tags_options.langmap.'.lang, a:exts)
+  call indexer.set_lang_map(a:ft, a:exts)
 endfunction
 
 let s:project_roots = get(s:, 'project_roots', [])

@@ -179,8 +179,9 @@ function! s:analyse_flavour(exepath) abort
   else
     call lh#object#inject(flavour, '_analyse_fields', '_use_default_fields', s:k_script_name)
   endif
-  call lh#object#inject_methods(flavour, s:k_script_name,
-        \ '_analyse_kinds', '_analyse_languages', '_recursive_or_all')
+  call lh#object#inject_methods(flavour, s:k_script_name
+        \ , '_analyse_kinds', '_analyse_languages', '_recursive_or_all'
+        \ , 'set_lang_map')
 
   call flavour._analyse_extras()
   call flavour._analyse_fields()
@@ -188,6 +189,16 @@ function! s:analyse_flavour(exepath) abort
   call flavour._analyse_languages()
   return flavour
 endfunction
+
+" Function: s:set_lang_map(ft, exts) dict abort {{{3
+function! s:set_lang_map(ft, exts) dict abort
+  let lang = get(self._ft_lang_map, a:ft, s:k_unset)
+  if lh#option#is_unset(lang)
+    throw "No language associated to " .a:ft." filetype for ctags!"
+  endif
+  call lh#let#to('p:tags_options.langmap.'.lang, a:exts)
+endfunction
+
 
 " Function: s:_recursive_or_all() dict abort {{{3
 function! s:_recursive_or_all() dict abort
@@ -446,7 +457,9 @@ function! s:kinds_2_options(flavour, langs, args, options) abort " {{{3
   call map(copy(a:langs), 'extend(kinds, {v:val : []})')
   " first: add the prototypes
   call lh#assert#true(lh#has#vkey())
-  call map(kinds, 'has_key(a:flavour._kinds_proto, v:key) ? add(v:val, a:flavour._kinds_proto[v:key]) : v:val')
+  if get(a:args, 'extract_prototypes', 1)
+    call map(kinds, 'has_key(a:flavour._kinds_proto, v:key) ? add(v:val, a:flavour._kinds_proto[v:key]) : v:val')
+  endif
   " Then analyse some other requirements
   if get(a:args, 'extract_local_variables', 0)
     call map(kinds, 'has_key(a:flavour._kinds_local, v:key) ? add(v:val, a:flavour._kinds_local[v:key]) : v:val')
@@ -558,6 +571,7 @@ function! s:cmd_line(...) dict abort " {{{3
   " - fts: list
   " - extract_local_variables: bool
   " - field names: bool
+  " - force_language: string
   " - tag_file
   let args = get(a:, 1, {})
 
@@ -572,22 +586,31 @@ function! s:cmd_line(...) dict abort " {{{3
   let options += ['--tag-relative=yes']
 
   " # Files to index...
+  let last_options = []
   if     get(args, 'recursive_or_all', 0)
-    let last_options = [flavour._recursive_or_all()]
+    let last_options += [flavour._recursive_or_all()]
   else
     let file2index = get(args, 'index_file', '')
     if !empty(file2index)
-      call lh#assert#true(bufnr(file2index) >= 0)
-      let last_options = ['--append', file2index]
-      let ft = getbufvar(file2index, '&ft')
-      let args.fts = [ft]
+      if bufnr(file2index) >= 0
+        " TODO: no append in on-the-fly mode
+        let last_options += ['--append']
+        let ft = getbufvar(file2index, '&ft')
+        let args.fts = [ft]
+      else
+        " this is probably a temporary file with ft = &ft
+      endif
+      let last_options += [shellescape(file2index)]
       " let langs = [get(flavour._ft_lang_map, ft, '')]
       " TODO: Reject indexation of files with a language unsupported by ctags?
     endif
   endif
 
   " # Forced languages
-  if !exists('langs')
+  if has_key(args, 'force_language')
+    let langs = s:fts_2_langs(flavour, {'fts': [args['force_language']]}, options)
+    let options += ['--language-force='.langs[0]]
+  elseif !exists('langs')
     let langs = s:fts_2_langs(flavour, args, options)
   endif
 
