@@ -7,7 +7,7 @@
 " Version:      2.0.3
 let s:k_version = '2.0.3'
 " Created:      04th Jan 2007
-" Last Update:  21st Feb 2017
+" Last Update:  10th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -65,7 +65,7 @@ if exists("g:loaded_lh_tags") && !exists('g:force_reload_lh_tags')
 endif
 
 " ######################################################################
-" Tag browsing {{{1
+" ## Tag browsing {{{1
 
 nnoremap <silent> <Plug>CTagsSplitOpen     :call lh#tags#split_open()<cr>
 if !hasmapto('<Plug>CTagsSplitOpen', 'n')
@@ -77,7 +77,7 @@ if !hasmapto('<Plug>CTagsSplitOpen', 'v')
 endif
 
 " ######################################################################
-" Tag command {{{1
+" ## Tag command {{{1
 " ======================================================================
 
 command! -nargs=* -complete=custom,lh#tags#_command_complete
@@ -89,7 +89,7 @@ command! -nargs=* -complete=custom,lh#tags#_command_complete
 " * filter on +/#/- v\%[isibility] (pub/pro/pri)
 
 " ######################################################################
-" Tag generation {{{1
+" ## Tag generation {{{1
 " ======================================================================
 " Needs ctags executable {{{2
 let s:tags_executable = lh#option#get('tags_executable', 'ctags')
@@ -105,55 +105,56 @@ endif
 " Mappings {{{2
 " inoremap <expr> ; lh#tags#run('UpdateTags_for_ModifiedFile',';')
 
-nnoremap <silent> <Plug>CTagsUpdateCurrent :call lh#tags#update_current()<cr>
-let s:map_UpdateCurrent = {'modes': 'n'}
-if !hasmapto('<Plug>CTagsUpdateCurrent', 'n')
-  nmap <silent> <c-x>tc  <Plug>CTagsUpdateCurrent
-  let s:map_UpdateCurrent['binding'] = '<c-x>tc'
-endif
+function! s:map(what, default) abort
+  let s:map_{a:what} = {'modes': 'n'}
+  if !hasmapto('<Plug>CTags'.a:what, 'n')
+    " TODO: Check there is no other mapping starting with `a:default`
+    let check = mapcheck(a:default, 'n')
+    if !empty(check) && (check != '<Plug>CTags'.a:what)
+      call lh#common#warning_msg(lh#fmt#printf('Warning: While defining nmap `%1` to `%2` lh-tags: there already exists another mapping starting as `%1` to `%3`.',
+            \ a:default, '<Plug>CTags'.a:what, check))
+    else
+      let s:map_{a:what}['binding'] = a:default
+    endif
+  elseif has('gui_running') && has ('menu')
+    let map = lh#mapping#who_maps('<Plug>CTags'.a:what, 'n')
+    if !empty(map)
+      let s:map_{a:what}['binding'] = map[0].lhs
+    endif
+  endif
+endfunction
 
-nnoremap <silent> <Plug>CTagsUpdateAll     :call lh#tags#update_all()<cr>
-let s:map_UpdateAll = {'modes': 'n'}
-if !hasmapto('<Plug>CTagsUpdateAll', 'n')
-  nmap <silent> <c-x>ta  <Plug>CTagsUpdateAll
-  let s:map_UpdateAll['binding'] = '<c-x>ta'
-endif
+nnoremap <silent> <Plug>CTagsUpdateCurrent   :call lh#tags#update_current()<cr>
+nnoremap <silent> <Plug>CTagsUpdateAll       :call lh#tags#update_all()<cr>
+nnoremap <silent> <Plug>CTagsUpdateSpell     :call lh#tags#update_spellfile()<cr>
+nnoremap <silent> <Plug>CTagsUpdateHighlight :call lh#tags#update_highlight()<cr>
 
-nnoremap <silent> <Plug>CTagsUpdateSpell   :call lh#tags#update_spellfile()<cr>
-let s:map_UpdateSpell = {'modes': 'n'}
-if !hasmapto('<Plug>CTagsUpdateSpell', 'n')
-  nmap <silent> <c-x>ts  <Plug>CTagsUpdateSpell
-  let s:map_UpdateSpell['binding'] = '<c-x>ts'
-endif
-
-nnoremap <silent> <Plug>CTagsUpdateHighlight   :call lh#tags#update_highlight()<cr>
-let s:map_UpdateHighlight = {'modes': 'n'}
-if !hasmapto('<Plug>CTagsUpdateHighlight', 'n')
-  nmap <silent> <c-x>th  <Plug>CTagsUpdateHighlight
-  let s:map_UpdateHighlight['binding'] = '<c-x>th'
-endif
+call s:map('UpdateCurrent'  , '<c-x>tc')
+call s:map('UpdateAll'      , '<c-x>ta')
+call s:map('UpdateSpell'    , '<c-x>ts')
+call s:map('UpdateHighlight', '<c-x>th')
 
 " Menu {{{2
 if has('gui_running') && has ('menu')
   call lh#project#menu#make('a', '97', '-----<sep>-----', '', 'Nop')
 endif
-call lh#project#menu#make('anore', '97.100',
+call lh#project#menu#make('n', '97.100',
       \ '&Tags.Update &all',
       \ s:map_UpdateAll,
-      \ ':call lh#tags#update_all()<cr>')
+      \ '<Plug>CTagsUpdateAll')
 " TODO inhibit this menu when no_auto is true
-call lh#project#menu#make('anore', '97.101',
+call lh#project#menu#make('n', '97.101',
       \ '&Tags.Update &current',
       \ s:map_UpdateCurrent,
-      \ ':call lh#tags#update_current()<cr>')
-call lh#project#menu#make('anore', '97.102',
+      \ '<Plug>CTagsUpdateCurrent')
+call lh#project#menu#make('n', '97.102',
       \ '&Tags.Update &Spell Ignore List',
       \ s:map_UpdateSpell,
-      \ ':call lh#tags#update_spellfile()<cr>')
-call lh#project#menu#make('anore', '97.103',
+      \ '<Plug>CTagsUpdateSpell')
+call lh#project#menu#make('n', '97.103',
       \ '&Tags.Update Tags &Highlighted',
       \ s:map_UpdateHighlight,
-      \ ':call lh#tags#update_highlight()<cr>')
+      \ '<Plug>CTagsUpdateHighlight')
 
 call lh#project#menu#make('a', '97.200', '&Tags.-----<sep>-----', '', 'Nop')
 if lh#has#jobs()
