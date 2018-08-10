@@ -92,14 +92,14 @@ command! -nargs=* -complete=custom,lh#tags#_command_complete
 " ## Tag generation {{{1
 " ======================================================================
 " Needs ctags executable {{{2
-let s:tags_executable = lh#option#get('tags_executable', 'ctags')
-let s:script = expand('<sfile>:p')
-
-if !executable(s:tags_executable)
-  let g:loaded_lh_tags = s:script.' partially loaded as ``'.s:tags_executable."'' is not available in $PATH"
-  let &cpo=s:cpo_save
-  finish
-endif
+""let s:tags_executable = lh#option#get('tags_executable', 'ctags')
+""let s:script = expand('<sfile>:p')
+""
+""if !executable(s:tags_executable)
+""  let g:loaded_lh_tags = s:script.' partially loaded as ``'.s:tags_executable."'' is not available in $PATH"
+""  let &cpo=s:cpo_save
+""  finish
+""endif
 
 " ======================================================================
 " Mappings {{{2
@@ -159,8 +159,6 @@ call lh#project#menu#make('n', '97.103',
 call lh#project#menu#make('a', '97.200', '&Tags.-----<sep>-----', '', 'Nop')
 if lh#has#jobs()
   call lh#let#if_undef('g:tags_options.run_in_bg', 1)
-  if has('gui_running') && has ('menu')
-  endif
   call lh#project#menu#def_toggle_item(
         \ { 'variable': 'tags_options.run_in_bg'
         \ , 'values': [0, 1]

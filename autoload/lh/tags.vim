@@ -168,27 +168,24 @@ endfunction
 " ## Options {{{1
 " ======================================================================
 " # ctags executable {{{2
-" Function: s:CtagsExecutable() {{{3
-function! s:CtagsExecutable() abort
-  let tags_executable = lh#option#get('tags_executable', 'ctags', 'bg')
-  return tags_executable
-endfunction
-
 " Function: lh#tags#ctags_is_installed() {{{3
 function! lh#tags#ctags_is_installed() abort
-  return executable(s:CtagsExecutable())
+  return executable(s:indexer().executable())
 endfunction
 
 " Function: lh#tags#ctags_flavour() {{{3
+" @since version 1.5.0
+" @deprecated from Version 3.0.0
 function! lh#tags#ctags_flavour() abort
-  " @since version 1.5.0
+  call lh#notify#deprecated('lh#tags#ctags_flavour', 'lh-tags API differently')
+
   " call assert_true(lh#tags#ctags_is_installed())
   try
-    let ctags_executable = s:CtagsExecutable()
+    let ctags_executable = s:indexer().executable()
     if !lh#tags#ctags_is_installed()
       return 'echo "No '.ctags_executable.' binary found: "'
     endif
-    let ctags_version = s:System(s:CtagsExecutable(). ' --version')
+    let ctags_version = s:System(ctags_executable. ' --version')
     if ctags_version =~ 'Universal Ctags'
       " Here I'm interrested in knowing whether --extras has deprectaed
       " --extra, which was done in commit d76bc95
@@ -310,26 +307,9 @@ function! lh#tags#func_kind(ft) abort
 endfunction
 
 " Fields options {{{3
-" They'll get overriden everytime this file is loaded
 LetIfUndef g:tags_options {}
-""if lh#tags#ctags_is_installed()
-""  let s:flavour = lh#tags#ctags_flavour()
-""  if s:flavour == 'utags'
-""    LetTo g:tags_options.__extra = '--extras'
-""    LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --fields-c++=+{properties} --extras=+q'
-""  elseif s:flavour == 'utags-old'
-""    LetTo g:tags_options.__extra = '--extra'
-""    LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft &x{c++.properties} --extras=+q'
-""  else " etags
-""    LetTo g:tags_options.__extra = '--extra'
-""    LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft --extra=+q'
-""  endif
-""  LetIfUndef g:tags_options.c.flags    = '--c-kinds=+pf --fields=+imaS '.(g:tags_options.__extra).'=+q'
-""  " LetIfUndef g:tags_options.cpp.flags  = '--c++-kinds=+pf --fields=+imaSft '.(g:tags_options.__extra).'=+q --language-force=C++'
-""  " LetIfUndef g:tags_options.java.flags = '--c++-kinds=+acefgimp --fields=+imaSft '.(g:tags_options.__extra).'=+q --language-force=Java'
-""  LetIfUndef g:tags_options.java.flags = '--java-kinds=+acefgimp --fields=+imaSft '.(g:tags_options.__extra).'=+q'
-""  LetIfUndef g:tags_options.vim.flags  = '--fields=+mS '.(g:tags_options.__extra).'=+q'
-""endif
+" -> g:tags_options.__extra
+" -> g:tags_options.{ft}.flags
 
 function! s:indexer() abort " {{{3
   let indexer = lh#option#get(['tags_options.'.&ft.'.__indexer', 'tags_options.__indexer'])
@@ -374,14 +354,6 @@ function! lh#tags#set_lang_map(ft, exts) abort
     throw "No language associated to " .a:ft." filetype for ctags!"
   endif
   call lh#let#to('p:tags_options.langmap.'.lang, a:exts)
-  """ Be sure the option exists
-  ""call lh#let#if_undef('p:tags_options.'.a:ft.'.langmap', '')
-  """ Override it
-  ""if lh#tags#ctags_flavour() =~ 'utags'
-  ""  call lh#let#to('p:tags_options.'.a:ft.'.langmap', '--map-'.lang.'='.a:exts)
-  ""else
-  ""  call lh#let#to('p:tags_options.'.a:ft.'.langmap', '--langmap='.lang.':'.a:exts)
-  ""endif
 endfunction
 
 let s:project_roots = get(s:, 'project_roots', [])
