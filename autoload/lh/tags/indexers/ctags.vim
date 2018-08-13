@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      27th Jul 2018
-" Last Update:  10th Aug 2018
+" Last Update:  13th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Specifications for exhuberant-ctags and universal-ctags objects
@@ -571,7 +571,8 @@ function! s:cmd_line(...) dict abort " {{{3
   " - fts: list
   " - extract_local_variables: bool
   " - field names: bool
-  " - force_language: string
+  " - forced_language: string
+  " - analyse_file: filename -- expected to be used & forced_language
   " - tag_file
   let args = get(a:, 1, {})
 
@@ -585,33 +586,47 @@ function! s:cmd_line(...) dict abort " {{{3
   let options = []
   let options += ['--tag-relative=yes']
 
+  " # Forced languages
+  if has_key(args, 'forced_language')
+    let ft = args['forced_language']
+    let langs = s:fts_2_langs(flavour, {'fts': [ft]}, options)
+    let options += ['--language-force='.langs[0]]
+  elseif !exists('langs')
+    let langs = s:fts_2_langs(flavour, args, options)
+  endif
+
   " # Files to index...
   let last_options = []
   if     get(args, 'recursive_or_all', 0)
     let last_options += [flavour._recursive_or_all()]
   else
-    let file2index = get(args, 'index_file', '')
-    if !empty(file2index)
-      if bufnr(file2index) >= 0
-        " TODO: no append in on-the-fly mode
-        let last_options += ['--append']
-        let ft = getbufvar(file2index, '&ft')
-        let args.fts = [ft]
-      else
-        " this is probably a temporary file with ft = &ft
-      endif
-      let last_options += [shellescape(file2index)]
-      " let langs = [get(flavour._ft_lang_map, ft, '')]
-      " TODO: Reject indexation of files with a language unsupported by ctags?
-    endif
-  endif
+    " TODO: Reject indexation of files with a language unsupported by ctags?
 
-  " # Forced languages
-  if has_key(args, 'force_language')
-    let langs = s:fts_2_langs(flavour, {'fts': [args['force_language']]}, options)
-    let options += ['--language-force='.langs[0]]
-  elseif !exists('langs')
-    let langs = s:fts_2_langs(flavour, args, options)
+    let file2index = get(args, 'analyse_file', '')
+    if !empty(file2index)
+      " The file mays be a temporary file generated on the fly. The ft
+      " is then the forced_language
+      call lh#assert#value(args).has_key('forced_language', "When using lh-tags 'analyse_file' option, 'forced_language' is expected to be set")
+      call lh#assert#value(l:).has_key('ft') " should be set in 'forced_language' case
+      let args.fts = [ft]
+      let last_options += [shellescape(file2index)]
+    else
+      let file2index = get(args, 'index_file', '')
+      if !empty(file2index)
+        " Expects the file to be an edited buffer
+        if bufnr(file2index) >= 0
+          let last_options += ['--append']
+          let ft = getbufvar(file2index, '&ft')
+          let args.fts = [ft]
+        else
+          call lh#assert#unexpected("lh-tags 'index_file' option is expected to be used on files loaded in a buffer")
+          " this is probably a temporary file with ft = &ft
+        endif
+        let last_options += [shellescape(file2index)]
+        " let langs = [get(flavour._ft_lang_map, ft, '')]
+      endif
+    endif
+
   endif
 
   " # Given the languages of the current project, generate the "kinds"
