@@ -122,7 +122,7 @@ let s:all_lang_map = {
       \ 'yacc' : 'YACC',
       \ }
 
-" # ctags capabilities analysis {{{2
+" # ctagd flavours -- ctags capabilities analysis {{{2
 " We ask ctags --help & cie what extras, fields, kinds, are supported by
 " the current version
 " Let's hope ex-ctags can work this way because uni-ctags cannot tell us
@@ -181,7 +181,7 @@ function! s:analyse_flavour(exepath) abort
   endif
   call lh#object#inject_methods(flavour, s:k_script_name
         \ , '_analyse_kinds', '_analyse_languages', '_recursive_or_all'
-        \ , 'set_lang_map')
+        \ , 'set_lang_map', 'get_lang_for', 'get_kind_flags')
 
   call flavour._analyse_extras()
   call flavour._analyse_fields()
@@ -192,13 +192,18 @@ endfunction
 
 " Function: s:set_lang_map(ft, exts) dict abort {{{3
 function! s:set_lang_map(ft, exts) dict abort
+  let lang = self.get_lang_for(a:ft)
+  call lh#let#to('p:tags_options.langmap.'.lang, a:exts)
+endfunction
+
+" Function: s:get_lang_for(ft) dict abort {{{3
+function! s:get_lang_for(ft) dict abort
   let lang = get(self._ft_lang_map, a:ft, s:k_unset)
   if lh#option#is_unset(lang)
     throw "No language associated to " .a:ft." filetype for ctags!"
   endif
-  call lh#let#to('p:tags_options.langmap.'.lang, a:exts)
+  return lang
 endfunction
-
 
 " Function: s:_recursive_or_all() dict abort {{{3
 function! s:_recursive_or_all() dict abort
@@ -282,10 +287,14 @@ function! s:line2dict(line) abort
   let tokens = split(a:line)
   return {tokens[0] : join(tokens[1:], ' ')}
 endfunction
-function! s:extract_kinds(kinds, pattern) abort
+function! s:extract_kinds(kinds, pattern, ...) abort
+  " a:1: exclude patterns
   let kinds = map(deepcopy(a:kinds), "filter(v:val, 'v'.':val =~? a:pattern')")
+  if a:0 > 0
+    call map(kinds, "filter(v:val, 'v'.':val !~? a:1')")
+  endif
   call filter(kinds, '!empty(v:val)')
-  call map(kinds, 'keys(v:val)[0]')
+  call map(kinds, 'keys(v:val)')
   return kinds
 endfunction
 function! s:_analyse_kinds() dict abort
@@ -315,11 +324,21 @@ function! s:_analyse_kinds() dict abort
   " - local variables
   " Unfortunatelly, depending on the language, the exact option may
   " change => pre-analyse it.
-  let self._kinds_local    = s:extract_kinds(self._kinds, 'local')
-  let self._kinds_proto    = s:extract_kinds(self._kinds, '\vprototype|interface content|subroutine declaration')
-  let self._kinds_variable = s:extract_kinds(self._kinds, '\v(local |forward )@<!variable')
+  let self._kinds_functions       = s:extract_kinds(self._kinds, '\vsubprograms$|message|method|procedure|subroutine|function', '\vfunction (prototype|declaration|parameter|variable)')
+  let self._kinds_local_variables = s:extract_kinds(self._kinds, 'local')
+  let self._kinds_prototypess     = s:extract_kinds(self._kinds, '\vprototype|interface content|subroutine declaration')
+  let self._kinds_variables       = s:extract_kinds(self._kinds, '\v(local |forward )@<!variable')
 
   return self
+endfunction
+
+" Function! s:get_kind_flags(kind) dict abort " {{{3
+function! s:get_kind_flags(kind) dict abort
+  if has_key(self, '_kinds_'.a:kind)
+    return self['_kinds_'.a:kind]
+  else
+    return s:extract_kinds(self._kinds, a:kind)
+  endif
 endfunction
 
 " Function: s:_analyse_languages() dict abort {{{3
@@ -455,20 +474,19 @@ endfunction
 function! s:kinds_2_options(flavour, langs, args, options) abort " {{{3
   let kinds = {} " {lang: [kind-list]}
   call map(copy(a:langs), 'extend(kinds, {v:val : []})')
-  " first: add the prototypes
   call lh#assert#true(lh#has#vkey())
-  if get(a:args, 'extract_prototypes', 1)
-    call map(kinds, 'has_key(a:flavour._kinds_proto, v:key) ? add(v:val, a:flavour._kinds_proto[v:key]) : v:val')
-  endif
-  " Then analyse some other requirements
-  if get(a:args, 'extract_local_variables', 0)
-    call map(kinds, 'has_key(a:flavour._kinds_local, v:key) ? add(v:val, a:flavour._kinds_local[v:key]) : v:val')
-  endif
-  if get(a:args, 'extract_variables', 1)
-    call map(kinds, 'has_key(a:flavour._kinds_variable, v:key) ? add(v:val, a:flavour._kinds_variable[v:key]) : v:val')
-  endif
-  " TODO: add generic way to support other kinds...
-  " -> match a pattern ?
+
+  " first: add the prototypes, local variables, etc
+  let default_opt = {'extract_prototypes': 1, 'extract_local_variables': 0, 'extract_variables': 1, 'extract_functions': 1}
+  call extend(a:args, default_opt, 'keep')
+  let kinds_to_extract = filter(copy(a:args), 'v:key =~ "extract_" && v:val == 1')
+  for extracted_kind in keys(kinds_to_extract)
+    let kind_name = matchstr(extracted_kind, 'extract_\zs.*')
+    " v:key == lang, v:val == the list of kinds per lang
+    call map(kinds, 'extend(v:val, get(a:flavour.get_kind_flags(kind_name), v:key, []))')
+    call s:Verbose("Kind[%1] -> %2", extracted_kind, a:flavour.get_kind_flags(kind_name))
+  endfor
+
   " No need to include the kind if it's not off by default
   if ! get(g:tags_options, 'explicit_cmdline', 0)
     for [lang, lg_kinds] in items(kinds)
@@ -479,6 +497,8 @@ function! s:kinds_2_options(flavour, langs, args, options) abort " {{{3
   " Remove languages for which no specific "kinds" are to be extracted
   call filter(kinds, '!empty(v:val)')
   call map(kinds, 'add(a:options, printf(a:flavour._kind_opt_format."=+%s", v:key, join(v:val, "")))')
+
+  call s:Verbose("Kinds: %1 => %2", a:args, kinds)
 endfunction
 
 function! s:get_enabled(field_spec, langs) abort " {{{3

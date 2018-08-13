@@ -7,7 +7,7 @@
 " Version:      3.0.0
 let s:k_version = '3.0.0'
 " Created:      02nd Oct 2008
-" Last Update:  10th Aug 2018
+" Last Update:  13th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -205,31 +205,11 @@ function! lh#tags#ctags_flavour() abort
 endfunction
 
 " # The options {{{2
-" function kinds {{{3
-" The ctags kind for function implementation may be f in C, C++, but m in Java,
-" C#, ...
-let s:func_kinds =
-      \ { 'r': ['ada']
-      \ , 'm': ['java', 'cs']
-      \ , '[mf]' : ['javascript', 'objc', 'ocaml']
-      \ , '[pf]' : ['pascal']
-      \ , 's' : ['perl']
-      \ , '[bsm]' : ['perl6']
-      \ , '[fF]' : ['rust']
-      \ , '[f]' : ['vim']
-      \ }
-function! s:BuildFuncKinds()
-  for [pat, fts] in items(s:func_kinds)
-    for ft in fts
-      call lh#let#if_undef('g:tags_options.'.ft.'.func_kind', pat)
-    endfor
-  endfor
-endfunction
-call s:BuildFuncKinds()
-
 " Function: lh#tags#func_kind(ft) {{{3
 function! lh#tags#func_kind(ft) abort
-  return lh#option#get('tags_options.'.a:ft.'.func_kind', 'f')
+  let fl = s:indexer().flavour()
+  let lang = fl.get_lang_for(a:ft)
+  return get(fl.get_kind_flags('function'), lang, 'f')
 endfunction
 
 " Fields options {{{3
@@ -332,6 +312,7 @@ endfunction
 
 " ======================================================================
 " generate tags on-the-fly {{{3
+" TODO: rewritte completely
 function! s:UpdateTags_for_ModifiedFile() abort
   let indexer        = s:indexer()
   let src_dirname    = indexer.src_dirname()
