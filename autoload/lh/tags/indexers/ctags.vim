@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      27th Jul 2018
-" Last Update:  13th Aug 2018
+" Last Update:  16th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Specifications for exhuberant-ctags and universal-ctags objects
@@ -402,6 +402,9 @@ function! lh#tags#indexers#ctags#make(...) abort
         \ 'update_tags_option', 'db_filename',
         \ 'executable', 'set_executable', 'flavour',
         \ 'cmd_line')
+  call lh#object#inject(res, 'get_kind_flags', '_idx_get_kind_flags', s:k_script_name)
+  call lh#object#inject(res, 'has_kind',       '_idx_has_kind', s:k_script_name)
+
 
   " By default the executable is set w/ "bpg:tags_executable", but it can be
   " overwritten for the current indexer instance.
@@ -447,6 +450,22 @@ endfunction
 
 function! s:flavour() dict abort " {{{3
   return s:get_flavour(self.executable())
+endfunction
+
+function! s:_idx_get_kind_flags(ft, ...) dict abort " {{{3
+  " args:
+  " - either <kind>
+  " - or [<kind>, default...]
+  let fl = self.flavour()
+  let lang = fl.get_lang_for(a:ft)
+  let res = map(copy(a:000), 'type(v:val) == type([]) ? get(fl.get_kind_flags(v:val[0]), lang, v:val[1:]) : get(fl.get_kind_flags(v:val), lang, "")')
+  return res
+endfunction
+
+function! s:_idx_has_kind(ft, kind) dict abort " {{{3
+  let fl = self.flavour()
+  let lang = fl.get_lang_for(a:ft)
+  return has_key(fl.get_kind_flags(a:kind), lang)
 endfunction
 
 function! s:fts_2_langs(flavour, args, options) abort " {{{3

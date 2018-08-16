@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      26th Jul 2018
-" Last Update:  10th Aug 2018
+" Last Update:  16th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Interface for indexer objects
@@ -23,6 +23,10 @@ let s:k_version = '300'
 "   variables...)
 "   - possibility of low level overriding?
 "   - destination file
+"
+" - that need to be defined (overridden) in child functions
+"   - get_kind_flags
+"   - has_kind
 "
 " Usage:
 " Parameters will be set at project level (tag filename...)
