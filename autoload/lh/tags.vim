@@ -300,7 +300,7 @@ endfunction
 " # Tags generating functions {{{2
 " ======================================================================
 " (private) Conclude tag generation {{{3
-function! s:TagGenerated(ctags_pathname, msg, ...) abort
+function! s:TagGenerated(ctags_pathname, trigger, msg, ...) abort
   redrawstatus
   if a:0 > 0
     let async_output = a:1
@@ -326,10 +326,7 @@ function! s:TagGenerated(ctags_pathname, msg, ...) abort
 
   echomsg a:ctags_pathname . ' updated'.a:msg.'.'
   let auto_spell = s:AreIgnoredWordAutomaticallyGenerated()
-  if auto_spell == 1 || (auto_spell == 'all' && empty(a:msg))
-    " TODO: Fix the crappy convention
-    " - empty(msg) <=> GenerateAll
-    " - !empty <=> UpdateCurrentFile
+  if auto_spell == 1 || (auto_spell == 'all' && a:trigger == 'complete')
     call lh#tags#update_spellfile(a:ctags_pathname)
   endif
   if s:ShallWeAutomaticallyHighlightTags()

@@ -735,7 +735,7 @@ function! s:run_on_all_files(FinishedCb, args) dict abort " {{{3
   return lh#tags#system#get_runner('async').run(
         \  cmd_line
         \, msg
-        \, lh#partial#make(a:FinishedCb, [db_file, ' (triggered by complete update request)'])
+        \, lh#partial#make(a:FinishedCb, [db_file, 'complete', ' (triggered by complete update request)'])
         \, lh#partial#make('delete', [db_file])
         \ )
 endfunction
@@ -758,7 +758,7 @@ function! s:run_update_file(FinishedCb, args) dict abort " {{{3
   return lh#tags#system#get_runner('async').run(
           \ cmd_line,
           \ msg,
-          \ lh#partial#make(a:FinishedCb, [db_file, ' (triggered by '.source_name.' modification)']),
+          \ lh#partial#make(a:FinishedCb, [db_file, 'save', ' (triggered by '.source_name.' modification)']),
           \ lh#partial#make(s:function('PurgeFileReferences'), [db_file, source_name])
           \ )
 endfunction
@@ -787,7 +787,7 @@ function! s:run_update_modified_file(FinishedCb, args) dict abort " {{{3
   return lh#tags#system#get_runner('async').run(
           \ cmd_line,
           \ msg,
-          \ lh#partial#make(s:function('remove_and_conclude'), [lh#partial#make(a:FinishedCb, [db_file, ' (triggered manually on modified '.source_name.')']), temp_name, source_name, temp_tags, db_file]),
+          \ lh#partial#make(s:function('remove_and_conclude'), [lh#partial#make(a:FinishedCb, [db_file, 'modified' , ' (triggered manually on modified '.source_name.')']), temp_name, source_name, temp_tags, db_file]),
           \ lh#partial#make(s:function('PurgeFileReferences'), [db_file, source_name])
           \ )
 
