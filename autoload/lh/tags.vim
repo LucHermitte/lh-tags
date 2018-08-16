@@ -154,8 +154,8 @@ function! s:function(func)
   return function(s:SNR . a:func)
 endfunction
 
-" # s:System {{{2
-function! s:System(cmd_line) abort
+" # lh#tags#_System {{{2
+function! lh#tags#_System(cmd_line) abort
   call s:Verbose(a:cmd_line)
   let res = lh#os#system(a:cmd_line)
   if v:shell_error
@@ -185,7 +185,7 @@ function! lh#tags#ctags_flavour() abort
     if !lh#tags#ctags_is_installed()
       return 'echo "No '.ctags_executable.' binary found: "'
     endif
-    let ctags_version = s:System(ctags_executable. ' --version')
+    let ctags_version = lh#tags#_System(ctags_executable. ' --version')
     if ctags_version =~ 'Universal Ctags'
       " Here I'm interrested in knowing whether --extras has deprectaed
       " --extra, which was done in commit d76bc95
@@ -241,7 +241,7 @@ function! lh#tags#set_indexer(Func, ...) abort
   return indexer
 endfunction
 
-function! s:is_ft_indexed(ft) abort " {{{3
+function! lh#tags#_is_ft_indexed(ft) abort " {{{3
   " This option needs to be set in each project!
   let indexed_ft = lh#option#get('tags_options.indexed_ft', [])
   return index(indexed_ft, a:ft) >= 0
@@ -271,7 +271,7 @@ endfunction
 function! lh#tags#cmd_line(ctags_pathname) abort " {{{3
   call lh#notify#deprecated('lh#tags#cmd_line', 'lh#tags#indexers#ctags#make().cmd_line')
   let indexer = s:indexer()
-  call indexer.s:set_db_file(a:ctags_pathname)
+  call indexer.set_db_file(a:ctags_pathname)
   let cmd_line = indexer.cmd_line()
   return cmd_line
 endfunction
@@ -298,100 +298,6 @@ endfunction
 " ## Tags generation {{{1
 " ======================================================================
 " # Tags generating functions {{{2
-" ======================================================================
-" Purge all references to {source_name} in the tags file {{{3
-function! s:PurgeFileReferences(ctags_pathname, source_name) abort
-  call s:Verbose('Purge `%1` references from `%2`', a:source_name, a:ctags_pathname)
-  if filereadable(a:ctags_pathname)
-    let pattern = "\t".lh#path#to_regex(a:source_name)."\t"
-    let tags = readfile(a:ctags_pathname)
-    call filter(tags, 'v:val !~ pattern')
-    call writefile(tags, a:ctags_pathname, "b")
-  endif
-endfunction
-
-" ======================================================================
-" generate tags on-the-fly {{{3
-" TODO: rewritte completely
-function! s:UpdateTags_for_ModifiedFile() abort
-  let indexer        = s:indexer()
-  let src_dirname    = indexer.src_dirname()
-  let ctags_pathname = indexer.db_file()
-  let source_name    = lh#path#relative_to(expand('%:p'), src_dirname)
-  let temp_name      = tempname()
-  let temp_tags      = tempname()
-
-  try
-    " 1- purge old references to the source name
-    call s:PurgeFileReferences(ctags_pathname, source_name)
-
-    " 2- save the unsaved contents of the current file
-    call writefile(getline(1, '$'), temp_name, 'b')
-
-    " 3- call ctags, and replace references to the temporary source file to the
-    " real source file
-    let cmd_line = lh#tags#cmd_line(ctags_pathname).' '.source_name.' --append'
-    " todo: test the redirection on windows
-    let cmd_line .= ' && sed "s#\t'.temp_name.'\t#\t'.source_name.'\t#" > '.temp_tags
-    let cmd_line .= ' && mv -f '.temp_tags.' '.ctags_pathname
-    call s:System(cmd_line)
-  finally
-    call delete(temp_name)
-    call delete(temp_tags)
-  endtry
-
-  return ';'
-endfunction
-
-" ======================================================================
-" generate tags for all files {{{3
-function! s:UpdateTags_for_All(FinishedCb, args) abort
-  let indexer      = s:indexer()
-  let db_file      = indexer.db_file()
-  let src_dirname  = indexer.src_dirname()
-
-  let args      = extend(a:args, {'recursive_or_all': 1}, 'force')
-  let cmd_line  = lh#os#sys_cd(src_dirname)
-  let cmd_line .= ' && '.join(indexer.cmd_line(args), ' ')
-  " TODO: add function to request project name
-  let msg = 'ctags '.
-        \ lh#option#get('BTW_project_config._.name', fnamemodify(src_dirname, ':p:h:t'))
-  return lh#tags#system#get_runner('async').run(
-        \  cmd_line
-        \, msg
-        \, lh#partial#make(a:FinishedCb, [db_file, ' (triggered by complete update request)'])
-        \, lh#partial#make('delete', [db_file])
-        \ )
-endfunction
-
-" ======================================================================
-" generate tags for the current saved file {{{3
-function! s:UpdateTags_for_SavedFile(FinishedCb, args) abort
-  " Work on the current file -> &ft, expand('%')
-  if ! s:is_ft_indexed(&ft) " redundant check
-    return
-  endif
-  let indexer = s:indexer()
-  let db_file = indexer.db_file()
-
-  let src_dirname    = indexer.src_dirname()
-  let source_name    = lh#path#relative_to(src_dirname, expand('%:p'))
-  " lh#path#relative_to() expects to work on dirname => it'll return a dirname
-  let source_name    = substitute(source_name, '[/\\]$', '', '')
-
-  let args      = extend(a:args, {'index_file': source_name}, 'force')
-  let cmd_line  = lh#os#sys_cd(src_dirname)
-  let cmd_line .= ' && ' . join(indexer.cmd_line(args), ' ')
-  let msg = 'ctags '.expand('%:t')
-  return lh#tags#system#get_runner('async').run(
-          \ cmd_line,
-          \ msg,
-          \ lh#partial#make(a:FinishedCb, [db_file, ' (triggered by '.source_name.' modification)']),
-          \ lh#partial#make(s:function('PurgeFileReferences'), [db_file, source_name])
-          \ )
-  " TODO: PurgeFileReferences is very specific to the tag indexer
-endfunction
-
 " ======================================================================
 " (private) Conclude tag generation {{{3
 function! s:TagGenerated(ctags_pathname, msg, ...) abort
@@ -435,7 +341,7 @@ endfunction
 " See this function as a /template method/.
 function! lh#tags#run(tag_function, force) abort
   try
-    if a:tag_function == 'UpdateTags_for_SavedFile' && !s:is_ft_indexed(&ft)
+    if a:tag_function == 'run_update_file' && !lh#tags#_is_ft_indexed(&ft)
     call s:Verbose("Ignoring ctags generation on %1: `%2` is an unsupported filetype", a:tag_function, &ft)
       return 0
     endif
@@ -452,12 +358,11 @@ function! lh#tags#run(tag_function, force) abort
       endif
     endif
 
-    let l:Fn          = s:function(a:tag_function)
     let l:Finished_cb = s:function('TagGenerated')
     let args = lh#option#get('tags_options._', {})
     " yeah, "ft" can be injected at project level... This is certainly nuts!
     let args = extend(args, lh#option#get('tags_options.'.get(args, 'ft', &ft).'_', {}), 'force')
-    let msg = l:Fn(l:Finished_cb, args)
+    let msg = indexer[a:tag_function](l:Finished_cb, args)
   catch /tags-error:/
     call lh#common#error_msg(v:exception)
     return 0
@@ -468,16 +373,16 @@ endfunction
 " ======================================================================
 " Main function for updating all tags {{{3
 function! lh#tags#update_all() abort
-  let done = lh#tags#run('UpdateTags_for_All', 1)
+  let done = lh#tags#run('run_on_all_files', 1)
 endfunction
 
 " Main function for updating the tags from one file {{{3
 " @note the file may be saved or "modified".
 function! lh#tags#update_current() abort
   if &modified
-    let done = lh#tags#run('UpdateTags_for_ModifiedFile', 1)
+    let done = lh#tags#run('run_update_modified_file', 1)
   else
-    let done = lh#tags#run('UpdateTags_for_SavedFile', 1)
+    let done = lh#tags#run('run_update_file', 1)
   endif
 endfunction
 

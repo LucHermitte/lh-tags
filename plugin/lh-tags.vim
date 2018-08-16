@@ -7,7 +7,7 @@
 " Version:      2.0.3
 let s:k_version = '2.0.3'
 " Created:      04th Jan 2007
-" Last Update:  10th Aug 2018
+" Last Update:  16th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -188,7 +188,7 @@ call lh#project#menu#def_toggle_item(
 " Auto command for automatically tagging a file when saved {{{2
 augroup LH_TAGS
   au!
-  autocmd BufWritePost,FileWritePost * if ! lh#option#get('tags_options.no_auto', 1) | call lh#tags#run('UpdateTags_for_SavedFile',0) | endif
+  autocmd BufWritePost,FileWritePost * if ! lh#option#get('tags_options.no_auto', 1) | call lh#tags#run('run_update_file',0) | endif
 aug END
 
 " }}}1

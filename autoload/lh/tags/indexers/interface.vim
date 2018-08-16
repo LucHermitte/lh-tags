@@ -27,6 +27,9 @@ let s:k_version = '300'
 " - that need to be defined (overridden) in child functions
 "   - get_kind_flags
 "   - has_kind
+"   - run_on_all_files          -- update tags for all files/directory
+"   - run_update_file           -- update tags for current file (saved)
+"   - run_update_modified_file  -- update tags for current file (modified, not saved)
 "
 " Usage:
 " Parameters will be set at project level (tag filename...)
@@ -81,12 +84,12 @@ let s:k_script_name      = s:getSID()
 function! lh#tags#indexers#interface#make(...) abort
   let res = lh#object#make_top_type(get(a:, 1, {}))
   call lh#object#inject_methods(res, s:k_script_name,
-        \ 'run', 's:set_db_file', 'db_file', 'src_dirname', '__lhvl_oo_type')
+        \ 'set_db_file', 'db_file', 'src_dirname', '__lhvl_oo_type')
 
   return res
 endfunction
 
-function! s:s:set_db_file(filename) dict abort " {{{2
+function! s:set_db_file(filename) dict abort " {{{2
   if !lh#path#writable(a:filename)
     throw "tags-error: ".a:filename." cannot be modified"
   endif
@@ -107,9 +110,6 @@ function! s:source_dirname(...) dict abort " {{{2
   " If not set, this means the default value is the directory where the
   " tag file is produced => no need to specify it
   return empty(source_dir) && get(a:, 1, 0) ? self.src_dirname() : source_dir
-endfunction
-
-function! s:run(args) dict abort " {{{2
 endfunction
 
 function! s:__lhvl_oo_type() dict abort " {{{2

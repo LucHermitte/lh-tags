@@ -56,6 +56,14 @@ function! s:getSID() abort
   return eval(matchstr(expand('<sfile>'), '<SNR>\zs\d\+\ze_getSID$'))
 endfunction
 let s:k_script_name      = s:getSID()
+" s:function(func_name) {{{3
+function! s:function(func)
+  if !exists("s:SNR")
+    let s:SNR=matchstr(expand('<sfile>'), '<SNR>\d\+_\zefunction$')
+  endif
+  return function(s:SNR . a:func)
+endfunction
+
 
 "------------------------------------------------------------------------
 " ## Exported functions {{{1
@@ -401,7 +409,7 @@ function! lh#tags#indexers#ctags#make(...) abort
   call lh#object#inject_methods(res, s:k_script_name,
         \ 'update_tags_option', 'db_filename',
         \ 'executable', 'set_executable', 'flavour',
-        \ 'cmd_line')
+        \ 'cmd_line', 'run_on_all_files', 'run_update_file', 'run_update_modified_file')
   call lh#object#inject(res, 'get_kind_flags', '_idx_get_kind_flags', s:k_script_name)
   call lh#object#inject(res, 'has_kind',       '_idx_has_kind', s:k_script_name)
 
@@ -420,7 +428,7 @@ function! lh#tags#indexers#ctags#make(...) abort
 endfunction
 
 function! s:update_tags_option() dict abort " {{{3
-  call self.s:set_db_file(self.src_dirname() . self.db_filename())
+  call self.set_db_file(self.src_dirname() . self.db_filename())
   let fixed_path = lh#path#fix(self._db_file)
   if lh#project#is_in_a_project()
     call lh#let#to('p:&tags', '+='.fixed_path)
@@ -657,6 +665,9 @@ function! s:cmd_line(...) dict abort " {{{3
           let last_options += ['--append']
           let ft = getbufvar(file2index, '&ft')
           let args.fts = [ft]
+        elseif has_key(args, 'fts')
+          " filetypes already forced
+          let last_options += ['--append']
         else
           call lh#assert#unexpected("lh-tags 'index_file' option is expected to be used on files loaded in a buffer")
           " this is probably a temporary file with ft = &ft
@@ -711,8 +722,99 @@ function! s:cmd_line(...) dict abort " {{{3
   return cmd_line + options
 endfunction
 
+function! s:run_on_all_files(FinishedCb, args) dict abort " {{{3
+  let db_file     = self.db_file()
+  let src_dirname = self.src_dirname()
+
+  let args      = extend(a:args, {'recursive_or_all': 1}, 'force')
+  let cmd_line  = lh#os#sys_cd(src_dirname)
+  let cmd_line .= ' && '.join(self.cmd_line(args), ' ')
+  " TODO: add function to request project name
+  let msg = 'ctags '.
+        \ lh#option#get('BTW_project_config._.name', fnamemodify(src_dirname, ':p:h:t'))
+  return lh#tags#system#get_runner('async').run(
+        \  cmd_line
+        \, msg
+        \, lh#partial#make(a:FinishedCb, [db_file, ' (triggered by complete update request)'])
+        \, lh#partial#make('delete', [db_file])
+        \ )
+endfunction
+
+function! s:run_update_file(FinishedCb, args) dict abort " {{{3
+  " Work on the current file -> &ft, expand('%')
+  if ! lh#tags#_is_ft_indexed(&ft) " redundant check
+    return
+  endif
+  let db_file        = self.db_file()
+  let src_dirname    = self.src_dirname()
+  let source_name    = lh#path#relative_to(src_dirname, expand('%:p'))
+  " lh#path#relative_to() expects to work on dirname => it'll return a dirname
+  let source_name    = substitute(source_name, '[/\\]$', '', '')
+
+  let args      = extend(a:args, {'index_file': source_name}, 'force')
+  let cmd_line  = lh#os#sys_cd(src_dirname)
+  let cmd_line .= ' && ' . join(self.cmd_line(args), ' ')
+  let msg = 'ctags '.expand('%:t')
+  return lh#tags#system#get_runner('async').run(
+          \ cmd_line,
+          \ msg,
+          \ lh#partial#make(a:FinishedCb, [db_file, ' (triggered by '.source_name.' modification)']),
+          \ lh#partial#make(s:function('PurgeFileReferences'), [db_file, source_name])
+          \ )
+endfunction
+
+"------------------------------------------------------------------------
+function! s:run_update_modified_file(FinishedCb, args) dict abort " {{{3
+  " Work on the current file -> &ft, expand('%')
+  if ! lh#tags#_is_ft_indexed(&ft) " redundant check
+    return
+  endif
+  let db_file     = self.db_file()
+  let temp_tags   = tempname()
+
+  " save the unsaved contents of the current file
+  let src_dirname = self.src_dirname()
+  let source_name = lh#path#relative_to(src_dirname, expand('%:p'))
+  " lh#path#relative_to() expects to work on dirname => it'll return a dirname
+  let source_name = substitute(source_name, '[/\\]$', '', '')
+  let temp_name   = tempname()
+  call writefile(getline(1, '$'), temp_name, 'b')
+
+  let args      = extend(a:args, {'index_file': temp_name, 'fts': [&ft], 'forced_language': &ft}, 'force')
+  let cmd_line  = lh#os#sys_cd(src_dirname)
+  let cmd_line .= ' && ' . join(self.cmd_line(args), ' ')
+  let msg = 'ctags '.expand('%:t')
+  return lh#tags#system#get_runner('async').run(
+          \ cmd_line,
+          \ msg,
+          \ lh#partial#make(s:function('remove_and_conclude'), [lh#partial#make(a:FinishedCb, [db_file, ' (triggered manually on modified '.source_name.')']), temp_name, source_name, temp_tags, db_file]),
+          \ lh#partial#make(s:function('PurgeFileReferences'), [db_file, source_name])
+          \ )
+
+  " TODO: in case of failure, clean as well!
+endfunction
+
 "------------------------------------------------------------------------
 " ## Internal functions {{{1
+" Purge all references to {source_name} in the tags file {{{2
+function! s:PurgeFileReferences(ctags_pathname, source_name) abort
+  call s:Verbose('Purge `%1` references from `%2`', a:source_name, a:ctags_pathname)
+  if filereadable(a:ctags_pathname)
+    let pattern = "\t".lh#path#to_regex(a:source_name)."\t"
+    let tags = readfile(a:ctags_pathname)
+    call filter(tags, 'v:val !~ pattern')
+    call writefile(tags, a:ctags_pathname, "b")
+  endif
+endfunction
+
+function! s:remove_and_conclude(FinishedCb, temp_name, source_name, temp_db, db_file,...) abort " {{{2
+  let cmd_line = 'sed "s#\t'.a:temp_name.'\t#\t'.a:source_name.'\t#" '.shellescape(a:db_file).' >> '.shellescape(a:temp_db)
+        \ . ' && mv -f '.shellescape(a:temp_db).' '.shellescape(a:db_file)
+  call lh#tags#_System(cmd_line)
+  call delete(a:temp_name)
+  call delete(a:temp_db)
+  return call('lh#partial#execute', [a:FinishedCb] + a:000)
+endfunction
 
 "------------------------------------------------------------------------
 " }}}1
