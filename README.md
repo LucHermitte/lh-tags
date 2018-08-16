@@ -5,10 +5,15 @@
 
 lh-tags is a ctags wrapper plugin for Vim.
 
-This plugin has two features:
+This plugin has two main features:
  * The generation of `tags` files is simplified,
  * and tag selection is simplified (the support for overloads (when
    _overloading_ is supported) is more ergonomic than what `:tselect` permits)
+
+Plus a feature aimed at plugin developpers:
+ * an API to request information on the current file -- local variables,
+   information on an enumeration, function boudaries... -- that is not
+   necesserally stored in the current tag database.
 
 ## Features
 
