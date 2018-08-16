@@ -420,7 +420,7 @@ function! lh#tags#indexers#ctags#make(...) abort
 endfunction
 
 function! s:update_tags_option() dict abort " {{{3
-  call self.set_output_file(self.src_dirname() . self.db_filename())
+  call self.s:set_db_file(self.src_dirname() . self.db_filename())
   let fixed_path = lh#path#fix(self._db_file)
   if lh#project#is_in_a_project()
     call lh#let#to('p:&tags', '+='.fixed_path)

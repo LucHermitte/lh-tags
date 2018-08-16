@@ -81,13 +81,12 @@ let s:k_script_name      = s:getSID()
 function! lh#tags#indexers#interface#make(...) abort
   let res = lh#object#make_top_type(get(a:, 1, {}))
   call lh#object#inject_methods(res, s:k_script_name,
-        \ 'run', 'set_output_file', 'db_file', 'src_dirname', '__lhvl_oo_type')
+        \ 'run', 's:set_db_file', 'db_file', 'src_dirname', '__lhvl_oo_type')
 
-  " TODO: harmonize set_output_file & db_file
   return res
 endfunction
 
-function! s:set_output_file(filename) dict abort " {{{2
+function! s:s:set_db_file(filename) dict abort " {{{2
   if !lh#path#writable(a:filename)
     throw "tags-error: ".a:filename." cannot be modified"
   endif

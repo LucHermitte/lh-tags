@@ -7,7 +7,7 @@
 " Version:      3.0.0
 let s:k_version = '3.0.0'
 " Created:      02nd Oct 2008
-" Last Update:  13th Aug 2018
+" Last Update:  16th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -271,7 +271,7 @@ endfunction
 function! lh#tags#cmd_line(ctags_pathname) abort " {{{3
   call lh#notify#deprecated('lh#tags#cmd_line', 'lh#tags#indexers#ctags#make().cmd_line')
   let indexer = s:indexer()
-  call indexer.set_output_file(a:ctags_pathname)
+  call indexer.s:set_db_file(a:ctags_pathname)
   let cmd_line = indexer.cmd_line()
   return cmd_line
 endfunction
