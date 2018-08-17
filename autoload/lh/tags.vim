@@ -7,7 +7,7 @@
 " Version:      3.0.0
 let s:k_version = '3.0.0'
 " Created:      02nd Oct 2008
-" Last Update:  16th Aug 2018
+" Last Update:  17th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -487,38 +487,12 @@ endfunction
 " ## Tag browsing {{{1
 " ======================================================================
 " # Tag push/pop {{{2
-" internal tmp tags file {{{3
-if !exists('s:tags_jump')
-  let s:tags_jump = tempname()
-  let &tags .= ','.s:tags_jump
-  let s:lines = []
-endif
-
-let s:lines = []
+" Feature moved to lh-vim-lib 4.6.0
 
 " lh#tags#jump {{{3
-let s:k_tag_name__ = '__jump_tag__'
-let s:k_nb_digits  = 5 " works with ~1 million jumps. Should be enough
 function! lh#tags#jump(tagentry) abort
-  call s:Verbose('Jumping to tag %1', a:tagentry)
-  let last = len(s:lines)+1
-  " Assert s:tagentry.filename == expand('%:p')
-  let filename = expand('%:p')
-
-  let tag_name = s:k_tag_name__.repeat('0', s:k_nb_digits-strlen(last)).last
-  let l = tag_name
-        \ . "\t" . (filename)
-        \ . "\t" . (a:tagentry.cmd)
-
-
-  " test whether a new digit is used. In that case renumber every tags to have
-  " a lexical order
-  call add(s:lines, l)
-  call writefile(s:lines, s:tags_jump)
-  if exists('&l:tags')
-    exe 'setlocal tags+='.s:tags_jump
-  endif
-  exe 'tag '.tag_name
+  call lh#notify#deprecated('lh#tags#jump()', 'lh#tags#stack#jump() from lh-vim-lib')
+  call lh#tags#stack#jump(a:tagentry)
 endfunction
 
 " # Tag dialog {{{2
@@ -882,15 +856,7 @@ function! s:JumpToTag(tags_data, taginfo) abort
     endif
   endfor
   " Execute the search
-  call lh#tags#jump(a:taginfo)
-  return
-  try
-    let save_magic=&magic
-    set nomagic
-    exe a:taginfo.cmd
-  finally
-    let &magic=save_magic
-  endtry
+  call lh#tags#stack#jump(a:taginfo)
 endfunction
 
 " s:Find() {{{3
