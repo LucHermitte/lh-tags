@@ -10,7 +10,7 @@ This plugin has two main features:
  * and tag selection is simplified (the support for overloads (when
    _overloading_ is supported) is more ergonomic than what `:tselect` permits)
 
-Plus a feature aimed at plugin developpers:
+plus a feature aimed at plugin developpers:
  * an API to request information on the current file -- local variables,
    information on an enumeration, function boudaries... -- that is not
    necesserally stored in the current tag database.
@@ -39,6 +39,8 @@ Plus a feature aimed at plugin developpers:
    specialized options to produced dedicaded tag files.
  * Tag files built can be used to (automatically) fill 'spellfile' option with
    words to be ignored by vim spell checker.
+ * Generated tags can also automatically be highlighted (see `(bpg):tags_options.auto_highlight`)
+
 
 ### Tags selection
  * Presents all tags that match the selected text (`META-W-META-DOWN`), or the

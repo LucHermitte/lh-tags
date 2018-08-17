@@ -1,5 +1,5 @@
-*lh-tags.txt*           lh-tags (v2.0.3)
-                        For Vim version 7+.    Last change: 21st Feb 2017
+*lh-tags.txt*           lh-tags (v3.0.0)
+                        For Vim version 7+.    Last change: 17th Aug 2018
 
                         By Luc Hermitte
                         luc {dot} hermitte {at} gmail {dot} com
@@ -25,6 +25,11 @@ This plugin has two features:
  * The generation of `tags` files is simplified,
  * and tag selection is simplified (the support for overloads (when
    _overloading_ is supported) is more ergonomic than what |:tselect| permits)
+
+plus a feature aimed at plugin developpers:
+ * an API to request information on the current file -- local variables,
+   information on an enumeration, function boudaries... -- that is not
+   necesserally stored in the current tag database.
 
 ------------------------------------------------------------------------------
 FEATURES                                *lhtags-features* {{{1
@@ -239,6 +244,6 @@ TO DO                                   *lhtags-todo* {{{1
 
                                                          }}}1
 ------------------------------------------------------------------------------
- © Luc Hermitte, 2008-2017, <http://github.com/LucHermitte/lh-tags>, CC by SA 3.0 {{{1
+ © Luc Hermitte, 2008-2018, <http://github.com/LucHermitte/lh-tags>, CC by SA 3.0 {{{1
  VIM: let b:VS_language = 'american'
  vim:ts=8:sw=4:tw=80:fo=tcq2:ft=help:fdm=marker:
