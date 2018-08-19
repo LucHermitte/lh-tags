@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      26th Jul 2018
-" Last Update:  16th Aug 2018
+" Last Update:  19th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Interface for indexer objects
@@ -84,7 +84,9 @@ let s:k_script_name      = s:getSID()
 function! lh#tags#indexers#interface#make(...) abort
   let res = lh#object#make_top_type(get(a:, 1, {}))
   call lh#object#inject_methods(res, s:k_script_name,
-        \ 'set_db_file', 'db_file', 'src_dirname', '__lhvl_oo_type')
+        \ 'set_db_file', 'db_file', 'src_dirname',
+        \ '_fix_cygwin_paths',
+        \ '__lhvl_oo_type')
 
   return res
 endfunction
@@ -94,6 +96,16 @@ function! s:set_db_file(filename) dict abort " {{{2
     throw "tags-error: ".a:filename." cannot be modified"
   endif
   let self._db_file = a:filename
+  call self._fix_cygwin_paths()
+endfunction
+
+function! s:_fix_cygwin_paths() dict abort " {{{2
+  " When calling cygwin-ctags from windows-vim, we cannot pass a full
+  " windows absolute path. We need either to translate it, or to work
+  " with relative paths.
+  if lh#os#prog_needs_cygpath_translation(self.executable())
+    let self._system_db_file = lh#os#system('cygpath -u '.shellescape(self._db_file))
+  endif
 endfunction
 
 function! s:db_file() dict abort " {{{2

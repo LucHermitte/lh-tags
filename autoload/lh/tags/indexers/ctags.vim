@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      27th Jul 2018
-" Last Update:  16th Aug 2018
+" Last Update:  19th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Specifications for exhuberant-ctags and universal-ctags objects
@@ -454,6 +454,8 @@ function! s:set_executable(exec) dict abort " {{{3
   " Check the flavour is compatible with ctags usual interface
   let fl = s:get_flavour(a:exec)
   let res._executable = a:exec
+
+  call self._fix_cygwin_paths()
 endfunction
 
 function! s:flavour() dict abort " {{{3
@@ -711,7 +713,7 @@ function! s:cmd_line(...) dict abort " {{{3
   let options += [lh#option#get('tags_options.flags', '', 'wbpg')]
 
   " # Destination file
-  let options += ['-f', self._db_file]
+  let options += ['-f', get(self, '_system_db_file', self._db_file)]
   " File/dir to index...
   let options += last_options
 
