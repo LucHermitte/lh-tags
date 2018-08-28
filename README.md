@@ -8,9 +8,11 @@ lh-tags is a ctags wrapper plugin for Vim.
 This plugin has two main features:
  * The generation of `tags` files is simplified,
  * and tag selection is simplified (the support for overloads (when
-   _overloading_ is supported) is more ergonomic than what `:tselect` permits)
+   _overloading_ is supported) is more ergonomic than what
+   [`:tselect`](http://vimhelp.appspot.com/tagsrch.txt.html#%3atselect)
+   permits)
 
-It also provide a feature aimed at plugin developpers:
+It also provides a feature aimed at plugin developpers:
  * an [API](doc/API.md) to request information on the current file -- local
    variables,
    information on an enumeration, function boundaries... In other Words, the
@@ -21,7 +23,9 @@ It also provide a feature aimed at plugin developpers:
 
 ### Tags generation
  * Is portable: the plugin is regularly used on nixes, windows (with or without
-   cygwin, and with `'shellslash'` on).
+   cygwin, and with
+   [`'shellslash'`](http://vimhelp.appspot.com/options.txt.html#%27shellslash%27)
+   on).
  * Is incremental: when a file under the watch of lh-tags is modified, only
    this file is parsed -- its previous information is deleted from the current
    `tags` file.
@@ -172,7 +176,7 @@ Since version 3.0.0, it's best to avoid to directly set
 `b:tags_options.{ft}.flags` to either `--langmap=C++:+.txx` or
 `--map-C++=+.txx` as it's not _portable_ between the various flavours of ctags.
 
-### Highlight tags (options)
+### Option to highlight tags
 
  * `g:tags_options.auto_highlight` boolean option that tells to
    automatically highlight tags with `TagsGroup` style -- which is linked to
@@ -194,7 +198,7 @@ Notes:
  * This feature can incur an observable slow down with current
    non-multithreaded implementations of Vim.
 
-### Add tags to the list of correctly spelled words (options)
+### Options to add tags to the list of correctly spelled words
 
  * `lh#tags#ignore_spelling()` option permits to add all the current tags to
    Vim spellchecker ignore list. If no parameter is passed to the function, it
@@ -212,8 +216,8 @@ Notes:
    - `"all"`: only when tags are regenerated for the whole project, never when
             a file is saved.
 
-   Indeed, updating spellfile may be very long on some projects, and we may
-   not wish to see this task automated.
+       Indeed, updating spellfile may be very long on some projects, and we may
+       not wish to see this task automated.
 
  * `(bg):tags_to_spellfile` has been deprecated since Version 2.0.0. Use
    `lh#tags#ignore_spelling()` instead.
