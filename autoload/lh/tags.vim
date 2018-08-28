@@ -7,7 +7,7 @@
 " Version:      3.0.0
 let s:k_version = '3.0.0'
 " Created:      02nd Oct 2008
-" Last Update:  17th Aug 2018
+" Last Update:  28th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -286,12 +286,12 @@ function! s:AreIgnoredWordAutomaticallyGenerated() abort " {{{3
   " "0": no
   " "1": yes
   " "all": only on <Plug>CTagsUpdateAll
-  return lh#option#get('tags_options.auto_spellfile_update', 0)
+  return lh#option#get('tags_options.auto_spellfile_update', 0, 'g')
 endfunction
 
 " ######################################################################
 function! s:ShallWeAutomaticallyHighlightTags() abort " {{{3
-  return lh#option#get('tags_options.auto_highlight', 0)
+  return lh#option#get('tags_options.auto_highlight', 0, 'g')
 endfunction
 
 " ######################################################################

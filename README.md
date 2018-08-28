@@ -10,10 +10,12 @@ This plugin has two main features:
  * and tag selection is simplified (the support for overloads (when
    _overloading_ is supported) is more ergonomic than what `:tselect` permits)
 
-plus a feature aimed at plugin developpers:
- * an API to request information on the current file -- local variables,
-   information on an enumeration, function boudaries... -- that is not
-   necesserally stored in the current tag database.
+It also provide a feature aimed at plugin developpers:
+ * an [API](doc/API.md) to request information on the current file -- local
+   variables,
+   information on an enumeration, function boundaries... In other Words, the
+   API gives on-the-fly access to information that is not necesserally stored
+   in the current tag database.
 
 ## Features
 
@@ -23,23 +25,26 @@ plus a feature aimed at plugin developpers:
  * Is incremental: when a file under the watch of lh-tags is modified, only
    this file is parsed -- its previous information is deleted from the current
    `tags` file.
- * Can be run on the whole project, when needed
+ * Can be run on the whole project, when needed.
  * Is, of course, [parametrisable](#options).
  * Can be run asynchronously (this is the default starting from Vim 7.4-1980).
    When this happens, [airline](https://github.com/vim-airline/vim-airline)
-   will display information about the background jobs.
+   will display information about the background jobs -- if _airline_ plugin is
+   installed, of course.
  * Can be done on a third-party project freshly cloned/checked out without a
-   need to define any configuration file for
-   [local_vimrc](http://github.com/LucHermitte/local_vimrc).
+   need to define any configuration file for a
+   [local_vimrc](http://github.com/LucHermitte/local_vimrc) plugin.
  * Doesn't have external dependencies other than `ctags` and `cd`.
    BTW, I highly recommend [universal ctags](http://github.com/universal-ctags/ctags)
    over exhuberant ctags.
  * Is project friendly: i.e. multiple projects can be opened simultaneously in
-   a vim session, and we can run `ctags` on each of them with different
+   a single vim session, and we can run `ctags` on each of them with different
    specialized options to produced dedicaded tag files.
- * Tag files built can be used to (automatically) fill 'spellfile' option with
-   words to be ignored by vim spell checker.
- * Generated tags can also automatically be highlighted (see `(bpg):tags_options.auto_highlight`)
+ * Tag files built can be used to (automatically) fill
+   [`'spellfile'`](http://vimhelp.appspot.com/options.txt.html#%27spellfile%27)
+   option with words to be ignored by vim spell checker.
+ * Generated tags can also automatically be highlighted (see
+   `g:tags_options.auto_highlight`)
 
 
 ### Tags selection
@@ -81,6 +86,8 @@ can enjoy lh-tags automagic update of the database, and improved tag selection.
 Regarding the conventions used in my plugins, and how to set options, see
 the following
 [documentation](https://github.com/LucHermitte/lh-vim-lib/blob/master/doc/Options.md).
+I explain what I mean by `(bpg)`, what each scope covers, and how (and where)
+related variables can be set.
 
 ### Directory and pathnames related options
 lh-tags can distinguish the directory where a tag database is stored from the
@@ -116,10 +123,11 @@ searching the first option which is set among:
    project are opened).
 
    Note: At this time, we cannot say _"never ask for this directory"_ as it's
-   possible with lh-vim-lib _Project feature_.
+   possible with lh-vim-lib _Project feature_. I'm likelly to change the
+   current behaviour to the one used in lh-vim-lib.
 
 #### Name of the tag database: `(pbg):tags_filename`
-The name defaults to `'tags'` with ctags indexers.
+The name defaults to `"tags"` with ctags indexers.
 
 This option permits to have another name -- this can be useful when all tag
 databases are stored with a policy such as `projects/.tags/{projectname}.ctags`.
@@ -132,8 +140,8 @@ the sources directory `(bpg):paths.tags.src_dir`.
 
 #### Indexed filetype: `lh#tags#add_indexed_ft()`
 
-This option helps managing the filetypes whose files will be indexed. Other
-files are ignored.
+This option helps managing the filetypes whose files will be indexed. Files of
+other types are ignored.
 
 Internally, this updates the project option `p:tags_options.indexed_ft` --
 prefer this function when using
@@ -145,6 +153,7 @@ be used instead. The global option is meant to be used when no project are
 defined.
 
 ```vim
+" In this project we index only C and C++ files
 :call lh#tags#add_indexed_ft('c', 'cpp')
 ```
 
@@ -163,10 +172,109 @@ Since version 3.0.0, it's best to avoid to directly set
 `b:tags_options.{ft}.flags` to either `--langmap=C++:+.txx` or
 `--map-C++=+.txx` as it's not _portable_ between the various flavours of ctags.
 
-### Other options
+### Highlight tags (options)
+
+ * `g:tags_options.auto_highlight` boolean option that tells to
+   automatically highlight tags with `TagsGroup` style -- which is linked to
+   `Special` group.
+
+   Defaults to 0.
+
+   This option is best set in your `.vimrc`. If you want to change or toggle
+   its value, you'd best use the menu `Project->Tags->Auto Highlight Tags` when running
+   gvim, or the `:Toggle` command:
+
+   ```vim
+   :Toggle ProjectTagsAutoHighlightTags
+   ```
+
+Notes:
+ * At this point, there is a bug: the highlighting isn't propagated to all
+   buffers.
+ * This feature can incur an observable slow down with current
+   non-multithreaded implementations of Vim.
+
+### Add tags to the list of correctly spelled words (options)
+
+ * `lh#tags#ignore_spelling()` option permits to add all the current tags to
+   Vim spellchecker ignore list. If no parameter is passed to the function, it
+   will assume the dictionary file to be named `code-symbols-spell.{enc}.add`.
+   If no file was specified in
+   [`'spellfile'`](http://vimhelp.appspot.com/options.txt.html#%27spellfile%27),
+   one is automatically added to contain words the end-user would want to
+   manually register with [`zg`](http://vimhelp.appspot.com/spell.txt.html#zg)
+   and all.
+
+ * `g:tags_options.auto_spellfile_update` specifies whether spellfiles are
+   automatically generated from updated tag files:
+   - `0`    : _never_, use `CTRL-X_ts` instead.
+   - `1`    : _always_
+   - `"all"`: only when tags are regenerated for the whole project, never when
+            a file is saved.
+
+   Indeed, updating spellfile may be very long on some projects, and we may
+   not wish to see this task automated.
+
+ * `(bg):tags_to_spellfile` has been deprecated since Version 2.0.0. Use
+   `lh#tags#ignore_spelling()` instead.
+
+Note:
+ * This feature can incur an observable slow down with current
+   non-multithreaded implementations of Vim.
+
+### Tag selection (options)
+
+ * `(bpg):tags_select` defaults to `'expand('<cword>')'`; this policy says how
+   the current word under the cursor is selected by normal mode mapping
+   `META-W-META-DOWN`.
+
+### Indexer related options
+
+Since V 3.0.0, lh-tags can support multiple indexers. At this time only
+indexers for ctags are supported. I'm likelly to eventually support _GNU
+global_. Any other indexer needs to be typically dropped into
+`{rtp}/autoload/lh/tags/indexers/{indexername}.vim`
+
+If you want to contribute another indexer, check
+`autoload/lh/tags/indexers/interface.vim` and the implementation of ctags
+indexer.
 
  * `lh#tags#set_indexer(indexer [,scope])`
-    TODO
+
+    This function permits to change the current indexer. The indexer will be
+    binded to the specified scope (the default value is `"p"`).
+
+#### Options common to all indexers
+
+ * (V3.0+) `(bpg):tags_options._...` and `(bpg):tags_options._.{&ft}.... `
+    dictionaries of options. This is the prefered way to specify ctags
+    `--fields`, `--extra(s)` and `--kinds` parameters. The supported suboptions
+    are:
+
+    * all field names and shortcut names that can be obtained with `ctags
+      --list-field`. The plugin will try to find the best fit for each indexer
+      supported.
+    * `extract_local_variables`
+    * `extract_variables`
+    * TODO: add generic support for other kinds
+    * `recursive_or_all` used internally to work on all files of a directory
+    * `index_file` used internally to index a single file
+    * `ft` to force a filetype
+
+    Note: these options can also be injected while calling
+    `cmd_line()` method on indexers.
+
+    Indexers other than _ctags_ indexer are expected to translate the possible
+    values to something they could understand.
+
+#### Options specific to the ctags indexer
+
+ * `(bpg):tags_executable` defaults to `"ctags"`; you should not need to change
+   it unless you want to play with different flavours of ctags installed on a
+   same system.
+
+ * `(bpg):tags_must_go_recursive` defaults to 1; set it to 0 if you really want
+   to not explore subdirectories.
 
  * `g:tags_options.explicit_cmdline'` -- default: 0;
     Tells to not rely on implicit options when indexing files. For instance,
@@ -174,68 +282,31 @@ Since version 3.0.0, it's best to avoid to directly set
     will procude command line 100% explicit about which fields should produced,
     or ignored.
 
- * `(bg):tags_options.flags` defaults to an empty string; It contains extra
-   flags you could pass to `ctags` execution. You'll have to adjust
-   these options to your needs.
- * (V2.0+) `(bg):tags_options.{ft}.flags` defaults to nothing since Version 3.0.
+ * `(wbpg):tags_options.flags` defaults to an empty string; It contains extra
+   flags you could pass to `ctags` execution. You may have to adjust these
+   options to your needs. Note that most options are already covered by the
+   indexer generic options: `(bpg):tags_options._...` and
+   `(bpg):tags_options._.{&ft}.... `.
+
+ * (V2.0+) `(wbpg):tags_options.{ft}.flags` defaults to nothing since Version 3.0.
    It can be  used to set anything specific to a filetype, yet prefer the new
    dedicated interface to specify ctags `--fields`, `--extra(s)` and `--kinds`
    parameters.
 
-    * c:    `'--c++-kinds=+p --fields=+imaS --extra=+q'`
-    * cpp:  `'--c++-kinds=+pf --fields=+imaSft --extra=+q --language-force=C++'`
-            `'x{c++.properties}` will also be added when using Universal ctags
-    * java: `'--c++-kinds=+acefgimp --fields=+imaSft --extra=+q --language-force=Java'`
-    * vim:  `'--fields=+mS --extra=+q'`
+   Note: This was renamed from `(bg):tags_options_{ft}` in version 2.0.0.
 
-   Warning: This was renamed from `(bg):tags_options_{ft}` in version 2.0.0.
- * (V3.0+) `(bpg):tags_options._...` and `(bpg):tags_options._.{&ft}.... ` dictionaries
-   of options. This is the prefered way to specify ctags `--fields`,
-   `--extra(s)` and `--kinds` parameters. The supported suboptions are:
+### Other options
+ * `(bpg):tags_options.no_auto` defaults to 1; set it to 0 if you want to enable the
+   automatic incremental update. IOW, if you want incremental update, force
+   this option to 0.
+   Note: this has changed in version 2.0.0; it used to be named
+   `(bg):LHT_no_auto`, and it had the opposite default value.
 
-   * all field names and shortcut names that can be obtained with `ctags
-     --list-field`. The plugin will try to find the best fit for each indexer
-     supported.
-   * `extract_local_variables`
-   * `extract_variables`
-   * TODO: add generic support for other kinds
-   * `recursive_or_all` used internally to work on all files of a directory
-   * `index_file` used internally to index a single file
-   * `ft` to force a filetype
-
-   Note: these options can also be injected while calling
-   `cmd_line()` method on indexers.
-
- * `(bg):tags_executable` defaults to `ctags`; you should not need to change
-   it. This option is used by the _ctags indexer_.
- * `(bg):tags_must_go_recursive` defaults to 1; set it to 0 if you really want
-   to not explore subdirectories.
- * `(bg):tags_select` defaults to `'expand('<cword>')'`; this policy says how
-   the current word under the cursor is selected by normal mode mapping
-   `META-W-META-DOWN`.
- * `(bg):tags_options.no_auto` defaults to 1; set it to 0 if you want to enable the
-   automatic incremental update.
-   Warning: this has changed in version 2.0.0; it used to be named
-   `(bg):LHT_no_auto`, and it have the opposite default value.
- * `lh#tags#ignore_spelling()` option permits to add all the current tags to
-   Vim spellchecker ignore list. If no parameter is passed to the function, it
-   will assume the dictionary file to be named `code-symbols-spell.{enc}.add`.
-   If no file was specified in `'spellfile'`, one is automatically added to
-   contain words the end-user would want to manually register with `zg` and
-   all.
- * `g:tags_options.auto_spellfile_update` specifies whether spellfiles are
-   automatically generated from updated tag files:
-   - `0`    : never, use `CTRL-X_ts` instead.
-   - `1`    : always
-   - `"all"`: only when tags are regenerated for the whole project, never when
-            a file is saved.
-
-   Indeed, updating spellfile may be very long on some projects, and we may
-   not wish to see this task automated.
- * `(bg):tags_to_spellfile` has been deprecated. See `lh#tags#ignore_spelling()` instead.
- * `(bg):tags_options.run_in_bg` ; set to 1 by default, if |+job|s are supported.
+ * `g:tags_options.run_in_bg` ; set to 1 by default, if
+   |[+job](http://vimhelp.appspot.com/various.txt.html#%2bjob)|s are supported.
    Tells to execute `<Plug>CTagsUpdateCurrent` and `<Plug>CTagsUpdateAll` in
-   background (through |+job| feature).
+   background (through
+   |[+job](http://vimhelp.appspot.com/various.txt.html#%2bjob)| feature).
 
    This option is best set in your `.vimrc`. If you want to change or toggle
    its value, you'd best use the menu `Project->Tags->Generate` when running
@@ -248,6 +319,8 @@ Since version 3.0.0, it's best to avoid to directly set
   * `lh#tags#update_tagfiles()` instructs the plugin to automatically set
    `'tags'` with the current tagfile.
    This may be deprecated in the future for something less cumbersome to use.
+
+### Example
 
 A typical configuration file for
 [local_vimrc](http://github.com/LucHermitte/local_vimrc) will be:
@@ -293,33 +366,31 @@ LetIfUndef g:tags_options.auto_spellfile_update 'all'
 
 ## To Do
 
- * Have behaviour similar to the one from the quickfix mode (possibility to
-   close and reopen the search window; prev&next moves)
- * Show/hide declarations -- merge declaration and definitions
- * Pluggable filters (that will check the number of parameters, their type, etc)
- * Check on-the-fly generation
- * Get rid of `lh#tags#update_tagfiles()` is possible.
- * Be able to specify a directory to store all spellfiles automatically.
-   `{prjroot}/spell/`, `{prjroot}/.spell/`?
- * `g:tags_options.auto_spellfile_update` should be overridable for each
-   project.
- * See to update spellfile in the background thanks to Python.
+ * Tag selection
+     * Have behaviour similar to the one from the quickfix mode (possibility to
+       close and reopen the search window; prev&next moves)
+     * Show/hide declarations -- merge declaration and definitions
+     * Pluggable filters (that will check the number of parameters, their type, etc)
+ * Tag generation
+     * Get rid of `lh#tags#update_tagfiles()` is possible.
+     * Be able to specify a directory to store all spellfiles automatically.
+       `{prjroot}/spell/`, `{prjroot}/.spell/`?
+     * `g:tags_options.auto_spellfile_update` should be overridable for each
+       project.
+     * See to update spellfile in the background thanks to Python.
+     * Auto-update on other events like `CursorHold*`
  * Auto-highlight tags
-   * Cache tag list generated for spell file (as long it's not generated in
-   background in another vim instance)
-   * `g:tags_options.auto_highlight` should be overridable for each project.
-   * doc
-   * auto-execute
-   * Different highlighting for different Identifier kind (type, function,
-   variable, ...)
-   * Incrementally add/remove highlighted keywords when tags are incrementally
-   updated.
-     * And do the same for ignored words
- * Auto-update on other events like `CursorHold*`
+     * Cache tag list generated for spell file (as long it's not generated in
+     background in another vim instance)
+     * `g:tags_options.auto_highlight` should be overridable for each project.
+     * doc
+     * auto-execute
+     * Different highlighting for different Identifier kind (type, function,
+     variable, ...)
+     * Incrementally add/remove highlighted keywords when tags are incrementally
+     updated.
+       * And do the same for ignored words
  * Document API:
-   * `lh#tags#getnames()`
-   * `lh#tags#command()`
-   * `lh#tags#cmd_line()`
 
 ## Design Choices
 
@@ -338,8 +409,7 @@ LetIfUndef g:tags_options.auto_spellfile_update 'all'
     ActivateAddons lh-tags
     ```
 
-  * or with [vim-flavor](http://github.com/kana/vim-flavor) which also supports
-    dependencies
+  * or with [vim-flavor](http://github.com/kana/vim-flavor) which also supports dependencies
 
     ```
     flavor 'LucHermitte/lh-tags'
