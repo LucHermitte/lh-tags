@@ -69,19 +69,11 @@ It also provides a feature aimed at plugin developpers:
 In order to use lh-tags, I highly recommend to use a plugin like
 [local_vimrc](http://github.com/LucHermitte/local_vimrc).
 
-In the buffer local section, you'll have to:
- * adjust `(bg):tags_options.{ft}.flags` if the default values don't suit you
-   -- I used to add exclusion lists in my projects.
- * to be sure where the root directory of the source files is:
-   FIXME
-   * either set `b:tags_dirname`, or `b:project_sources_dir`, or
-     `b:BTW_project_config._.paths.sources` to the project root directory --
-     when my projects are compiled with CMake+whatever I use the variables
-     from CMake encapsulation of
-     [BuildToolsWrapper](http://github.com/LucHermitte/vim-build-tools-wrapper)
-     to set `b:tags_dirname`.
-   * or be sure there is a `.git/` or a `.svn/` subdirectory in the root
-     directory of the source code.
+In the buffer local section, you can:
+ * set some `(bpg):tags_options....` if the default values don't suit you -- I
+   use if to add exclusion lists in my projects.
+ * force another root directory where to store the ctags database
+ * ...
 
 Then, you'll have to generate the `tags` database once (`<C-X>ta`), then you
 can enjoy lh-tags automagic update of the database, and improved tag selection.
@@ -250,6 +242,10 @@ indexer.
 
 #### Options common to all indexers
 
+ * (V3.0+) `(bpg):tags_options.excludes`
+   [List](http://vimhelp.appspot.com/eval.txt.html#List) of excluded patterns,
+   in `ctags` format.
+
  * (V3.0+) `(bpg):tags_options._...` and `(bpg):tags_options._.{&ft}.... `
     dictionaries of options. This is the prefered way to specify ctags
     `--fields`, `--extra(s)` and `--kinds` parameters. The supported suboptions
@@ -331,23 +327,32 @@ A typical configuration file for
 
 ```vim
 " #### In _vimrc_local.vim
-" Local vimrc variable for source dir
-let b:project_sources_dir = g:FooBarProject_config.paths.sources
-" or
-LetIfUndef b:BTW_project_config._ = g:FooBarProject_config
+
+" Define the project
+Project --define FooBar
+
 ...
 " ======================[ tags generation {{{2
+
 " Be sure tags are automatically updated on the current file
-LetIfUndef b:tags_options.no_auto 0
+LetIfUndef p:tags_options.no_auto 0
+
 " Declare the indexed filetypes
 call lh#tags#add_indexed_ft('c', 'cpp')
+
+" Files and directories to ignore
+LetIfUndef p:tags_options.excludes = ['"tests/*"', 'aspecificdir']
+
 " Update Vim &tags option w/ the tag file produced for the current project
 " (the folowing line is the only one which is required in all projects)
 call lh#tags#update_tagfiles() " uses b:project_sources_dir/BTW_project_config
+
 " Register ITK/OTB extensions as C++ extensions
 call lh#tags#set_lang_map('cpp', '+.txx')
+
 " Instruct to ignore spelling of code constructs
 call lh#tags#ignore_spelling()
+
 " But automatically when a file has been saved (this is too slow on OTB!)
 LetIfUndef g:tags_options.auto_spellfile_update 'all'
 ```
