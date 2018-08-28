@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      27th Jul 2018
-" Last Update:  19th Aug 2018
+" Last Update:  29th Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Specifications for exhuberant-ctags and universal-ctags objects
@@ -130,7 +130,7 @@ let s:all_lang_map = {
       \ 'yacc' : 'YACC',
       \ }
 
-" # ctagd flavours -- ctags capabilities analysis {{{2
+" # ctags flavours -- ctags capabilities analysis {{{2
 " We ask ctags --help & cie what extras, fields, kinds, are supported by
 " the current version
 " Let's hope ex-ctags can work this way because uni-ctags cannot tell us
