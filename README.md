@@ -399,13 +399,12 @@ LetIfUndef g:tags_options.auto_spellfile_update 'all'
      * Incrementally add/remove highlighted keywords when tags are incrementally
      updated.
        * And do the same for ignored words
- * Document API:
 
 ## Design Choices
 
  * 100% in Vim script language
- * API usable from other plugins -- to extract function boundaries, local
-   variables...
+ * [API](doc/API.md) usable from other plugins -- to extract function
+   boundaries, local variables...
  * Avoid dependencies other than [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib)
  * Support project specific settings (options may differ from one project to
    the other)

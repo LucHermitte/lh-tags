@@ -36,7 +36,7 @@ Indexers like `ctags` index files according to their extension. When we use non
 standard extensions (like `.tpp` in C++), we need to tell `ctags` that all
 `*.tpp` files are C++ files.
 
-lh-tags provides a unique function to register new extension to a (Vim-)filetype.
+lh-tags provides a unique function to register new extensions to a (Vim-)filetype.
 
 ## Indexers
 
@@ -55,8 +55,8 @@ saved.
 Method specific to `ctags`-like indexers that fill tag file that can accessed
 through [`taglist()`](http://vimhelp.appspot.com/eval.txt.html#taglist%28%29).
 
-Tell whether there is ctags _kind_ associated to the specified pattern.
-The `kind_pattern` which is expected to be a
+Tells whether there is a ctags _kind_ associated to the specified pattern.
+The `kind_pattern` is expected to be a
 [`regular-expression`](http://vimhelp.appspot.com/pattern.txt.html#regular-expression).
 The names/patterns officially supported follow current universal-ctags kinds.
 
@@ -83,11 +83,11 @@ Getter to DB filename property.
 Returns the root directory where the sources are.
 
 See the option
-[`(bpg):paths.tags.src_dir`](#dirname-to-source-code-bpgpathstagssrc_dir).
+[`(bpg):paths.tags.src_dir`](../README.md#dirname-to-source-code-bpgpathstagssrc_dir).
 
 #### `indexer._fix_cygwin_paths()`
 Some paths need to be translated when running Cygwin programs from Windows
-native flavour of Vim.
+native flavour of Vim. This method takes care of that.
 
 ### Methods specific to ctags indexer
 #### `lh#tags#indexer#ctags#make([args])`
@@ -110,10 +110,10 @@ Getter to the name of the tag file to use. Wraps access to
 Getter that wraps access to `(bpg):tags_executable` option.
 
 #### `indexer.set_executable()`
-Method to locally override the tag executable is need be in the restricted
+Method to locally override the tag executable, if need be, in the restricted
 context of the indexer.
 
-## Ctags flavours
+#### `indexer.flavour()`
 
 Internally the ctags indexer relies on another object to obtain precise
 information of what the exact flavour of ctags
