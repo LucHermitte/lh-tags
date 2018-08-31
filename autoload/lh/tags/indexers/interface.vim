@@ -128,7 +128,7 @@ function! s:analyse_buffer(...) dict abort " {{{2
     let firstline = get(args, 'firstline', 1)
     let lastline  = get(args, 'lastline',  '$')
     let source_name = tempname()
-    call writefile(getline(s, e), source_name, 'b')
+    call writefile(getline(firstline, lastline), source_name, 'b')
   else
     let source_name    = expand('%:p')
   endif
@@ -152,7 +152,8 @@ function! s:analyse_buffer(...) dict abort " {{{2
     throw "Cannot execute `".cmd_line."`: ".exec
   endif
 
-  let lTags = self.taglist('.')
+  let pattern = get(args, 'pattern', '.')
+  let lTags = self.taglist(pattern)
   return lTags
 endfunction
 
