@@ -30,6 +30,7 @@ let s:k_version = '300'
 "   - run_on_all_files          -- update tags for all files/directory
 "   - run_update_file           -- update tags for current file (saved)
 "   - run_update_modified_file  -- update tags for current file (modified, not saved)
+"   - taglist                   -- wraps |taglist()| on a "forced" tag file
 "
 " Usage:
 " Parameters will be set at project level (tag filename...)
@@ -85,6 +86,7 @@ function! lh#tags#indexers#interface#make(...) abort
   let res = lh#object#make_top_type(get(a:, 1, {}))
   call lh#object#inject_methods(res, s:k_script_name,
         \ 'set_db_file', 'db_file', 'src_dirname',
+        \ 'analyse_buffer',
         \ '_fix_cygwin_paths',
         \ '__lhvl_oo_type')
 
@@ -113,6 +115,45 @@ function! s:db_file() dict abort " {{{2
 endfunction
 function! s:src_dirname() dict abort " {{{2
   return s:DB_Dirname()
+endfunction
+
+function! s:analyse_buffer(...) dict abort " {{{2
+  if !exists('s:temp_tags')
+    let s:temp_tags = tempname()
+  endif
+
+  " previously known as lh#dev#__BuildCrtBufferCtags()
+  let args = get(a:, 1, {})
+  if &modified || has_key(args, 'firstline')
+    let firstline = get(args, 'firstline', 1)
+    let lastline  = get(args, 'lastline',  '$')
+    let source_name = tempname()
+    call writefile(getline(s, e), source_name, 'b')
+  else
+    let source_name    = expand('%:p')
+  endif
+  " call s:Verbose("Args: %1, %2", args, a:000)
+
+  let ctags_dirname = fnamemodify(s:temp_tags, ':h')
+  if filereadable(s:temp_tags)
+    call delete(s:temp_tags)
+  endif
+  call self.set_db_file(s:temp_tags)
+
+  let options = extend(args, {'forced_language':&ft, 'extract_local_variables': 1, 'end': 1, 'extract_prototypes': 0, 'analyse_file': source_name}, 'force')
+  let cmd_line = join(self.cmd_line(options), ' ')
+
+  if filereadable(s:temp_tags)
+    call delete(s:temp_tags)
+  endif
+  call s:Verbose(cmd_line)
+  let exec = system(cmd_line)
+  if v:shell_error != 0
+    throw "Cannot execute `".cmd_line."`: ".exec
+  endif
+
+  let lTags = self.taglist('.')
+  return lTags
 endfunction
 
 function! s:__lhvl_oo_type() dict abort " {{{2
@@ -196,6 +237,14 @@ function! s:DB_Dirname(...) abort " {{{3
   return res
 endfunction
 
+" # lh#tags#indexers#interface#_sort_lines(t1, t2) {{{2
+function! lh#tags#indexers#interface#_sort_lines(t1, t2) abort
+  let l1 = a:t1.line
+  let l2 = a:t2.line
+  return    l1 == l2 ? 0
+        \ : l1 >  l2 ? 1
+        \ :           -1
+endfunction
 
 "------------------------------------------------------------------------
 " }}}1

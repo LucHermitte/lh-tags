@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      27th Jul 2018
-" Last Update:  29th Aug 2018
+" Last Update:  31st Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Specifications for exhuberant-ctags and universal-ctags objects
@@ -409,7 +409,9 @@ function! lh#tags#indexers#ctags#make(...) abort
   call lh#object#inject_methods(res, s:k_script_name,
         \ 'update_tags_option', 'db_filename',
         \ 'executable', 'set_executable', 'flavour',
-        \ 'cmd_line', 'run_on_all_files', 'run_update_file', 'run_update_modified_file')
+        \ 'cmd_line', 'run_on_all_files', 'run_update_file', 'run_update_modified_file',
+        \ 'taglist'
+        \ )
   call lh#object#inject(res, 'get_kind_flags', '_idx_get_kind_flags', s:k_script_name)
   call lh#object#inject(res, 'has_kind',       '_idx_has_kind', s:k_script_name)
 
@@ -796,6 +798,29 @@ function! s:run_update_modified_file(FinishedCb, args) dict abort " {{{3
   " TODO: in case of failure, clean as well!
 endfunction
 
+function! s:taglist(pat) dict abort " {{{3
+  let db_file = self.db_file()
+  try
+    " TODO: check local value & co
+    let tags_save = &tags
+    let &tags = db_file
+    " This works only with ctags based DB...
+    let lTags = taglist('.')
+  finally
+    let &tags = tags_save
+    if s:verbose < 2
+      call delete(db_file)
+    else
+      let b = bufwinnr('%')
+      call lh#buffer#jump(db_file, "sp")
+      exe b.'wincmd w'
+    endif
+  endtry
+  call s:EvalLines(lTags)
+  call sort(lTags, function('lh#tags#indexers#interface#_sort_lines'))
+  return lTags
+endfunction
+
 "------------------------------------------------------------------------
 " ## Internal functions {{{1
 " Purge all references to {source_name} in the tags file {{{2
@@ -819,6 +844,29 @@ function! s:remove_and_conclude(FinishedCb, temp_name, source_name, temp_db, db_
 endfunction
 
 "------------------------------------------------------------------------
+" s:EvalLines(list) {{{2
+function! s:EvalLines(list) abort
+  for t in a:list
+    if !has_key(t, 'line') " sometimes, VimL declarations are badly understood
+      let fields = split(t.cmd)
+      for field in fields
+        if field =~ '\v^\k+:'
+          let [all, key, value; rest ] = matchlist(field, '\v^(\k+):(.*)')
+          let t[key] = value
+        elseif len(field) == 1
+          let t.kind = field
+        elseif field =~ '/.*/";'
+          let t.cmd = field
+        endif
+      endfor
+      let t.file = fields[0]
+    endif
+    " and do evaluate the line eventually
+    let t.line = eval(t.line)
+    unlet t.filename
+  endfor
+endfunction
+
 " }}}1
 "------------------------------------------------------------------------
 let &cpo=s:cpo_save

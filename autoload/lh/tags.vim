@@ -7,7 +7,7 @@
 " Version:      3.0.0
 let s:k_version = '3.0.0'
 " Created:      02nd Oct 2008
-" Last Update:  28th Aug 2018
+" Last Update:  31st Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -225,16 +225,25 @@ function! s:indexer() abort " {{{3
   return indexer
 endfunction
 
-" Function: lh#tags#set_indexer(Func [,scope]) {{{3
+" Function: lh#tags#build_indexer(Func) {{{3
 " If {Func} is a string, execute lh#tags#indexers#{Func}#make()
 " If it's a function, just call it, and assert it's of the right type
-function! lh#tags#set_indexer(Func, ...) abort
+function! lh#tags#build_indexer(Func) abort
   call lh#assert#type(a:Func).belongs_to('', function('has'))
   if type(a:Func) == type('')
     let indexer = call('lh#tags#indexers#'.a:Func.'#make', [])
   else
     let indexer = a:Func()
   endif
+  call lh#assert#value(indexer).verifies('lh#tags#indexers#interface#is_an_indexer')
+  return indexer
+endfunction
+
+" Function: lh#tags#set_indexer(Func [,scope]) {{{3
+" If {Func} is a string, execute lh#tags#indexers#{Func}#make()
+" If it's a function, just call it, and assert it's of the right type
+function! lh#tags#set_indexer(Func, ...) abort
+  let indexer = lh#tags#build_indexer(a:Func)
   call lh#assert#value(indexer).verifies('lh#tags#indexers#interface#is_an_indexer')
   let scope = get(a:, 1, 'p')
   call lh#let#to(scope.':tags_options.__indexer', indexer)

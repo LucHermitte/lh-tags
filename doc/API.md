@@ -38,6 +38,36 @@ standard extensions (like `.tpp` in C++), we need to tell `ctags` that all
 
 lh-tags provides a unique function to register new extensions to a (Vim-)filetype.
 
+### `lh#tags#session#get(args)`
+Returns a tag session.
+
+The session object returned:
+- possesses a reference to the indexer used
+- possesses the list of tags found
+- possesses an internal counter to factorize multiple calls to `ctags`
+- can be `finalize()`d
+
+Every time a session is requested, an internal counter is incremented. This
+permits to request tags from multiple Vim functions executed together, several
+times, and yet have the external `ctags` executable run only once.
+
+It's imperative to always execute `session.finalize()` from a
+[`:finally`](http://vimhelp.appspot.com/eval.txt.html#%3afinally) block.
+Each call to `#get()` must be balanced with a call to `finalize()`
+
+`args` can contain:
+- `firstline`, and `lastline` to restrict the lines on which the analyse is
+  performed
+- `indexer`, a name, or
+  [Funcref](http://vimhelp.appspot.com/eval.txt.html#Funcref), to an indexer
+  building function.
+- any parameter used by `indexer.cmd_line()` method -- BTW, the following are
+  forcefully injected:
+  - `forced_language` to `&ft`,
+  - `extract_local_variables'` to 1,
+  - `end` to 1,
+  - `extract_prototypes` to 0.
+
 ## Indexers
 
 ### Specialized methods common to all indexers
@@ -69,6 +99,13 @@ identified through the `kind_pattern` which is expected to be a
 [`regular-expression`](http://vimhelp.appspot.com/pattern.txt.html#regular-expression).
 The names/patterns officially supported follow current universal-ctags kinds.
 
+#### `indexer.analyse_buffer(options)`
+Returns tags associated to the current buffer. The tags extraction can be
+restricted to lines between `options.firstline` and `options.lastline` if
+specified.
+
+This is internally used by `lh#tags#session#*()` functions.
+
 ### Internal methods common to all indexers
 #### `indexer.set_db_file()`
 Changes the (tag) database filename.
@@ -85,7 +122,7 @@ Returns the root directory where the sources are.
 See the option
 [`(bpg):paths.tags.src_dir`](../README.md#dirname-to-source-code-bpgpathstagssrc_dir).
 
-#### `indexer._fix_cygwin_paths()`
+### `indexer._fix_cygwin_paths()`
 Some paths need to be translated when running Cygwin programs from Windows
 native flavour of Vim. This method takes care of that.
 
