@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      26th Jul 2018
-" Last Update:  19th Aug 2018
+" Last Update:  31st Aug 2018
 "------------------------------------------------------------------------
 " Description:
 "       Interface for indexer objects
@@ -113,15 +113,6 @@ function! s:db_file() dict abort " {{{2
 endfunction
 function! s:src_dirname() dict abort " {{{2
   return s:DB_Dirname()
-endfunction
-
-function! s:source_dirname(...) dict abort " {{{2
-  " Option: if set to "1", force to return the exact path, even when by
-  " default this is the src_dirname.
-  let source_dir = lh#option#get('paths.sources', '')
-  " If not set, this means the default value is the directory where the
-  " tag file is produced => no need to specify it
-  return empty(source_dir) && get(a:, 1, 0) ? self.src_dirname() : source_dir
 endfunction
 
 function! s:__lhvl_oo_type() dict abort " {{{2
