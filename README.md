@@ -50,7 +50,6 @@ It also provides a feature aimed at plugin developpers:
  * Generated tags can also automatically be highlighted (see
    `g:tags_options.auto_highlight`)
 
-
 ### Tags selection
  * Presents all tags that match the selected text (`META-W-META-DOWN`), or the
    pattern used (`:LHTags`).
@@ -71,7 +70,7 @@ In order to use lh-tags, I highly recommend to use a plugin like
 
 In the buffer local section, you can:
  * set some `(bpg):tags_options....` if the default values don't suit you -- I
-   use if to add exclusion lists in my projects.
+   use it to add exclusion lists in my projects.
  * force another root directory where to store the ctags database
  * ...
 
@@ -144,8 +143,8 @@ prefer this function when using
 [local_vimrc](http://github.com/LucHermitte/local_vimrc) to configure a
 project.
 
-It's also possible to set the option `g:tags_options.indexed_ft` that'll
-be used instead. The global option is meant to be used when no project are
+It's also possible to set the option `g:tags_options.indexed_ft` that'll be
+used instead. The global option is meant to be used when no project are
 defined.
 
 ```vim
@@ -170,9 +169,8 @@ Since version 3.0.0, it's best to avoid to directly set
 
 ### Option to highlight tags
 
- * `g:tags_options.auto_highlight` boolean option that tells to
-   automatically highlight tags with `TagsGroup` style -- which is linked to
-   `Special` group.
+ * `g:tags_options.auto_highlight` boolean option that tells to automatically
+   highlight tags with `TagsGroup` style -- which is linked to `Special` group.
 
    Defaults to 0.
 
@@ -286,7 +284,7 @@ indexer.
    flags you could pass to `ctags` execution. You may have to adjust these
    options to your needs. Note that most options are already covered by the
    indexer generic options: `(bpg):tags_options._...` and
-   `(bpg):tags_options._.{&ft}.... `.
+   `(bpg):tags_options._.{&ft}....`.
 
  * (V2.0+) `(wbpg):tags_options.{ft}.flags` defaults to nothing since Version 3.0.
    It can be  used to set anything specific to a filetype, yet prefer the new
@@ -387,15 +385,14 @@ LetIfUndef g:tags_options.auto_spellfile_update 'all'
      * `g:tags_options.auto_spellfile_update` should be overridable for each
        project.
      * See to update spellfile in the background thanks to Python.
-     * Auto-update on other events like `CursorHold*`
+     * Auto-update on other events like `CursorHold`
  * Auto-highlight tags
      * Cache tag list generated for spell file (as long it's not generated in
      background in another vim instance)
      * `g:tags_options.auto_highlight` should be overridable for each project.
-     * doc
-     * auto-execute
      * Different highlighting for different Identifier kind (type, function,
      variable, ...)
+     * Specify syn hl.
      * Incrementally add/remove highlighted keywords when tags are incrementally
      updated.
        * And do the same for ignored words
