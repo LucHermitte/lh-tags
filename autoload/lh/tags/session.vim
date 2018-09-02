@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      31st Aug 2018
-" Last Update:  31st Aug 2018
+" Last Update:  02nd Sep 2018
 "------------------------------------------------------------------------
 " Description:
 "       «description»
@@ -61,12 +61,12 @@ endfunction
 " ## Exported functions {{{1
 
 " Function: lh#tags#session#get(...) {{{3
-if !exists('s:crt_session')
+" if !exists('s:crt_session')
   let s:crt_session = {
         \ 'tags': [],
         \ 'count': 0
         \ }
-endif
+" endif
 
 function! lh#tags#session#get(...) abort
   if s:crt_session.count == 0
@@ -84,9 +84,10 @@ function! lh#tags#session#new(...) abort
 
   let args    = get(a:, 1, {})
   let indexer = get(args, 'indexer', 'ctags')
+  " call extend(args, {'relative': 0})
   let session.count   = 0
   let session.indexer = lh#tags#build_indexer(indexer)
-  let session.tags    = call(session.indexer.analyse_buffer, a:000)
+  let session.tags    = call(session.indexer.analyse_buffer, [args])
 
   return session
 endfunction

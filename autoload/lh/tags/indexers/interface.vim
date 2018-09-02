@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      26th Jul 2018
-" Last Update:  31st Aug 2018
+" Last Update:  02nd Sep 2018
 "------------------------------------------------------------------------
 " Description:
 "       Interface for indexer objects
@@ -123,6 +123,7 @@ function! s:analyse_buffer(...) dict abort " {{{2
   endif
 
   " previously known as lh#dev#__BuildCrtBufferCtags()
+  let full_src_name = expand('%:.')
   let args = get(a:, 1, {})
   if &modified || has_key(args, 'firstline')
     let firstline = get(args, 'firstline', 1)
@@ -130,7 +131,7 @@ function! s:analyse_buffer(...) dict abort " {{{2
     let source_name = tempname()
     call writefile(getline(firstline, lastline), source_name, 'b')
   else
-    let source_name    = expand('%:p')
+    let source_name    = expand('%:t')
   endif
   " call s:Verbose("Args: %1, %2", args, a:000)
 
@@ -141,7 +142,9 @@ function! s:analyse_buffer(...) dict abort " {{{2
   call self.set_db_file(s:temp_tags)
 
   let options = extend(args, {'forced_language':&ft, 'extract_local_variables': 1, 'end': 1, 'extract_prototypes': 0, 'analyse_file': source_name}, 'force')
-  let cmd_line = join(self.cmd_line(options), ' ')
+  let cmd_line
+        \ = lh#os#sys_cd(fnamemodify(source_name, ':h')) . ' && '
+        \ . join(self.cmd_line(options), ' ')
 
   if filereadable(s:temp_tags)
     call delete(s:temp_tags)
@@ -154,6 +157,11 @@ function! s:analyse_buffer(...) dict abort " {{{2
 
   let pattern = get(args, 'pattern', '.')
   let lTags = self.taglist(pattern)
+
+  " Inject back the right filename
+  " -> it's necesary when working on extract of the original file, or
+  "  when mixing cygwin-tags with windows-gvim
+  call map(lTags, 'extend(v:val, {"filename": full_src_name}, "force")')
   return lTags
 endfunction
 

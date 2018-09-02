@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      27th Jul 2018
-" Last Update:  31st Aug 2018
+" Last Update:  02nd Sep 2018
 "------------------------------------------------------------------------
 " Description:
 "       Specifications for exhuberant-ctags and universal-ctags objects
@@ -635,7 +635,9 @@ function! s:cmd_line(...) dict abort " {{{3
   let flavour = self.flavour() " ctags flavour: exctag/universal-ctags (many different versions)
 
   let options = []
-  let options += ['--tag-relative=yes']
+  if get(args, 'relative', 1)
+    let options += ['--tag-relative=yes']
+  endif
 
   " # Forced languages
   if has_key(args, 'forced_language')
@@ -805,7 +807,7 @@ function! s:taglist(pat) dict abort " {{{3
     let tags_save = &tags
     let &tags = db_file
     " This works only with ctags based DB...
-    let lTags = taglist('.')
+    let lTags = taglist(a:pat)
   finally
     let &tags = tags_save
     if s:verbose < 2
