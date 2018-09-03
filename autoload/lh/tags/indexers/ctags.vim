@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      27th Jul 2018
-" Last Update:  02nd Sep 2018
+" Last Update:  03rd Sep 2018
 "------------------------------------------------------------------------
 " Description:
 "       Specifications for exhuberant-ctags and universal-ctags objects
@@ -140,7 +140,7 @@ let s:ctags_flavours = {}
 
 " Function: s:get_flavour(exe) abort {{{3
 function! s:get_flavour(exe) abort
-  let exe = exepath(a:exe)
+  let exe = lh#path#exe(a:exe)
   if ! has_key(s:ctags_flavours, exe)
     let s:ctags_flavours[exe] = s:analyse_flavour(exe)
   endif
@@ -483,6 +483,7 @@ endfunction
 function! s:fts_2_langs(flavour, args, options) abort " {{{3
   let fts = get(a:args, 'fts', s:k_unset)
   if lh#option#is_unset(fts)
+    unlet fts
     let fts = lh#option#get('tags_options.indexed_ft')
   endif
   if lh#option#is_set(fts)

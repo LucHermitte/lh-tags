@@ -7,7 +7,7 @@
 " Version:      3.0.0.
 let s:k_version = '300'
 " Created:      31st Aug 2018
-" Last Update:  02nd Sep 2018
+" Last Update:  03rd Sep 2018
 "------------------------------------------------------------------------
 " Description:
 "       «description»
@@ -87,7 +87,7 @@ function! lh#tags#session#new(...) abort
   " call extend(args, {'relative': 0})
   let session.count   = 0
   let session.indexer = lh#tags#build_indexer(indexer)
-  let session.tags    = call(session.indexer.analyse_buffer, [args])
+  let session.tags    = call(session.indexer.analyse_buffer, [args], session.indexer)
 
   return session
 endfunction
