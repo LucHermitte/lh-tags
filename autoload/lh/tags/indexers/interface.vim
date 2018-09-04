@@ -4,10 +4,10 @@
 "		<URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/blob/master/License.md>
-" Version:      3.0.0.
-let s:k_version = '300'
+" Version:      3.0.3.
+let s:k_version = '303'
 " Created:      26th Jul 2018
-" Last Update:  02nd Sep 2018
+" Last Update:  04th Sep 2018
 "------------------------------------------------------------------------
 " Description:
 "       Interface for indexer objects

@@ -4,10 +4,10 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      3.0.0
-let s:k_version = '3.0.0'
+" Version:      3.0.3
+let s:k_version = '3.0.3'
 " Created:      02nd Oct 2008
-" Last Update:  31st Aug 2018
+" Last Update:  04th Sep 2018
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -228,10 +228,10 @@ endfunction
 " Function: lh#tags#build_indexer(Func) {{{3
 " If {Func} is a string, execute lh#tags#indexers#{Func}#make()
 " If it's a function, just call it, and assert it's of the right type
-function! lh#tags#build_indexer(Func) abort
+function! lh#tags#build_indexer(Func, ...) abort
   call lh#assert#type(a:Func).belongs_to('', function('has'))
   if type(a:Func) == type('')
-    let indexer = call('lh#tags#indexers#'.a:Func.'#make', [])
+    let indexer = call('lh#tags#indexers#'.a:Func.'#make', a:000)
   else
     let indexer = a:Func()
   endif

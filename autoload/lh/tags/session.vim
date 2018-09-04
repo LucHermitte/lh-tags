@@ -4,10 +4,10 @@
 "		<URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/blob/master/License.md>
-" Version:      3.0.0.
-let s:k_version = '300'
+" Version:      3.0.3.
+let s:k_version = '303'
 " Created:      31st Aug 2018
-" Last Update:  03rd Sep 2018
+" Last Update:  04th Sep 2018
 "------------------------------------------------------------------------
 " Description:
 "       «description»
@@ -84,9 +84,9 @@ function! lh#tags#session#new(...) abort
 
   let args    = get(a:, 1, {})
   let indexer = get(args, 'indexer', 'ctags')
-  " call extend(args, {'relative': 0})
+  " call extend(args, {'dont_update_tags_option': 1})
   let session.count   = 0
-  let session.indexer = lh#tags#build_indexer(indexer)
+  let session.indexer = lh#tags#build_indexer(indexer, {'dont_update_tags_option': 1})
   let session.tags    = call(session.indexer.analyse_buffer, [args], session.indexer)
 
   return session
