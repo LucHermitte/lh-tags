@@ -4,10 +4,10 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      3.0.3
-let s:k_version = '3.0.3'
+" Version:      3.0.4
+let s:k_version = '3.0.4'
 " Created:      02nd Oct 2008
-" Last Update:  04th Sep 2018
+" Last Update:  31st Oct 2018
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -218,7 +218,12 @@ LetIfUndef g:tags_options {}
 " -> g:tags_options.{ft}.flags
 
 function! s:indexer() abort " {{{3
-  let indexer = lh#option#get(['tags_options.'.&ft.'.__indexer', 'tags_options.__indexer'])
+  let indexer_names = []
+  if !empty(&ft)
+    let indexer_names += ['tags_options.'.&ft.'.__indexer']
+  endif
+  let indexer_names += ['tags_options.__indexer']
+  let indexer = lh#option#get(indexer_names)
   if lh#option#is_unset(indexer)
     let indexer = lh#tags#set_indexer(function('lh#tags#indexers#ctags#make'))
   endif
@@ -348,9 +353,10 @@ endfunction
 function! lh#tags#run(tag_function, force) abort
   try
     if a:tag_function == 'run_update_file' && !lh#tags#_is_ft_indexed(&ft)
-    call s:Verbose("Ignoring ctags generation on %1: `%2` is an unsupported filetype", a:tag_function, &ft)
+      call s:Verbose("Ignoring ctags generation on %1: `%2` is an unsupported filetype", a:tag_function, &ft)
       return 0
     endif
+    call lh#assert#value(&ft).not().empty()
     call s:Verbose("Run ctags on %1 %2", a:tag_function, a:force ? "(forcing)": "")
     let indexer = s:indexer()
     " let g:indexer = indexer
