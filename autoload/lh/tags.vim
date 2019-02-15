@@ -450,14 +450,14 @@ endfunction
 " Function: lh#tags#ignore_spelling([spellfilename]) {{{3
 " Tells lh-tags to use a spell file
 function! lh#tags#ignore_spelling(...) abort
-  let tags_dirname = lh#option#get('tags_dirname')
-  let spelldirname  = lh#path#to_dirname(tags_dirname)
+  let tags_dirname = s:indexer().src_dirname()
+  call lh#assert#value(tags_dirname).is_set()
   let ext = '.'.&enc.'.add'
 
   " 0- If there was a spell file remove it
   let old_spellfilename = lh#option#get('tags_options.spellfile')
   if lh#option#is_set(old_spellfilename)
-    exe 'setlocal spellfile-='.lh#path#fix(spelldirname.old_spellfilename)
+    exe 'setlocal spellfile-='.lh#path#fix(tags_dirname.old_spellfilename)
   endif
 
   " 1- Register the new spell file
@@ -469,9 +469,9 @@ function! lh#tags#ignore_spelling(...) abort
   if empty(&spellfile)
     " Be sure there is a file to hold words to ignore manually registered by
     " the end user
-    exe 'setlocal spellfile+='.lh#path#fix(spelldirname.'ignore'.ext)
+    exe 'setlocal spellfile+='.lh#path#fix(tags_dirname.'ignore'.ext)
   endif
-  exe 'setlocal spellfile+='.lh#path#fix(spelldirname.spellfilename)
+  exe 'setlocal spellfile+='.lh#path#fix(tags_dirname.spellfilename)
 endfunction
 
 " Update the spellfile {{{3
