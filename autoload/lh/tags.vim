@@ -4,10 +4,10 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      3.0.4
-let s:k_version = '3.0.4'
+" Version:      3.0.5
+let s:k_version = '3.0.5'
 " Created:      02nd Oct 2008
-" Last Update:  31st Oct 2018
+" Last Update:  15th Feb 2019
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -270,10 +270,11 @@ endfunction
 let s:k_unset = lh#option#unset()
 function! lh#tags#set_lang_map(ft, exts) abort
   let indexer = s:indexer()
-  if !has_key(indexer, 'set_lang_map')
+  let fl = s:indexer().flavour()
+  if !has_key(fl, 'set_lang_map')
     throw "tags-error: The current indexer has no ft -> lang map"
   endif
-  call indexer.set_lang_map(a:ft, a:exts)
+  call fl.set_lang_map(a:ft, a:exts)
 endfunction
 
 let s:project_roots = get(s:, 'project_roots', [])
