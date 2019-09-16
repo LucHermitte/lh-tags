@@ -252,6 +252,7 @@ indexer.
     * all field names and shortcut names that can be obtained with `ctags
       --list-field`. The plugin will try to find the best fit for each indexer
       supported.
+    * `absolute_path` used to generate absolute path of tag locations
     * `extract_local_variables`
     * `extract_variables`
     * TODO: add generic support for other kinds
