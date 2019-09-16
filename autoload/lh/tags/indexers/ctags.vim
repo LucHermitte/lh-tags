@@ -651,7 +651,7 @@ function! s:cmd_line(...) dict abort " {{{3
 
   " # Files to index...
   let last_options = []
-  if     get(args, 'recursive_or_all', 0)
+  if get(args, 'recursive_or_all', 0)
     let last_options += [flavour._recursive_or_all()]
   else
     " TODO: Reject indexation of files with a language unsupported by ctags?
@@ -683,7 +683,9 @@ function! s:cmd_line(...) dict abort " {{{3
         " let langs = [get(flavour._ft_lang_map, ft, '')]
       endif
     endif
-
+  endif
+  if get(args, 'absolute_path', 0)
+    let last_options += [shellescape(self.src_dirname())]
   endif
 
   " # Given the languages of the current project, generate the "kinds"
