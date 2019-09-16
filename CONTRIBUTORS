@@ -1,0 +1,4 @@
+Luc Hermitte, maintainer, 2007-2019
+Troy Curtis Jr., Improve logs, doc, 2015, PR#1
+Dalton Barreto, Fix doc typo, 2017, PR#3
+Alexey Aksenov, Add `absolute_path` option, 2019, PR#6

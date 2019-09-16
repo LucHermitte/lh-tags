@@ -4,10 +4,10 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      3.0.5
-let s:version = '3.0.5'
+" Version:      3.0.6
+let s:version = '3.0.6'
 " Created:      20th Mar 2012
-" Last Update:  15th Feb 2019
+" Last Update:  16th Sep 2019
 " }}}1
 "=============================================================================
 
@@ -23,12 +23,13 @@ finally
   let &rtp = save_rtp
 endtry
 finish
+CONTRIBUTORS
+VimFlavor
+addon-info.json
 autoload/lh/tags.vim
 autoload/lh/tags/indexers/ctags.vim
 autoload/lh/tags/indexers/interface.vim
 autoload/lh/tags/session.vim
 autoload/lh/tags/system.vim
 ftplugin/cpp/cpp_lh-tags-hooks.vim
-addon-info.json
 plugin/lh-tags.vim
-VimFlavor
