@@ -4,10 +4,10 @@
 "		<URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/blob/master/License.md>
-" Version:      3.0.3.
-let s:k_version = '303'
+" Version:      3.0.6.
+let s:k_version = '306'
 " Created:      26th Jul 2018
-" Last Update:  04th Sep 2018
+" Last Update:  27th Dec 2019
 "------------------------------------------------------------------------
 " Description:
 "       Interface for indexer objects
@@ -126,12 +126,14 @@ function! s:analyse_buffer(...) dict abort " {{{2
   let full_src_name = expand('%:.')
   let args = get(a:, 1, {})
   if &modified || has_key(args, 'firstline')
-    let firstline = get(args, 'firstline', 1)
-    let lastline  = get(args, 'lastline',  '$')
+    let firstline   = get(args, 'firstline', 1)
+    let lastline    = get(args, 'lastline',  '$')
     let source_name = tempname()
+    let source_dir  = fnamemodify(source_name, ':h')
     call writefile(getline(firstline, lastline), source_name, 'b')
   else
-    let source_name    = expand('%:t')
+    let source_name = expand('%:t')
+    let source_dir  = expand('%:h')
   endif
   " call s:Verbose("Args: %1, %2", args, a:000)
 
@@ -143,7 +145,7 @@ function! s:analyse_buffer(...) dict abort " {{{2
 
   let options = extend(args, {'forced_language':&ft, 'extract_local_variables': 1, 'end': 1, 'extract_prototypes': 0, 'analyse_file': source_name}, 'force')
   let cmd_line
-        \ = lh#os#sys_cd(fnamemodify(source_name, ':h')) . ' && '
+        \ = lh#os#sys_cd(source_dir) . ' && '
         \ . join(self.cmd_line(options), ' ')
 
   if filereadable(s:temp_tags)
