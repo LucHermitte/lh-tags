@@ -7,7 +7,7 @@
 " Version:      3.0.6
 let s:k_version = '3.0.6'
 " Created:      02nd Oct 2008
-" Last Update:  12th Jan 2020
+" Last Update:  15th Jan 2020
 "------------------------------------------------------------------------
 " Description:
 "       Small plugin related to tags files.
@@ -834,8 +834,8 @@ function! lh#tags#_select(results, ...) abort
     " this is an assert
     throw "lh-tags: We are not supposed to select several tags"
   endif
-  " There is a header => we need to apply an offset!
-  let selection = a:results.selection[0]-1
+
+  let selection = a:results.selection[0]
   if selection < 1
     call lh#common#warning_msg('Invalid selection')
     return
@@ -850,7 +850,6 @@ function! lh#tags#_select(results, ...) abort
   echomsg '-> '.choices[selection]
   " echomsg '-> '.info[selection-1].filename . ": ".info[selection-1].cmd
   if exists('s:quit') | :quit | endif
-  " call s:JumpToTag(cmd, info[selection-1])
   call s:JumpToTag(tags_data, b:tagsinfo[selection])
 endfunction
 
