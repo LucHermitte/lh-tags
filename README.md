@@ -408,7 +408,7 @@ LetIfUndef g:tags_options.auto_spellfile_update 'all'
    the other)
 
 ## Installation
-  * Requirements: Vim 7.2-295, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v4.6.1
+  * Requirements: Vim 7.2-295, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v5.0.0
   * With [vim-addon-manager](https://github.com/MarcWeber/vim-addon-manager), install lh-tags (this is the preferred method because of the dependencies)
 
     ```vim

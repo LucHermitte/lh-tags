@@ -4,10 +4,10 @@
 "		<URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/blob/master/License.md>
-" Version:      3.0.0.
-let s:k_version = '300'
+" Version:      3.0.7.
+let s:k_version = '307'
 " Created:      26th Jul 2018
-" Last Update:  26th Jul 2018
+" Last Update:  18th Feb 2020
 "------------------------------------------------------------------------
 " Description:
 "       Functions for launching external processes
@@ -130,7 +130,8 @@ function! s:run_async(cmd_line, txt, finished_cb, ...) abort
   if a:0 > 0
     let job.before_start_cb = a:1
   endif
-  call lh#async#queue(job)
+  let queue = lh#async#get_queue('tags', 'stack')
+  call queue.push_or_start(job)
   return 0
 endfunction
 
