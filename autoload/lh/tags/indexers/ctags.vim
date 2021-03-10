@@ -4,10 +4,10 @@
 "		<URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/blob/master/License.md>
-" Version:      3.0.0.
-let s:k_version = '300'
+" Version:      3.0.7.
+let s:k_version = '307'
 " Created:      27th Jul 2018
-" Last Update:  03rd Sep 2018
+" Last Update:  10th Mar 2021
 "------------------------------------------------------------------------
 " Description:
 "       Specifications for exhuberant-ctags and universal-ctags objects
@@ -171,7 +171,7 @@ function! s:analyse_flavour(exepath) abort
 
   " uctags is deprecating <LANG>-kind in favour of kind-<LANG>
   " => use this form if possible
-  let flavour._kind_opt_format = s:check_pattern(raw_options, a:exepath, ['--kinds-<LANG>', '--<LANG>-kinds'], ['--kinds-%s', '--%s-kinds'])
+  let flavour._kind_opt_format = s:check_pattern(raw_options, a:exepath, ['--kinds-(<LANG>', '--kinds-<LANG>', '--<LANG>-kinds'], ['--kinds-%s', '--kinds-%s', '--%s-kinds'])
 
   " uctags introduces --map-<LANG>
   let flavour._langmap_opt_format = s:check_pattern(raw_options, a:exepath, ['--map-<LANG>', '--langmap='], ['--map-%s=%s', '--langmap=%s:%s'])
