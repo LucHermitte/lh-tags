@@ -7,7 +7,7 @@
 " Version:      3.0.6.
 let s:k_version = '306'
 " Created:      26th Jul 2018
-" Last Update:  27th Dec 2019
+" Last Update:  10th Aug 2021
 "------------------------------------------------------------------------
 " Description:
 "       Interface for indexer objects
@@ -65,6 +65,12 @@ endfunction
 function! s:Verbose(expr, ...) abort
   if s:verbose
     call call('s:Log',[a:expr]+a:000)
+  endif
+endfunction
+
+function! s:Callstack(...)
+  if s:verbose
+    call call('lh#log#callstack',a:000)
   endif
 endfunction
 
