@@ -4,10 +4,10 @@
 "               <URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/tree/master/License.md>
-" Version:      3.0.7
-let s:version = '3.0.7'
+" Version:      3.0.8
+let s:version = '3.0.8'
 " Created:      20th Mar 2012
-" Last Update:  18th Feb 2020
+" Last Update:  12th Aug 2021
 " }}}1
 "=============================================================================
 

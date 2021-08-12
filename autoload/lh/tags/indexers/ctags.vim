@@ -4,10 +4,10 @@
 "		<URL:http://github.com/LucHermitte/lh-tags>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/lh-tags/blob/master/License.md>
-" Version:      3.0.7.
-let s:k_version = '307'
+" Version:      3.0.8.
+let s:k_version = '308'
 " Created:      27th Jul 2018
-" Last Update:  10th Mar 2021
+" Last Update:  12th Aug 2021
 "------------------------------------------------------------------------
 " Description:
 "       Specifications for exhuberant-ctags and universal-ctags objects
@@ -668,6 +668,7 @@ function! s:cmd_line(...) dict abort " {{{3
       let file2index = get(args, 'index_file', '')
       if !empty(file2index)
         " Expects the file to be an edited buffer
+        let file2index = self.src_dirname() . '/' . file2index
         if bufnr(file2index) >= 0
           let last_options += ['--append']
           let ft = getbufvar(file2index, '&ft')
